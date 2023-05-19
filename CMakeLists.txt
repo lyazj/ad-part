@@ -67,6 +67,8 @@ endif()
 
 # 以下为可执行文件构建
 
+add_executable(sanitize-test src/sanitizer-test.cpp)
+
 add_executable(onnx-test src/onnx-test.cpp)
 target_link_libraries(onnx-test PUBLIC onnxruntime)
 
