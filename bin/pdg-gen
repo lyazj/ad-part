@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+# Output PDG type info to OUTPUT_PATH.
+
+import particle
+import numpy as np
+import os
+import sys
+
+PT_CHARGED_HADRON =  1
+PT_NEUTRAL_HADRON =  2
+PT_PHOTON         =  4
+PT_ELECTRON       =  8
+PT_MUON           = 16
+
+if len(sys.argv) != 2:
+    print(f'usage: {os.path.basename(sys.argv[0])} <output-path>', file=sys.stderr)
+    sys.exit(1)
+OUTPUT_PATH = sys.argv[1]
+os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+
+def get_info(par: particle.Particle) -> int:
+    isnot_charged = int(not par.charge)
+    is_hadron = int(bool(particle.pdgid.is_hadron(par.pdgid)))
+    is_photon = int(abs(par.pdgid) == 22)
+    is_electron = int(abs(par.pdgid) == 11)
+    is_muon = int(abs(par.pdgid) == 13)
+    return (
+        int(is_hadron) << isnot_charged
+    ) | (is_photon << 2) | (is_electron << 3) | (is_muon << 4)
+
+print('generating PDG info...', flush=True)
+info = np.array(
+    [[par.pdgid, get_info(par)] for par in particle.Particle.all()],
+    dtype='int32'
+)
+info.tofile(OUTPUT_PATH)
+print(f'PDG info saved to: {os.path.abspath(OUTPUT_PATH)}')
