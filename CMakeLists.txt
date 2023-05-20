@@ -100,7 +100,7 @@ add_executable(root-test src/root-test.cpp)
 target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
 
 add_executable(delphes-test src/delphes-test.cpp src/adenv.cpp)
-target_link_libraries(delphes-test PUBLIC Delphes ${ROOT_LIBRARIES})
+target_link_libraries(delphes-test PUBLIC Delphes ROOT::Tree)
 
 add_executable(flatten src/flatten.cpp src/adenv.cpp src/adpdg.cpp src/adbranch.cpp src/adjet.cpp)
-target_link_libraries(flatten PUBLIC Delphes ${ROOT_LIBRARIES} z)
+target_link_libraries(flatten PUBLIC Delphes ROOT::Tree ROOT::Physics z)
