@@ -44,6 +44,22 @@ add_compile_definitions(DELPHES_DIR="${DELPHES_DIR}")
 add_compile_definitions(DELPHES_EXTERNAL_DIR="${DELPHES_DIR}/external")
 add_compile_definitions(LIBDELPHES_SO="${DELPHES_LIB_DIR}/libDelphes.so")
 
+# zlib 编译选项
+if(ZLIB_DIR)
+    if(NOT ZLIB_INC_DIR)
+        set(ZLIB_INC_DIR ${ZLIB_DIR}/include)
+    endif()
+    if(NOT ZLIB_LIB_DIR)
+        set(ZLIB_LIB_DIR ${ZLIB_DIR}/lib)
+    endif()
+endif()
+if(ZLIB_INC_DIR)
+    include_directories(${ZLIB_INC_DIR})
+endif()
+if(ZLIB_LIB_DIR)
+    link_directories(${ZLIB_LIB_DIR})
+endif()
+
 # PDG 数据生成和编译
 if(NOT PDG_PATH)
     set(PDG_PATH ${CMAKE_SOURCE_DIR}/run/pdginfo)
