@@ -44,8 +44,15 @@ add_compile_definitions(DELPHES_DIR="${DELPHES_DIR}")
 add_compile_definitions(DELPHES_EXTERNAL_DIR="${DELPHES_DIR}/external")
 add_compile_definitions(LIBDELPHES_SO="${DELPHES_LIB_DIR}/libDelphes.so")
 
-# 优化和调试选项
-option(ENABLE_SANITIZER "compile and link sanitizing flags" ON)
+# PDG 数据生成和编译
+if(NOT PDG_PATH)
+    set(PDG_PATH ${CMAKE_SOURCE_DIR}/run/pdginfo)
+endif()
+execute_process(COMMAND ${CMAKE_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} COMMAND_ERROR_IS_FATAL ANY)
+add_compile_definitions(PDG_PATH="${PDG_PATH}")
+
+# 优化、调试和通用编译选项
+option(ENABLE_SANITIZER "compile and link sanitizing flags" OFF)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE DEBUG)
 endif()
@@ -64,6 +71,7 @@ else()
     add_compile_options(-O3)
 endif()
 add_compile_options(-Wall -Wshadow -Wextra)
+add_compile_definitions(_GNU_SOURCE)
 
 # 以下为可执行文件构建
 
@@ -75,5 +83,8 @@ target_link_libraries(onnx-test PUBLIC onnxruntime)
 add_executable(root-test src/root-test.cpp)
 target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
 
-add_executable(delphes-test src/delphes-test.cpp)
+add_executable(delphes-test src/delphes-test.cpp src/adenv.cpp)
 target_link_libraries(delphes-test PUBLIC Delphes ${ROOT_LIBRARIES})
+
+add_executable(flatten src/flatten.cpp src/adenv.cpp src/adpdg.cpp src/adbranch.cpp src/adjet.cpp)
+target_link_libraries(flatten PUBLIC Delphes ${ROOT_LIBRARIES} z)

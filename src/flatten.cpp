@@ -1,0 +1,61 @@
+#include "adenv.h"
+#include "adpdg.h"
+#include "adliteral.h"
+#include "adbranch.h"
+#include "adjet.h"
+#include <classes/DelphesClasses.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <memory>
+#include <zlib.h>
+#include <stdio.h>
+
+using namespace std;
+
+int main(int argc, char *argv[])
+{
+  if(argc != 3) {
+    fprintf(stderr, "usage: %s <rootfile> <dumpfile>\n",
+        get_invoc_short_name());
+    return 1;
+  }
+  const char *rootfile = argv[1];  // rootfile to read
+  const char *dumpfile = argv[2];  // dumpfile to write
+  ADPDGQuerier pdg;  // pdgid -> type info
+
+  // NOTE: Do this before loading rootfile.
+  setenv_delphes();
+
+  // Open rootfile and get Delphes tree.
+  auto file = make_shared<TFile>(rootfile, "read");
+  auto delphes = file->Get<TTree>("Delphes");
+  Long64_t n = delphes->GetEntries();
+
+  // Open dumpfile to write.
+  gzFile dump = gzopen(dumpfile, "wb");
+  if(dump == NULL) {
+    fprintf(stderr, "ERROR: error opening dumpfile");
+    return 1;
+  }
+  shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
+
+  // Set up branches.
+  auto brjet = ADBranch(delphes, "Jet"_branch);
+
+  // Traverse entries.
+  for(Long64_t i = 0; i < n; ++i) {
+    // Fetch data.
+    delphes->GetEntry(i);
+
+    // Parse and dump data.
+    Long64_t njet = brjet.get_branch()->GetEntries();
+    for(Long64_t j = 0; j < njet; ++j) {
+      ADJet jet(pdg, *brjet[j]);
+      jet.write(dump);
+    }
+  }
+
+  // Success!
+  ADJet::summary();
+  return 0;
+}
