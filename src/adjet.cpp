@@ -162,10 +162,10 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   e = p4.Energy();
   npar = n;
   sdmass = jet.Mass;  // ?
-  tau1 = 0.0;  // FIXME
-  tau2 = 0.0;  // FIXME
-  tau3 = 0.0;  // FIXME
-  tau4 = 0.0;  // FIXME
+  tau1 = jet.Tau[0];  // ?
+  tau2 = jet.Tau[1];  // ?
+  tau3 = jet.Tau[2];  // ?
+  tau4 = jet.Tau[3];  // ?
 
   n = min<Long64_t>(n, NPAR_PER_JET);
   par = (ADParticle *)malloc(NPAR_PER_JET * sizeof(*par));
