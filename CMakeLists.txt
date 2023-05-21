@@ -64,7 +64,10 @@ endif()
 if(NOT PDG_PATH)
     set(PDG_PATH ${CMAKE_SOURCE_DIR}/run/pdginfo)
 endif()
-execute_process(COMMAND ${CMAKE_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} COMMAND_ERROR_IS_FATAL ANY)
+execute_process(COMMAND ${CMAKE_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} RESULT_VARIABLE RETCODE)
+if(NOT RETCODE EQUAL 0)
+    message(FATAL_ERROR "error generating pdginfo")
+endif()
 add_compile_definitions(PDG_PATH="${PDG_PATH}")
 
 # 优化、调试和通用编译选项
