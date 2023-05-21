@@ -9,6 +9,10 @@ struct ADCharPack {
   static constexpr const C str[sizeof...(CPack) + 1] = {CPack..., 0};
 };
 
+// Required before C++17.
+template<class C, C... CPack>
+constexpr const C ADCharPack<C, CPack...>::str[sizeof...(CPack) + 1];
+
 // Get ADCharPack literal.
 template<class C, C... CPack>
 constexpr ADCharPack<C, CPack...> operator""_pack()
