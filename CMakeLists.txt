@@ -13,9 +13,11 @@ if(NOT ROOT_DIR)
     set(ROOT_DIR ${CMAKE_SOURCE_DIR}/root/cmake)
 endif()
 find_package(ROOT)
-separate_arguments(ROOT_CC_FLAGS)
-separate_arguments(ROOT_CXX_FLAGS)
-add_compile_options(${ROOT_CXX_FLAGS})
+set(ROOT_CC_FLAG_LIST ${ROOT_CC_FLAGS})
+set(ROOT_CXX_FLAG_LIST ${ROOT_CXX_FLAGS})
+separate_arguments(ROOT_CC_FLAG_LIST)
+separate_arguments(ROOT_CXX_FLAG_LIST)
+add_compile_options(${ROOT_CXX_FLAG_LIST})
 add_compile_definitions(${ROOT_DEFINITIONS})
 include_directories(${ROOT_INCLUDE_DIRS})
 
@@ -91,6 +93,17 @@ else()
 endif()
 add_compile_options(-Wall -Wshadow -Wextra)
 add_compile_definitions(_GNU_SOURCE)
+
+# 编译环境检查
+set(CODE_TO_COMPILE "#include <string>\\nusing std::operator\"\"s;\\n")
+set(TEMP_OUTPUT "/tmp/trail_$$.o")
+set(TRAIL_FLAGS "-xc++ ${ROOT_CXX_FLAGS} - -o ${TEMP_OUTPUT} -c")
+execute_process(COMMAND sh -c
+"printf '${CODE_TO_COMPILE}' | ${CMAKE_CXX_COMPILER} ${TRAIL_FLAGS} && rm ${TEMP_OUTPUT}"
+RESULT_VARIABLE RETCODE)
+if(NOT RETCODE EQUAL 0)
+    message(FATAL_ERROR "string literals not supported, expect C++14 or later")
+endif()
 
 # 以下为可执行文件构建
 
