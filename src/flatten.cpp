@@ -1,6 +1,6 @@
 #include "adenv.h"
 #include "adpdg.h"
-#include "adliteral.h"
+#include "adtype.h"
 #include "adbranch.h"
 #include "adjet.h"
 #include <classes/DelphesClasses.h>
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
 
   // Set up branches.
-  auto brjet = ADBranch<decltype("JET"_branch)>(delphes);
+  auto brjet = ADBranch<decltype("Jet"_branch)>(delphes);
 
   // Traverse entries.
   for(Long64_t i = 0; i < n; ++i) {

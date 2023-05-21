@@ -29,7 +29,7 @@ class ADBranch : protected ADBranchBase {
 
 public:
   ADBranch(TTree *tree_in, BranchInfo = { })
-    : ADBranchBase(tree_in, BranchInfo::name, BranchInfo::TypeInfo::name)
+    : ADBranchBase(tree_in, BranchInfo::name, BranchInfo::type::name)
   {
     // do nothing
   }
@@ -37,8 +37,8 @@ public:
   using ADBranchBase::get_branch;
   using ADBranchBase::get_data;
 
-  typename BranchInfo::TypeInfo::type *&operator[](size_t i) const {
-    return (typename BranchInfo::TypeInfo::type *&)ADBranchBase::operator[](i);
+  typename BranchInfo::type::type *&operator[](size_t i) const {
+    return (typename BranchInfo::type::type *&)ADBranchBase::operator[](i);
   }
 
 };
