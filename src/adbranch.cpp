@@ -7,9 +7,9 @@ using namespace std;
 
 ADBranchBase::ADBranchBase(TTree *tree_in, const char *brname, const char *tpname)
 {
+  data = new TClonesArray(tpname);
   tree = tree_in;
   branch = tree->GetBranch(brname);
-  data = new TClonesArray(tpname);
   branch->SetAddress(&data);
   branch->SetStatus(1);
 }
