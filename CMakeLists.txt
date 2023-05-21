@@ -99,6 +99,9 @@ add_executable(sanitize-test src/sanitizer-test.cpp)
 add_executable(onnx-test src/onnx-test.cpp)
 target_link_libraries(onnx-test PUBLIC onnxruntime)
 
+add_executable(onnx-test-gpu src/onnx-test-gpu.cpp)
+target_link_libraries(onnx-test-gpu PUBLIC onnxruntime)
+
 add_executable(root-test src/root-test.cpp)
 target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
 
