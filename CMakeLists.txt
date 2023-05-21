@@ -98,12 +98,14 @@ add_compile_definitions(_GNU_SOURCE)
 set(CODE_TO_COMPILE "#include <string>\\nusing std::operator\"\"s;\\n")
 set(TEMP_OUTPUT "/tmp/trail_$$.o")
 set(TRAIL_FLAGS "-xc++ ${ROOT_CXX_FLAGS} - -o ${TEMP_OUTPUT} -c")
+message("compiling trail code...")
 execute_process(COMMAND sh -c
 "printf '${CODE_TO_COMPILE}' | ${CMAKE_CXX_COMPILER} ${TRAIL_FLAGS} && rm ${TEMP_OUTPUT}"
 RESULT_VARIABLE RETCODE)
 if(NOT RETCODE EQUAL 0)
     message(FATAL_ERROR "string literals not supported, expect C++14 or later")
 endif()
+message("passed test for string literal operator support")
 
 # 以下为可执行文件构建
 
