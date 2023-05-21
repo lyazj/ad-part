@@ -6,7 +6,6 @@
 #include <classes/DelphesClasses.h>
 #include <TFile.h>
 #include <TTree.h>
-#include <TClonesArray.h>
 #include <memory>
 #include <zlib.h>
 #include <stdio.h>
