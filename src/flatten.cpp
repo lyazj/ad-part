@@ -6,6 +6,7 @@
 #include <classes/DelphesClasses.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TClonesArray.h>
 #include <memory>
 #include <zlib.h>
 #include <stdio.h>
@@ -40,7 +41,7 @@ int main(int argc, char *argv[])
   shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
 
   // Set up branches.
-  auto brjet = ADBranch<decltype("Jet"_branch)>(delphes);
+  auto brjet = get_branch(delphes, "Jet"_branch);
 
   // Traverse entries.
   for(Long64_t i = 0; i < n; ++i) {
@@ -48,8 +49,8 @@ int main(int argc, char *argv[])
     delphes->GetEntry(i);
 
     // Parse and dump data.
-    Long64_t njet = brjet.get_branch()->GetEntries();
-    for(Long64_t j = 0; j < njet; ++j) {
+    size_t njet = brjet.size();
+    for(size_t j = 0; j < njet; ++j) {
       ADJet jet(pdg, *brjet[j]);
       jet.write(dump);
     }

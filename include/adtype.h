@@ -108,6 +108,7 @@ struct ADBranchInfo;
 //   e.g. register_type("GenJet"_pack, "Jet"_type);
 
 register_branch("Jet"_pack, "Jet"_type);
+register_branch("FatJet"_pack, "Jet"_type);
 
 // ----------------------------------------------------------------------
 

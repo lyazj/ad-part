@@ -5,10 +5,9 @@
 
 using namespace std;
 
-ADBranchBase::ADBranchBase(TTree *tree_in, const char *brname, const char *tpname)
+ADBranchBase::ADBranchBase(TTree *tree, const char *brname, const char *tpname)
 {
   data = new TClonesArray(tpname);
-  tree = tree_in;
   branch = tree->GetBranch(brname);
   branch->SetAddress(&data);
   branch->SetStatus(1);
@@ -19,6 +18,11 @@ ADBranchBase::~ADBranchBase()
   branch->SetAddress(NULL);
   branch->SetStatus(0);
   delete data;
+}
+
+size_t ADBranchBase::size() const
+{
+  return data->GetEntries();
 }
 
 TObject *&ADBranchBase::operator[](size_t i) const
