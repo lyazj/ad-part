@@ -145,7 +145,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   phi = p4.Phi();
   e = p4.Energy();
   npar = n;
-  sdmass = jet.Mass;  // ?
+  sdmass = jet.SoftDroppedP4[0].M();  // ?
   tau1 = jet.Tau[0];  // ?
   tau2 = jet.Tau[1];  // ?
   tau3 = jet.Tau[2];  // ?
