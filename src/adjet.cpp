@@ -13,6 +13,7 @@
 
 using namespace std;
 
+size_t ADJet::nadjet;
 size_t ADJet::ngnpar;
 size_t ADJet::ntrack;
 size_t ADJet::ntower;
@@ -47,6 +48,53 @@ bool read_features(T &obj, gzFile file)
   return true;
 }
 
+template<class DelphesClass>
+void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
+    const TLorentzVector &p4_jet, ADPDGInfo pdginfo)
+{
+  TLorentzVector p4 = par.P4();
+
+  adpar.log_pt = log(p4.Pt());
+  adpar.log_e = log(p4.Energy());
+  adpar.log_pt_rel = adpar.log_pt - log(p4_jet.Pt());
+  adpar.log_e_rel = adpar.log_e - log(p4_jet.Energy());
+  adpar.delta_r = p4.DeltaR(p4_jet);
+  adpar.charge = 0.0;  // padding
+  adpar.is_charged_hadron = pdginfo.is_charged_hadron();
+  adpar.is_neutral_hadron = pdginfo.is_neutral_hadron();
+  adpar.is_photon = pdginfo.is_photon();
+  adpar.is_electron = pdginfo.is_electron();
+  adpar.is_muon = pdginfo.is_muon();
+  adpar.d0 = 0.0;  // padding
+  adpar.d0_err = 0.0;  // padding
+  adpar.dz = 0.0; // padding
+  adpar.dz_err = 0.0;  // padding
+  adpar.deta = p4.Eta() - p4_jet.Eta();
+  adpar.dphi = p4.Phi() - p4_jet.Phi();
+  adpar.px = p4.Px();
+  adpar.py = p4.Py();
+  adpar.pz = p4.Pz();
+  adpar.e = p4.Energy();
+  adpar.mask = 1.0;
+}
+
+template<class DelphesClass>
+void set_adpar_charge(ADParticle &adpar, const DelphesClass &par,
+    const TLorentzVector &, ADPDGInfo)
+{
+  adpar.charge = par.Charge;
+}
+
+template<class DelphesClass>
+void set_adpar_d0dzde(ADParticle &adpar, const DelphesClass &par,
+    const TLorentzVector &, ADPDGInfo)
+{
+  adpar.d0 = par.D0;
+  adpar.d0_err = par.ErrorD0;
+  adpar.dz = par.DZ;
+  adpar.dz_err = par.ErrorDZ;
+}
+
 }  // namespace
 
 ADParticle::ADParticle()
@@ -54,91 +102,27 @@ ADParticle::ADParticle()
   memset(feature_begin, 0, feature_end - feature_begin);  // padding
 }
 
-ADParticle::ADParticle(const ADPDGQuerier &pdg, const GenParticle &gnpar, const ADJet &jet)
+ADParticle::ADParticle(const GenParticle &gnpar,
+    const TLorentzVector &p4_jet, const ADPDGQuerier &pdg)
 {
-  TLorentzVector p4 = gnpar.P4();
   ADPDGInfo pdginfo = pdg[gnpar.PID];
-
-  log_pt = log(p4.Pt());
-  log_e = log(p4.Energy());
-  log_pt_rel = log_pt - log(jet.pt);
-  log_e_rel = log_e - log(jet.e);
-  delta_r = hypot(p4.Eta() - jet.eta, p4.Phi() - jet.phi);
-  charge = gnpar.Charge;
-  is_charged_hadron = pdginfo.is_charged_hadron();
-  is_neutral_hadron = pdginfo.is_neutral_hadron();
-  is_photon = pdginfo.is_photon();
-  is_electron = pdginfo.is_electron();
-  is_muon = pdginfo.is_muon();
-  d0 = 0.0;  // padding
-  d0_err = 0.0;  // padding
-  dz = 0.0; // padding
-  dz_err = 0.0;  // padding
-  deta = p4.Eta() - jet.eta;
-  dphi = p4.Phi() - jet.phi;
-  px = p4.Px();
-  py = p4.Py();
-  pz = p4.Pz();
-  e = p4.Energy();
-  mask = 1.0;
+  set_adpar_common(*this, gnpar, p4_jet, pdginfo);
+  set_adpar_charge(*this, gnpar, p4_jet, pdginfo);
 }
 
-ADParticle::ADParticle(const ADPDGQuerier &pdg, const Track &track, const ADJet &jet)
+ADParticle::ADParticle(const Track &track,
+    const TLorentzVector &p4_jet, const ADPDGQuerier &pdg)
 {
-  TLorentzVector p4 = track.P4();
   ADPDGInfo pdginfo = pdg[track.PID];
-
-  log_pt = log(p4.Pt());
-  log_e = log(p4.Energy());
-  log_pt_rel = log_pt - log(jet.pt);
-  log_e_rel = log_e - log(jet.e);
-  delta_r = hypot(p4.Eta() - jet.eta, p4.Phi() - jet.phi);
-  charge = track.Charge;
-  is_charged_hadron = pdginfo.is_charged_hadron();
-  is_neutral_hadron = pdginfo.is_neutral_hadron();
-  is_photon = pdginfo.is_photon();
-  is_electron = pdginfo.is_electron();
-  is_muon = pdginfo.is_muon();
-  d0 = track.D0;
-  d0_err = track.ErrorD0;
-  dz = track.DZ;
-  dz_err = track.ErrorDZ;
-  deta = p4.Eta() - jet.eta;
-  dphi = p4.Phi() - jet.phi;
-  px = p4.Px();
-  py = p4.Py();
-  pz = p4.Pz();
-  e = p4.Energy();
-  mask = 1.0;
+  set_adpar_common(*this, track, p4_jet, pdginfo);
+  set_adpar_charge(*this, track, p4_jet, pdginfo);
+  set_adpar_d0dzde(*this, track, p4_jet, pdginfo);
 }
 
-ADParticle::ADParticle(const ADPDGQuerier &, const Tower &tower, const ADJet &jet)
+ADParticle::ADParticle(const Tower &tower,
+    const TLorentzVector &p4_jet, const ADPDGQuerier &)
 {
-  TLorentzVector p4 = tower.P4();
-  ADPDGInfo pdginfo(0);  // padding
-
-  log_pt = log(p4.Pt());
-  log_e = log(p4.Energy());
-  log_pt_rel = log_pt - log(jet.pt);
-  log_e_rel = log_e - log(jet.e);
-  delta_r = hypot(p4.Eta() - jet.eta, p4.Phi() - jet.phi);
-  charge = 0.0;  // padding
-  is_charged_hadron = pdginfo.is_charged_hadron();
-  is_neutral_hadron = pdginfo.is_neutral_hadron();
-  is_photon = pdginfo.is_photon();
-  is_electron = pdginfo.is_electron();
-  is_muon = pdginfo.is_muon();
-  d0 = 0.0;  // padding
-  d0_err = 0.0;  // padding
-  dz = 0.0; // padding
-  dz_err = 0.0;  // padding
-  deta = p4.Eta() - jet.eta;
-  dphi = p4.Phi() - jet.phi;
-  px = p4.Px();
-  py = p4.Py();
-  pz = p4.Pz();
-  e = p4.Energy();
-  mask = 1.0;
+  set_adpar_common(*this, tower, p4_jet, (ADPDGInfo)0);
 }
 
 bool ADParticle::read(gzFile file)
@@ -175,14 +159,14 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
     TObject *obj = jet.Constituents[i];
     if(obj->IsA() == GenParticle::Class()) {
       ++ngnpar;
-      new((void *)&par[i]) ADParticle(pdg, *(GenParticle *)obj, *this);
+      new((void *)&par[i]) ADParticle(*(GenParticle *)obj, p4, pdg);
     }
     else if(obj->IsA() == Track::Class()) {
       ++ntrack;
-      new((void *)&par[i]) ADParticle(pdg, *(Track *)obj, *this);
+      new((void *)&par[i]) ADParticle(*(Track *)obj, p4, pdg);
     } else if(obj->IsA() == Tower::Class()) {
       ++ntower;
-      new((void *)&par[i]) ADParticle(pdg, *(Tower *)obj, *this);
+      new((void *)&par[i]) ADParticle(*(Tower *)obj, p4, pdg);
     } else {  // unrecognized type
       ++nunrec;
       fprintf(stderr, "WARNING: unrecognized constituent type\n");
@@ -192,6 +176,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   for(; n < NPAR_PER_JET; ++n) {
     new((void *)&par[n]) ADParticle();
   }
+  ++nadjet;
 }
 
 ADJet::~ADJet()
@@ -223,6 +208,6 @@ void ADJet::write(gzFile file) const
 
 void ADJet::summary()
 {
-  printf("ngnpar=%zu ntrack=%zu ntower=%zu nunrec=%zu\n",
-      ngnpar, ntrack, ntower, nunrec);
+  printf("nadjet=%zu ngnpar=%zu ntrack=%zu ntower=%zu nunrec=%zu\n",
+      nadjet, ngnpar, ntrack, ntower, nunrec);
 }

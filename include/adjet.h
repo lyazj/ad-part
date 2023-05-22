@@ -10,6 +10,7 @@ class GenParticle;
 class Track;
 class Tower;
 class ADPDGQuerier;
+class TLorentzVector;
 
 // classes to be defined
 class ADParticle;
@@ -44,9 +45,9 @@ public:
   char feature_end[0];
 
   ADParticle();
-  ADParticle(const ADPDGQuerier &, const GenParticle &, const ADJet &);
-  ADParticle(const ADPDGQuerier &, const Track &, const ADJet &);
-  ADParticle(const ADPDGQuerier &, const Tower &, const ADJet &);
+  ADParticle(const GenParticle &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
+  ADParticle(const Track &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
+  ADParticle(const Tower &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
@@ -78,6 +79,7 @@ public:
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
 
+  static size_t nadjet;
   static size_t ngnpar;
   static size_t ntrack;
   static size_t ntower;

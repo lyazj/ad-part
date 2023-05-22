@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
   auto file = make_shared<TFile>(rootfile, "read");
   auto delphes = file->Get<TTree>("Delphes");
   Long64_t n = delphes->GetEntries();
+  printf("%s: %llu events\n", rootfile, (unsigned long long)n);
 
   // Open dumpfile to write.
   gzFile dump = gzopen(dumpfile, "wb");
