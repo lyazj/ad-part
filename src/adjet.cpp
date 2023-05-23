@@ -18,6 +18,7 @@ size_t ADJet::ngnpar;
 size_t ADJet::ntrack;
 size_t ADJet::ntower;
 size_t ADJet::nunrec;
+size_t ADJet::ndscrd;
 
 namespace {
 
@@ -46,6 +47,13 @@ bool read_features(T &obj, gzFile file)
     return false;
   }
   return true;
+}
+
+template<class DelphesClass>
+bool check_par_common(const TObject &par)
+{
+  TLorentzVector p4 = ((const DelphesClass &)par).P4();
+  return abs(p4.Pz()) <= 10000 && abs(p4.Eta()) <= 5 && p4.Pt() > 0;
 }
 
 template<class DelphesClass>
@@ -155,26 +163,29 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   par = (ADParticle *)malloc(NPAR_PER_JET * sizeof(*par));
   if(par == NULL) throw bad_alloc();
 
+  Long64_t c = 0;  // particle counter
   for(Long64_t i = 0; i < n; ++i) {
     TObject *obj = jet.Constituents[i];
     if(obj->IsA() == GenParticle::Class()) {
       ++ngnpar;
-      new((void *)&par[i]) ADParticle(*(GenParticle *)obj, p4, pdg);
+      if(!check_par_common<GenParticle>(*obj)) { ++ndscrd; continue; }
+      new((void *)&par[c++]) ADParticle(*(GenParticle *)obj, p4, pdg);
     }
     else if(obj->IsA() == Track::Class()) {
       ++ntrack;
-      new((void *)&par[i]) ADParticle(*(Track *)obj, p4, pdg);
+      if(!check_par_common<Track>(*obj)) { ++ndscrd; continue; }
+      new((void *)&par[c++]) ADParticle(*(Track *)obj, p4, pdg);
     } else if(obj->IsA() == Tower::Class()) {
       ++ntower;
-      new((void *)&par[i]) ADParticle(*(Tower *)obj, p4, pdg);
+      if(!check_par_common<Tower>(*obj)) { ++ndscrd; continue; }
+      new((void *)&par[c++]) ADParticle(*(Tower *)obj, p4, pdg);
     } else {  // unrecognized type
       ++nunrec;
       fprintf(stderr, "WARNING: unrecognized constituent type\n");
-      new((void *)&par[n]) ADParticle();
     }
   }
-  for(; n < NPAR_PER_JET; ++n) {
-    new((void *)&par[n]) ADParticle();
+  while(c < NPAR_PER_JET) {  // padding
+    new((void *)&par[c++]) ADParticle();
   }
   ++nadjet;
 }
@@ -208,6 +219,6 @@ void ADJet::write(gzFile file) const
 
 void ADJet::summary()
 {
-  printf("nadjet=%zu ngnpar=%zu ntrack=%zu ntower=%zu nunrec=%zu\n",
-      nadjet, ngnpar, ntrack, ntower, nunrec);
+  printf("nadjet=%zu ngnpar=%zu ntrack=%zu ntower=%zu nunrec=%zu "
+      "ndscrd=%zu\n", nadjet, ngnpar, ntrack, ntower, nunrec, ndscrd);
 }

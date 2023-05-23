@@ -84,6 +84,7 @@ public:
   static size_t ntrack;
   static size_t ntower;
   static size_t nunrec;
+  static size_t ndscrd;
   static void summary();  // particle counting summary
 
 };
