@@ -151,6 +151,8 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
 {
   ++nadjet;
   if(!check(jet)) throw ADInvalidJet();
+  ++nvalid;
+
   TLorentzVector p4 = jet.P4();
   Long64_t n = jet.Constituents.GetEntries();
 
@@ -160,11 +162,11 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   phi = p4.Phi();
   e = p4.Energy();
   npar = n;
-  sdmass = jet.SoftDroppedP4[0].M();  // ?
-  tau1 = jet.Tau[0];  // ?
-  tau2 = jet.Tau[1];  // ?
-  tau3 = jet.Tau[2];  // ?
-  tau4 = jet.Tau[3];  // ?
+  sdmass = jet.SoftDroppedP4[0].M();
+  tau1 = jet.Tau[0];
+  tau2 = jet.Tau[1];
+  tau3 = jet.Tau[2];
+  tau4 = jet.Tau[3];
 
   // constituent number
   n = min<Long64_t>(n, NPAR_PER_JET);
@@ -209,7 +211,6 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   while(c < NPAR_PER_JET) {
     new((void *)&par[c++]) ADParticle();
   }
-  ++nvalid;
 }
 
 ADJet::~ADJet()

@@ -11,3 +11,7 @@
 #ifndef PDG_PATH
 #define PDG_PATH  "pdginfo"
 #endif  /* PDG_PATH */
+
+struct ADException {
+  virtual ~ADException() = default;
+};

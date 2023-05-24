@@ -75,6 +75,7 @@ public:
 
   ADJet(const ADPDGQuerier &, const Jet &);
   ~ADJet();
+  static bool check(const Jet &);  // keep(true) or cut(false)
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
@@ -88,9 +89,7 @@ public:
   static size_t ndscrd;
   static void summary();  // particle counting summary
 
-  static bool check(const Jet &);  // keep(true) or cut(false)
-
 };
 
-struct ADInvalidJet { };
-struct ADOverflow { };
+struct ADInvalidJet : ADException { };
+struct ADOverflow : ADException { };
