@@ -2,6 +2,7 @@
 #include "adtensor.h"
 #include <onnxruntime_cxx_api.h>
 #include <vector>
+#include <memory>
 
 using namespace std;
 using namespace Ort;
@@ -14,25 +15,27 @@ int main()
   MemoryInfo memory_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
   // 输入张量
-  vector<const char *> input_names = {"pf_features", "pf_vectors", "pf_mask"};
-  vector<int64_t> input_shapes = {17, 4, 1};
-  vector<ADPFTensor> input_tensors;
+  vector<const char *> input_names;
   vector<Value> input_values;
-  for(size_t i = 0; i < input_shapes.size(); ++i) {
-    input_tensors.emplace_back(input_shapes[i]);
-    input_values.emplace_back(input_tensors[i].tensor(memory_info));
+  vector<shared_ptr<ADPFTensor>> input_tensors;
+  input_tensors.emplace_back(new ADPFFeatures);
+  input_tensors.emplace_back(new ADPFVectors);
+  input_tensors.emplace_back(new ADPFMask);
+  for(const auto &tensor : input_tensors) {
+    input_names.push_back(tensor->get_name());
+    input_values.push_back(tensor->tensor(memory_info));
   }
 
   // TODO 填写输入
 
   // 输出张量
-  vector<const char *> output_names = {"softmax"};
-  vector<int64_t> output_shapes = {NRSLTCLASS};
-  vector<ADCCTensor> output_tensors;
+  vector<const char *> output_names;
   vector<Value> output_values;
-  for(size_t i = 0; i < output_shapes.size(); ++i) {
-    output_tensors.emplace_back(output_shapes[i]);
-    output_values.emplace_back(output_tensors[i].tensor(memory_info));
+  vector<shared_ptr<ADCFTensor>> output_tensors;
+  output_tensors.emplace_back(new ADSoftmax);
+  for(const auto &tensor : output_tensors) {
+    output_names.push_back(tensor->get_name());
+    output_values.push_back(tensor->tensor(memory_info));
   }
 
   // 运行模型
