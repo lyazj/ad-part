@@ -93,3 +93,4 @@ public:
 };
 
 struct ADInvalidJet { };
+struct ADOverflow { };

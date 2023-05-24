@@ -104,6 +104,9 @@ void set_adpar_d0dzde(ADParticle &adpar, const DelphesClass &par,
   adpar.dz_err = par.ErrorDZ;
 }
 
+// max_{i: size_t}{(size_t)(float)i == i}
+constexpr auto NPAR_MAX = 0x1000000;
+
 }  // namespace
 
 ADParticle::ADParticle()
@@ -198,6 +201,10 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   };
   sort(par, par + c, larger_pt);
 
+  // feature updating
+  if(c > NPAR_MAX) throw ADOverflow();
+  npar = c;
+
   // padding
   while(c < NPAR_PER_JET) {
     new((void *)&par[c++]) ADParticle();
@@ -238,7 +245,7 @@ void ADJet::summary()
       "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, nunrec, ndscrd);
 }
 
-bool ADJet::check(const Jet &jet)
+bool ADJet::check(const Jet &jet)  // XXX
 {
   // return jet.PT >= 500 && abs(jet.Eta) <= 2;
   return abs(jet.Eta) <= 2;
