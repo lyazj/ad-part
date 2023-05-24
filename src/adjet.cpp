@@ -14,6 +14,7 @@
 using namespace std;
 
 size_t ADJet::nadjet;
+size_t ADJet::nvalid;
 size_t ADJet::ngnpar;
 size_t ADJet::ntrack;
 size_t ADJet::ntower;
@@ -145,6 +146,8 @@ void ADParticle::write(gzFile file) const
 
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
 {
+  ++nadjet;
+  if(!check(jet)) throw ADInvalidJet();
   TLorentzVector p4 = jet.P4();
   Long64_t n = jet.Constituents.GetEntries();
 
@@ -189,19 +192,17 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   }
 
   // sorting
+  // TODO better performance
   auto larger_pt = [](const ADParticle &p, const ADParticle &q) {
     return p.log_pt > q.log_pt;
   };
-  if(!is_sorted(par, par + c, larger_pt)) {
-    fprintf(stderr, "WARNING: unsorted constituents\n");
-    sort(par, par + c, larger_pt);
-  }
+  sort(par, par + c, larger_pt);
 
   // padding
   while(c < NPAR_PER_JET) {
     new((void *)&par[c++]) ADParticle();
   }
-  ++nadjet;
+  ++nvalid;
 }
 
 ADJet::~ADJet()
@@ -233,6 +234,12 @@ void ADJet::write(gzFile file) const
 
 void ADJet::summary()
 {
-  printf("nadjet=%zu ngnpar=%zu ntrack=%zu ntower=%zu nunrec=%zu "
-      "ndscrd=%zu\n", nadjet, ngnpar, ntrack, ntower, nunrec, ndscrd);
+  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu nunrec=%zu "
+      "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, nunrec, ndscrd);
+}
+
+bool ADJet::check(const Jet &jet)
+{
+  // return jet.PT >= 500 && abs(jet.Eta) <= 2;
+  return abs(jet.Eta) <= 2;
 }

@@ -80,6 +80,7 @@ public:
   void write(gzFile) const;  // binary output
 
   static size_t nadjet;
+  static size_t nvalid;
   static size_t ngnpar;
   static size_t ntrack;
   static size_t ntower;
@@ -87,4 +88,8 @@ public:
   static size_t ndscrd;
   static void summary();  // particle counting summary
 
+  static bool check(const Jet &);  // keep(true) or cut(false)
+
 };
+
+struct ADInvalidJet { };

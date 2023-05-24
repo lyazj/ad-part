@@ -51,8 +51,10 @@ int main(int argc, char *argv[])
     // Parse and dump data.
     size_t njet = brjet.size();
     for(size_t j = 0; j < njet; ++j) {
-      ADJet jet(pdg, *brjet[j]);
-      jet.write(dump);
+      try {
+        ADJet jet(pdg, *brjet[j]);
+        jet.write(dump);
+      } catch(const ADInvalidJet &) { }
     }
   }
 
