@@ -148,6 +148,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   TLorentzVector p4 = jet.P4();
   Long64_t n = jet.Constituents.GetEntries();
 
+  // features
   pt = p4.Pt();
   eta = p4.Eta();
   phi = p4.Phi();
@@ -159,10 +160,12 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   tau3 = jet.Tau[2];  // ?
   tau4 = jet.Tau[3];  // ?
 
+  // constituent number
   n = min<Long64_t>(n, NPAR_PER_JET);
   par = (ADParticle *)malloc(NPAR_PER_JET * sizeof(*par));
   if(par == NULL) throw bad_alloc();
 
+  // constituents
   Long64_t c = 0;  // particle counter
   for(Long64_t i = 0; i < n; ++i) {
     TObject *obj = jet.Constituents[i];
@@ -184,7 +187,18 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
       fprintf(stderr, "WARNING: unrecognized constituent type\n");
     }
   }
-  while(c < NPAR_PER_JET) {  // padding
+
+  // sorting
+  auto larger_pt = [](const ADParticle &p, const ADParticle &q) {
+    return p.log_pt > q.log_pt;
+  };
+  if(!is_sorted(par, par + c, larger_pt)) {
+    fprintf(stderr, "WARNING: unsorted constituents\n");
+    sort(par, par + c, larger_pt);
+  }
+
+  // padding
+  while(c < NPAR_PER_JET) {
     new((void *)&par[c++]) ADParticle();
   }
   ++nadjet;
