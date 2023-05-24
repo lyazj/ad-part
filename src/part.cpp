@@ -14,8 +14,8 @@ int main()
   MemoryInfo memory_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
   // 输入张量
-  vector<const char *> input_names = {"pf_points", "pf_features", "pf_vectors", "pf_mask"};
-  vector<int64_t> input_shapes = {2, 17, 4, 1};
+  vector<const char *> input_names = {"pf_features", "pf_vectors", "pf_mask"};
+  vector<int64_t> input_shapes = {17, 4, 1};
   vector<ADPFTensor> input_tensors;
   vector<Value> input_values;
   for(size_t i = 0; i < input_shapes.size(); ++i) {
@@ -27,7 +27,7 @@ int main()
 
   // 输出张量
   vector<const char *> output_names = {"softmax"};
-  vector<int64_t> output_shapes = {2};
+  vector<int64_t> output_shapes = {NRSLTCLASS};
   vector<ADCCTensor> output_tensors;
   vector<Value> output_values;
   for(size_t i = 0; i < output_shapes.size(); ++i) {

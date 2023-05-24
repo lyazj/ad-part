@@ -11,6 +11,10 @@
 #define NPARTIFLOW  128
 #endif  /* NPARTIFLOW */
 
+#ifndef NRSLTCLASS
+#define NRSLTCLASS  10
+#endif  /* NRSLTCLASS */
+
 namespace Ort {
 
 // external classes
@@ -47,6 +51,6 @@ public:
 class ADCCTensor : public ADTensor {
 
 public:
-  ADCCTensor(int64_t nclss);
+  ADCCTensor(int64_t nclss = NRSLTCLASS);
 
 };
