@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   vector<shared_ptr<ADCFTensor>> output;
   output.emplace_back(new ADSoftmax);
 
-  // 运行模型，读取输出，写入输出
+  // 运行模型，读取输入，写入输出
   RunOptions options;
   ADRunner runner(input, output, memory_info, session, options, dump, part);
   int64_t b = 0;
