@@ -25,4 +25,6 @@ public:
   std::vector<std::string> get_names() const { return entnames; }
   std::vector<std::string> get_full_names() const;
 
+  ADListDir &sort_by_numbers();
+
 };

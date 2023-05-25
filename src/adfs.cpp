@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 #include <new>
+#include <algorithm>
 
 using namespace std;
 
@@ -27,6 +28,21 @@ constexpr int DT_MAP(unsigned char d_type)
     case DT_UNKNOWN: return ADListDir::DT_UNKNOWN;
   }
   throw runtime_error("unknown d_type: " + to_string(d_type));
+}
+
+vector<long long> parse_numbers(const string &str)
+{
+  vector<long long> nums;
+  size_t pos = 0;
+  while(pos < str.size()) {
+    pos = str.find_first_of("0123456789", pos);
+    if(pos == str.npos) break;
+    size_t end = str.find_first_not_of("0123456789", pos);
+    if(end == str.npos) end = str.size();
+    nums.push_back(stoll(str.substr(pos, end - pos)));
+    pos = end;
+  }
+  return nums;
 }
 
 }  // namespace
@@ -85,4 +101,22 @@ vector<string> ADListDir::get_full_names() const
     names.emplace_back(prefix + name);
   }
   return names;
+}
+
+ADListDir &ADListDir::sort_by_numbers()
+{
+  vector<pair<vector<long long>, size_t>> keys;
+  keys.reserve(entnames.size());
+  size_t i = 0;
+  for(const string &name : entnames) {
+    keys.emplace_back(parse_numbers(name), i++);
+  }
+  sort(keys.begin(), keys.end());
+  vector<string> names;
+  names.reserve(entnames.size());
+  for(const auto &key : keys) {
+    names.emplace_back(move(entnames[key.second]));
+  }
+  entnames = move(names);
+  return *this;
 }
