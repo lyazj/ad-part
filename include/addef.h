@@ -4,13 +4,21 @@
 #define Feature  float
 #endif  /* Feature */
 
-#ifndef NPAR_PER_JET
-#define NPAR_PER_JET  128
-#endif  /* NPAR_PER_JET */
-
 #ifndef PDG_PATH
 #define PDG_PATH  "pdginfo"
 #endif  /* PDG_PATH */
+
+#ifndef BATCH_SIZE
+#define BATCH_SIZE  128
+#endif  /* BATCH_SIZE */
+
+#ifndef NPARTIFLOW
+#define NPARTIFLOW  128
+#endif  /* NPARTIFLOW */
+
+#ifndef NRSLTCLASS
+#define NRSLTCLASS  10
+#endif  /* NRSLTCLASS */
 
 struct ADException {
   virtual ~ADException() = default;

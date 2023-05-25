@@ -4,10 +4,7 @@
 #include <classes/DelphesClasses.h>
 #include <TObject.h>
 #include <TLorentzVector.h>
-#include <stdexcept>
-#include <algorithm>
 #include <new>
-#include <zlib.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -22,33 +19,6 @@ size_t ADJet::nunrec;
 size_t ADJet::ndscrd;
 
 namespace {
-
-template<class T>
-void write_features(const T &obj, gzFile file)
-{
-  size_t s = obj.feature_end - obj.feature_begin;
-  size_t r = gzfwrite(obj.feature_begin, 1, s, file);
-  if(r != s) {
-    int e;
-    throw runtime_error(gzerror(file, &e));
-  }
-}
-
-template<class T>
-bool read_features(T &obj, gzFile file)
-{
-  size_t s = obj.feature_end - obj.feature_begin;
-  size_t r = gzfread(obj.feature_begin, 1, s, file);
-  if(r != s) {
-    int e;
-    const char *msg = gzerror(file, &e);
-    if(e || r) {
-      throw runtime_error(msg);
-    }
-    return false;
-  }
-  return true;
-}
 
 template<class DelphesClass>
 bool check_par_common(const TObject &par)
@@ -109,11 +79,6 @@ constexpr auto NPAR_MAX = 0x1000000;
 
 }  // namespace
 
-ADParticle::ADParticle()
-{
-  memset(feature_begin, 0, feature_end - feature_begin);  // padding
-}
-
 ADParticle::ADParticle(const GenParticle &gnpar,
     const TLorentzVector &p4_jet, const ADPDGQuerier &pdg)
 {
@@ -137,17 +102,7 @@ ADParticle::ADParticle(const Tower &tower,
   set_adpar_common(*this, tower, p4_jet, (ADPDGInfo)0);
 }
 
-bool ADParticle::read(gzFile file)
-{
-  return read_features(*this, file);
-}
-
-void ADParticle::write(gzFile file) const
-{
-  write_features(*this, file);
-}
-
-ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
+ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
 {
   ++nadjet;
   if(!check(jet)) throw ADInvalidJet();
@@ -168,14 +123,9 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   tau3 = jet.Tau[2];
   tau4 = jet.Tau[3];
 
-  // constituent number
-  n = min<Long64_t>(n, NPAR_PER_JET);
-  par = (ADParticle *)malloc(NPAR_PER_JET * sizeof(*par));
-  if(par == NULL) throw bad_alloc();
-
   // constituents
   Long64_t c = 0;  // particle counter
-  for(Long64_t i = 0; i < n; ++i) {
+  for(Long64_t i = 0; i < n && c < NPARTIFLOW; ++i) {
     TObject *obj = jet.Constituents[i];
     if(obj->IsA() == GenParticle::Class()) {
       ++ngnpar;
@@ -208,35 +158,8 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet)
   npar = c;
 
   // padding
-  while(c < NPAR_PER_JET) {
+  while(c < NPARTIFLOW) {
     new((void *)&par[c++]) ADParticle();
-  }
-}
-
-ADJet::~ADJet()
-{
-  for(Long64_t i = 0; i < NPAR_PER_JET; ++i) {
-    par[i].~ADParticle();
-  }
-  free(par);
-}
-
-bool ADJet::read(gzFile file)
-{
-  if(!read_features(*this, file)) return false;
-  for(Long64_t i = 0; i < NPAR_PER_JET; ++i) {
-    if(!par[i].read(file)) {
-      throw runtime_error("unexpected EOF");
-    }
-  }
-  return true;
-}
-
-void ADJet::write(gzFile file) const
-{
-  write_features(*this, file);
-  for(Long64_t i = 0; i < NPAR_PER_JET; ++i) {
-    par[i].write(file);
   }
 }
 

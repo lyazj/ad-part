@@ -4,10 +4,6 @@
 #include <zlib.h>
 #include <stddef.h>
 
-#ifndef NRSLTCLASS
-#define NRSLTCLASS  10
-#endif  /* NRSLTCLASS */
-
 // external classes
 class Jet;
 class GenParticle;
@@ -92,8 +88,9 @@ public:
 
   ADParticle *par;
 
+  ADJet();
   ADJet(const ADPDGQuerier &, const Jet &);
-  virtual ~ADJet();
+  ~ADJet();
   static bool check(const Jet &);  // keep(true) or cut(false)
 
   bool read(gzFile);  // binary input
@@ -113,20 +110,9 @@ public:
 class ADParT {
 
 public:
+  char feature_begin[0];
   Feature part[NRSLTCLASS];
-
-  ADParT() : part{0.0} { }
-  virtual ~ADParT();
-
-  bool read(gzFile);  // binary input
-  void write(gzFile) const;  // binary output
-
-};
-
-class ADParTJet : public ADJet, public ADParT {
-
-public:
-  using ADJet::ADJet;
+  char feature_end[0];
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output

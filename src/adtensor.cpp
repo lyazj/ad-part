@@ -6,14 +6,7 @@
 #include <new>
 #include <array>
 #include <algorithm>
-
-#ifndef BATCH_SIZE
-#define BATCH_SIZE  128
-#endif  /* BATCH_SIZE */
-
-#ifndef NPARTIFLOW
-#define NPARTIFLOW  128
-#endif  /* NPARTIFLOW */
+#include <utility>
 
 using namespace std;
 using namespace Ort;
@@ -24,7 +17,7 @@ template<Feature (ADParticle::*begin)[0], Feature (ADParticle::*end)[0], class A
 void set_value_common(ADPFTensor &tensor, int64_t n, const ADJet &jet)
 {
   int64_t s2 = tensor.get_shape()[2];
-  int64_t np = min<int64_t>(s2, NPAR_PER_JET);
+  int64_t np = min<int64_t>(s2, NPARTIFLOW);
 
   // feature copying
   for(int64_t p = 0; p < np; ++p) {
@@ -82,6 +75,14 @@ ADTensor::~ADTensor()
 Value ADTensor::tensor(const MemoryInfo &meminfo)
 {
   return Value::CreateTensor(meminfo, data, size, shape, shape_size);
+}
+
+Value ADTensor::tensor(const MemoryInfo &meminfo, int64_t shape0)
+{
+  swap(shape0, shape[0]);
+  Value value = tensor(meminfo);
+  swap(shape0, shape[0]);
+  return value;
 }
 
 ADPFTensor::ADPFTensor(int64_t nfeat)

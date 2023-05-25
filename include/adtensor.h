@@ -29,6 +29,7 @@ public:
   virtual ~ADTensor();
   
   Ort::Value tensor(const Ort::MemoryInfo &);
+  Ort::Value tensor(const Ort::MemoryInfo &, int64_t shape0);
   Feature *get_data() { return data; }
   int64_t get_size() { return size; }
   const int64_t *get_shape() { return shape; }

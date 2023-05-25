@@ -1,51 +1,63 @@
 #include "addef.h"
+#include "adenv.h"
 #include "adtensor.h"
-#include "adjet.h"
+#include "adrunner.h"
 #include <onnxruntime_cxx_api.h>
 #include <vector>
 #include <memory>
+#include <stdio.h>
+#include <zlib.h>
 
 using namespace std;
 using namespace Ort;
 
 int main(int argc, char *argv[])
 {
+  // 运行参数
+  if(argc != 3) {
+    fprintf(stderr, "usage: %s <dumpfile> <partfile>\n",
+        get_invoc_short_name());
+    return 1;
+  }
+  const char *dumpfile = argv[1];  // dumpfile to read
+  const char *partfile = argv[2];  // partfile to write
+
+  // 输入输出文件
+  gzFile dump = gzopen(dumpfile, "rb");
+  if(dump == NULL) {
+    fprintf(stderr, "ERROR: error opening dumpfile");
+    return 1;
+  }
+  shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
+  gzFile part = gzopen(partfile, "wb");
+  if(part == NULL) {
+    fprintf(stderr, "ERROR: error opening partfile");
+    return 1;
+  }
+  shared_ptr<gzFile_s> part_guard(part, [](gzFile f) { gzclose(f); } );
+
   // 运行环境
   Env env;
   Session session(env, "part.onnx", SessionOptions(nullptr));
   MemoryInfo memory_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
   // 输入张量
-  vector<const char *> input_names;
-  vector<Value> input_values;
-  vector<shared_ptr<ADPFTensor>> input_tensors;
-  input_tensors.emplace_back(new ADPFFeatures);
-  input_tensors.emplace_back(new ADPFVectors);
-  input_tensors.emplace_back(new ADPFMask);
-  for(const auto &tensor : input_tensors) {
-    input_names.push_back(tensor->get_name());
-    input_values.push_back(tensor->tensor(memory_info));
-  }
-
-  // TODO 填写输入
+  vector<shared_ptr<ADPFTensor>> input;
+  input.emplace_back(new ADPFFeatures);
+  input.emplace_back(new ADPFVectors);
+  input.emplace_back(new ADPFMask);
 
   // 输出张量
-  vector<const char *> output_names;
-  vector<Value> output_values;
-  vector<shared_ptr<ADCFTensor>> output_tensors;
-  output_tensors.emplace_back(new ADSoftmax);
-  for(const auto &tensor : output_tensors) {
-    output_names.push_back(tensor->get_name());
-    output_values.push_back(tensor->tensor(memory_info));
+  vector<shared_ptr<ADCFTensor>> output;
+  output.emplace_back(new ADSoftmax);
+
+  // 运行模型，读取输出，写入输出
+  RunOptions options;
+  ADRunner runner(input, output, memory_info, session, options, dump, part);
+  int64_t n;
+  while((n = runner.run_batch())) {
+    printf("%lld\n", (long long)n);
   }
-
-  // 运行模型
-  RunOptions run_options;
-  session.Run(run_options,
-      input_names.data(), input_values.data(), input_names.size(),
-      output_names.data(), output_values.data(), output_names.size());
-
-  // TODO 输出结果
 
   return 0;
 }
