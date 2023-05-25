@@ -1,5 +1,6 @@
 #include "addef.h"
 #include "adtensor.h"
+#include "adjet.h"
 #include <onnxruntime_cxx_api.h>
 #include <vector>
 #include <memory>
@@ -7,7 +8,7 @@
 using namespace std;
 using namespace Ort;
 
-int main()
+int main(int argc, char *argv[])
 {
   // 运行环境
   Env env;

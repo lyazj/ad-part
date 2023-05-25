@@ -4,6 +4,10 @@
 #include <zlib.h>
 #include <stddef.h>
 
+#ifndef NRSLTCLASS
+#define NRSLTCLASS  10
+#endif  /* NRSLTCLASS */
+
 // external classes
 class Jet;
 class GenParticle;
@@ -16,10 +20,15 @@ class TLorentzVector;
 class ADParticle;
 class ADJet;
 
+struct ADInvalidJet : ADException { };
+struct ADOverflow : ADException { };
+
 class ADParticle {
 
 public:
   char feature_begin[0];
+
+  Feature pf_features_begin[0];
   Feature log_pt;
   Feature log_e;
   Feature log_pt_rel;
@@ -35,13 +44,23 @@ public:
   Feature d0_err;
   Feature dz;
   Feature dz_err;
+  Feature pf_points_begin[0];
   Feature deta;
   Feature dphi;
+  Feature pf_points_end[0];
+  Feature pf_features_end[0];
+
+  Feature pf_vectors_begin[0];
   Feature px;
   Feature py;
   Feature pz;
   Feature e;
+  Feature pf_vectors_end[0];
+
+  Feature pf_mask_begin[0];
   Feature mask;
+  Feature pf_mask_end[0];
+
   char feature_end[0];
 
   ADParticle();
@@ -74,7 +93,7 @@ public:
   ADParticle *par;
 
   ADJet(const ADPDGQuerier &, const Jet &);
-  ~ADJet();
+  virtual ~ADJet();
   static bool check(const Jet &);  // keep(true) or cut(false)
 
   bool read(gzFile);  // binary input
@@ -91,5 +110,25 @@ public:
 
 };
 
-struct ADInvalidJet : ADException { };
-struct ADOverflow : ADException { };
+class ADParT {
+
+public:
+  Feature part[NRSLTCLASS];
+
+  ADParT() : part{0.0} { }
+  virtual ~ADParT();
+
+  bool read(gzFile);  // binary input
+  void write(gzFile) const;  // binary output
+
+};
+
+class ADParTJet : public ADJet, public ADParT {
+
+public:
+  using ADJet::ADJet;
+
+  bool read(gzFile);  // binary input
+  void write(gzFile) const;  // binary output
+
+};

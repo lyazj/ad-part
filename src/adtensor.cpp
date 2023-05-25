@@ -1,3 +1,4 @@
+#include "addef.h"
 #include "adtensor.h"
 #include "adjet.h"
 #include <onnxruntime_cxx_api.h>
@@ -14,12 +15,34 @@
 #define NPARTIFLOW  128
 #endif  /* NPARTIFLOW */
 
-#ifndef NRSLTCLASS
-#define NRSLTCLASS  10
-#endif  /* NRSLTCLASS */
-
 using namespace std;
 using namespace Ort;
+
+namespace {
+
+template<Feature (ADParticle::*begin)[0], Feature (ADParticle::*end)[0], class ADPFTensor>
+void set_value_common(ADPFTensor &tensor, int64_t n, const ADJet &jet)
+{
+  int64_t s2 = tensor.get_shape()[2];
+  int64_t np = min<int64_t>(s2, NPAR_PER_JET);
+
+  // feature copying
+  for(int64_t p = 0; p < np; ++p) {
+    int64_t f = 0;
+    for(Feature *pf = jet.par[p].*begin; pf != jet.par[p].*end; ++pf) {
+      tensor.at(n, f++, p) = *pf;
+    }
+  }
+
+  // zero padding
+  if(np == s2) return;
+  int64_t nf = jet.par[0].*end - jet.par[0].*begin;
+  for(int64_t f = 0; f < nf; ++f) {
+    for(int64_t p = np; p < s2; ++p) tensor.at(n, f, p) = 0.0;
+  }
+}
+
+}  // namespace
 
 ADTensor::ADTensor(const int64_t *shape_in, int64_t shape_size_in)
 {
@@ -80,55 +103,31 @@ void ADPFTensor::set_zero(int64_t n, int64_t p)
 
 void ADPFPoints::set_value(int64_t n, const ADJet &jet)
 {
-  int64_t np = min<int64_t>(shape[2], NPAR_PER_JET);
-  for(int64_t p = 0; p < np; ++p) {
-    deta(n, p) = jet.par[p].deta;
-    dphi(n, p) = jet.par[p].dphi;
-  }
+  set_value_common<&ADParticle::pf_points_begin, &ADParticle::pf_points_end>
+    (*this, n, jet);
 }
 
 void ADPFFeatures::set_value(int64_t n, const ADJet &jet)
 {
-  int64_t np = min<int64_t>(shape[2], NPAR_PER_JET);
-  for(int64_t p = 0; p < np; ++p) {
-    log_pt(n, p) = jet.par[p].log_pt;
-    log_e(n, p) = jet.par[p].log_e;
-    log_pt_rel(n, p) = jet.par[p].log_pt_rel;
-    log_e_rel(n, p) = jet.par[p].log_e_rel;
-    delta_r(n, p) = jet.par[p].delta_r;
-    charge(n, p) = jet.par[p].charge;
-    is_charged_hadron(n, p) = jet.par[p].is_charged_hadron;
-    is_neutral_hadron(n, p) = jet.par[p].is_neutral_hadron;
-    is_photon(n, p) = jet.par[p].is_photon;
-    is_electron(n, p) = jet.par[p].is_electron;
-    is_muon(n, p) = jet.par[p].is_muon;
-    d0(n, p) = jet.par[p].d0;
-    d0_err(n, p) = jet.par[p].d0_err;
-    dz(n, p) = jet.par[p].dz;
-    dz_err(n, p) = jet.par[p].dz_err;
-    deta(n, p) = jet.par[p].deta;
-    dphi(n, p) = jet.par[p].dphi;
-  }
-  for(int64_t p = np; p < shape[2]; ++p) set_zero(n, p);
+  set_value_common<&ADParticle::pf_features_begin, &ADParticle::pf_features_end>
+    (*this, n, jet);
 }
 
 void ADPFVectors::set_value(int64_t n, const ADJet &jet)
 {
-  int64_t np = min<int64_t>(shape[2], NPAR_PER_JET);
-  for(int64_t p = 0; p < np; ++p) {
-    px(n, p) = jet.par[p].px;
-    py(n, p) = jet.par[p].py;
-    pz(n, p) = jet.par[p].pz;
-    e(n, p) = jet.par[p].e;
-  }
-  for(int64_t p = np; p < shape[2]; ++p) set_zero(n, p);
+  set_value_common<&ADParticle::pf_vectors_begin, &ADParticle::pf_vectors_end>
+    (*this, n, jet);
 }
 
 void ADPFMask::set_value(int64_t n, const ADJet &jet)
 {
-  int64_t np = min<int64_t>(shape[2], NPAR_PER_JET);
-  for(int64_t p = 0; p < np; ++p) {
-    mask(n, p) = jet.par[p].mask;
+  set_value_common<&ADParticle::pf_mask_begin, &ADParticle::pf_mask_end>
+    (*this, n, jet);
+}
+
+void ADSoftmax::get_value(int64_t n, ADParT &part) const
+{
+  for(int64_t c = 0; c < NRSLTCLASS; ++c) {
+    part.part[c] = at(n, c);
   }
-  for(int64_t p = np; p < shape[2]; ++p) set_zero(n, p);
 }

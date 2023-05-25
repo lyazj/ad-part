@@ -13,6 +13,7 @@ struct MemoryInfo;
 
 // external classes
 class ADJet;
+class ADParT;
 
 class ADTensor {
 
@@ -29,6 +30,9 @@ public:
   
   Ort::Value tensor(const Ort::MemoryInfo &);
   Feature *get_data() { return data; }
+  int64_t get_size() { return size; }
+  const int64_t *get_shape() { return shape; }
+  int64_t get_shape_size() { return shape_size; }
   virtual const char *get_name() { return "tensor"; }
 
 };
@@ -39,8 +43,11 @@ public:
   ADPFTensor(int64_t nfeat);
   virtual const char *get_name() override = 0;
 
-  Feature &at(int64_t n, int64_t f, int64_t p) {
+  const Feature &at(int64_t n, int64_t f, int64_t p) const {
     return data[(n * shape[1] + f) * shape[2] + p];
+  }
+  Feature &at(int64_t n, int64_t f, int64_t p) {
+    return (Feature &)((const ADPFTensor *)this)->at(n, f, p);
   }
 
   void set_zero(int64_t n, int64_t p);
@@ -54,9 +61,14 @@ public:
   ADCFTensor();
   virtual const char *get_name() override = 0;
 
-  Feature &at(int64_t n, int64_t c) {
+  const Feature &at(int64_t n, int64_t c) const {
     return data[(n * shape[1]) + c];
   }
+  Feature &at(int64_t n, int64_t c) {
+    return (Feature &)((const ADCFTensor *)this)->at(n, c);
+  }
+
+  virtual void get_value(int64_t n, ADParT &) const = 0;
 
 };
 
@@ -135,5 +147,7 @@ public:
   virtual const char *get_name() override { return "softmax"; }
 
   Feature &softmax(int64_t n, int64_t c) { return at(n, c); }
+
+  virtual void get_value(int64_t n, ADParT &) const override;
 
 };
