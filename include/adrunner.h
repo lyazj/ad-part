@@ -27,8 +27,8 @@ private:
   const Ort::MemoryInfo &meminfo;
   std::vector<std::shared_ptr<ADTensor>> tensors;
   std::vector<const char *> names;
-  std::vector<Ort::Value> values;
-  std::vector<Ort::Value> temp_values;
+  std::vector<Ort::Value> values;  // use this when n == BATCH_SIZE
+  std::vector<Ort::Value> temp_values;  // use this when n != BATCH_SIZE
 
 public:
   ADRunPack(const std::vector<std::shared_ptr<ADTensor>> &tensors_in,

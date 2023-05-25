@@ -172,5 +172,6 @@ void ADJet::summary()
 bool ADJet::check(const Jet &jet)  // XXX
 {
   // return jet.PT >= 500 && abs(jet.Eta) <= 2;
-  return abs(jet.Eta) <= 2;
+  // return abs(jet.Eta) <= 2;
+  return 1;
 }

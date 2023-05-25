@@ -54,10 +54,13 @@ int main(int argc, char *argv[])
   // 运行模型，读取输出，写入输出
   RunOptions options;
   ADRunner runner(input, output, memory_info, session, options, dump, part);
+  int64_t b = 0;
   int64_t n;
-  while((n = runner.run_batch())) {
-    printf("%lld\n", (long long)n);
-  }
+  do {
+    n = runner.run_batch();
+    printf("---------- batch %lld ----------\n", (long long)b++);
+    printf("%lld jets processed\n", (long long)n);
+  } while(n);
 
   return 0;
 }
