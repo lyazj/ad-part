@@ -25,13 +25,13 @@ int main(int argc, char *argv[])
   // 输入输出文件
   gzFile dump = gzopen(dumpfile, "rb");
   if(dump == NULL) {
-    fprintf(stderr, "ERROR: error opening dumpfile");
+    fprintf(stderr, "ERROR: error opening dumpfile\n");
     return 1;
   }
   shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
   gzFile part = gzopen(partfile, "wb");
   if(part == NULL) {
-    fprintf(stderr, "ERROR: error opening partfile");
+    fprintf(stderr, "ERROR: error opening partfile\n");
     return 1;
   }
   shared_ptr<gzFile_s> part_guard(part, [](gzFile f) { gzclose(f); } );

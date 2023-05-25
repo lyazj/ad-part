@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
   // Open dumpfile to write.
   gzFile dump = gzopen(dumpfile, "wb");
   if(dump == NULL) {
-    fprintf(stderr, "ERROR: error opening dumpfile");
+    fprintf(stderr, "ERROR: error opening dumpfile\n");
     return 1;
   }
   shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
