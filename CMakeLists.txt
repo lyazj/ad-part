@@ -107,7 +107,7 @@ if(NOT RETCODE EQUAL 0)
 endif()
 message("passed test for string literal operator support")
 
-# 以下为动态库文件构建
+# 以下为静态库文件构建
 
 execute_process(COMMAND sh -c
 "ls ${CMAKE_SOURCE_DIR}/src/ad*.cpp | xargs echo -n"
