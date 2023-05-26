@@ -107,6 +107,18 @@ if(NOT RETCODE EQUAL 0)
 endif()
 message("passed test for string literal operator support")
 
+# 以下为动态库文件构建
+
+execute_process(COMMAND sh -c
+"ls ${CMAKE_SOURCE_DIR}/src/ad*.cpp | xargs echo -n"
+OUTPUT_VARIABLE AD_SOURCES RESULT_VARIABLE AD_STATUS
+)
+if(NOT AD_STATUS EQUAL 0)
+    message(FATAL_ERROR "error listing libadhep sources")
+endif()
+separate_arguments(AD_SOURCES)
+add_library(adhep ${AD_SOURCES})
+
 # 以下为可执行文件构建
 
 add_executable(sanitize-test src/sanitizer-test.cpp)
@@ -120,11 +132,11 @@ target_link_libraries(onnx-test-gpu PUBLIC onnxruntime)
 add_executable(root-test src/root-test.cpp)
 target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
 
-add_executable(delphes-test src/delphes-test.cpp src/adenv.cpp)
-target_link_libraries(delphes-test PUBLIC Delphes ROOT::Tree)
+add_executable(delphes-test src/delphes-test.cpp)
+target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree)
 
-add_executable(flatten src/flatten.cpp src/adenv.cpp src/adpdg.cpp src/adbranch.cpp src/adjet-io.cpp src/adjet-phy.cpp)
-target_link_libraries(flatten PUBLIC Delphes ROOT::Tree ROOT::Physics z)
+add_executable(flatten src/flatten.cpp)
+target_link_libraries(flatten PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
 
-add_executable(part src/part.cpp src/adenv.cpp src/adtensor.cpp src/adjet-io.cpp src/adrunner.cpp)
-target_link_libraries(part PUBLIC onnxruntime z)
+add_executable(part src/part.cpp)
+target_link_libraries(part PUBLIC adhep onnxruntime z)
