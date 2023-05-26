@@ -22,17 +22,19 @@ add_compile_definitions(${ROOT_DEFINITIONS})
 include_directories(${ROOT_INCLUDE_DIRS})
 
 # onnxruntime 编译选项
-if(NOT ONNX_DIR)
-    set(ONNX_DIR ${PROJECT_SOURCE_DIR}/onnxruntime)
+if(NOT AD_NOONNX)
+    if(NOT ONNX_DIR)
+        set(ONNX_DIR ${PROJECT_SOURCE_DIR}/onnxruntime)
+    endif()
+    if(NOT ONNX_INC_DIR)
+        set(ONNX_INC_DIR ${ONNX_DIR}/include)
+    endif()
+    if(NOT ONNX_LIB_DIR)
+        set(ONNX_LIB_DIR ${ONNX_DIR}/lib)
+    endif()
+    include_directories(${ONNX_INC_DIR})
+    link_directories(${ONNX_LIB_DIR})
 endif()
-if(NOT ONNX_INC_DIR)
-    set(ONNX_INC_DIR ${ONNX_DIR}/include)
-endif()
-if(NOT ONNX_LIB_DIR)
-    set(ONNX_LIB_DIR ${ONNX_DIR}/lib)
-endif()
-include_directories(${ONNX_INC_DIR})
-link_directories(${ONNX_LIB_DIR})
 
 # Delphes 编译选项
 if(NOT DELPHES_DIR)
@@ -63,14 +65,16 @@ if(ZLIB_LIB_DIR)
 endif()
 
 # PDG 数据生成和编译
-if(NOT PDG_PATH)
-    set(PDG_PATH ${PROJECT_SOURCE_DIR}/run/pdginfo)
+if(NOT AD_NOPDG)
+    if(NOT PDG_PATH)
+        set(PDG_PATH ${PROJECT_SOURCE_DIR}/run/pdginfo)
+    endif()
+    execute_process(COMMAND ${PROJECT_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} RESULT_VARIABLE RETCODE)
+    if(NOT RETCODE EQUAL 0)
+        message(FATAL_ERROR "error generating pdginfo")
+    endif()
+    add_compile_definitions(PDG_PATH="${PDG_PATH}")
 endif()
-execute_process(COMMAND ${PROJECT_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} RESULT_VARIABLE RETCODE)
-if(NOT RETCODE EQUAL 0)
-    message(FATAL_ERROR "error generating pdginfo")
-endif()
-add_compile_definitions(PDG_PATH="${PDG_PATH}")
 
 # 优化、调试和通用编译选项
 option(ENABLE_SANITIZER "compile and link sanitizing flags" ON)
@@ -117,26 +121,45 @@ if(NOT AD_STATUS EQUAL 0)
     message(FATAL_ERROR "error listing libadhep sources")
 endif()
 separate_arguments(AD_SOURCES)
+if(AD_NOONNX)
+    list(REMOVE_ITEM AD_SOURCES ${PROJECT_SOURCE_DIR}/src/adtensor.cpp)
+    list(REMOVE_ITEM AD_SOURCES ${PROJECT_SOURCE_DIR}/src/adrunner.cpp)
+endif()
+if(AD_NOPDG)
+    list(REMOVE_ITEM AD_SOURCES ${PROJECT_SOURCE_DIR}/src/adpdg.cpp)
+endif()
 add_library(adhep ${AD_SOURCES})
 
 # 以下为可执行文件构建
 
-add_executable(sanitize-test src/sanitizer-test.cpp)
+if(NOT AD_NOTEST)
 
-add_executable(onnx-test src/onnx-test.cpp)
-target_link_libraries(onnx-test PUBLIC onnxruntime)
+    add_executable(sanitize-test src/sanitizer-test.cpp)
+    
+    if(NOT AD_NOONNX)
+        add_executable(onnx-test src/onnx-test.cpp)
+        target_link_libraries(onnx-test PUBLIC onnxruntime)
+    
+        add_executable(onnx-test-gpu src/onnx-test-gpu.cpp)
+        target_link_libraries(onnx-test-gpu PUBLIC onnxruntime)
+    endif()
+    
+    add_executable(root-test src/root-test.cpp)
+    target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
+    
+    add_executable(delphes-test src/delphes-test.cpp)
+    target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree)
 
-add_executable(onnx-test-gpu src/onnx-test-gpu.cpp)
-target_link_libraries(onnx-test-gpu PUBLIC onnxruntime)
+endif()
 
-add_executable(root-test src/root-test.cpp)
-target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
+if(NOT AD_NOEXEC)
 
-add_executable(delphes-test src/delphes-test.cpp)
-target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree)
+    add_executable(flatten src/flatten.cpp)
+    target_link_libraries(flatten PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
+    
+    if(NOT AD_NOONNX)
+        add_executable(part src/part.cpp)
+        target_link_libraries(part PUBLIC adhep onnxruntime z)
+    endif()
 
-add_executable(flatten src/flatten.cpp)
-target_link_libraries(flatten PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
-
-add_executable(part src/part.cpp)
-target_link_libraries(part PUBLIC adhep onnxruntime z)
+endif()
