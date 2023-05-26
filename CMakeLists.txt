@@ -2,15 +2,15 @@ cmake_minimum_required(VERSION 3.13)
 project(ad-part VERSION 0.0.1)
 
 # 设置项目包含目录、库目录和可执行文件目录
-include_directories(${CMAKE_SOURCE_DIR}/include)
-link_directories(${CMAKE_SOURCE_DIR}/lib)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+link_directories(${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 # ROOT 编译选项
 if(NOT ROOT_DIR)
-    set(ROOT_DIR ${CMAKE_SOURCE_DIR}/root/cmake)
+    set(ROOT_DIR ${PROJECT_SOURCE_DIR}/root/cmake)
 endif()
 find_package(ROOT)
 set(ROOT_CC_FLAG_LIST ${ROOT_CC_FLAGS})
@@ -23,7 +23,7 @@ include_directories(${ROOT_INCLUDE_DIRS})
 
 # onnxruntime 编译选项
 if(NOT ONNX_DIR)
-    set(ONNX_DIR ${CMAKE_SOURCE_DIR}/onnxruntime)
+    set(ONNX_DIR ${PROJECT_SOURCE_DIR}/onnxruntime)
 endif()
 if(NOT ONNX_INC_DIR)
     set(ONNX_INC_DIR ${ONNX_DIR}/include)
@@ -36,7 +36,7 @@ link_directories(${ONNX_LIB_DIR})
 
 # Delphes 编译选项
 if(NOT DELPHES_DIR)
-    set(DELPHES_DIR ${CMAKE_SOURCE_DIR}/MG5_aMC/Delphes)
+    set(DELPHES_DIR ${PROJECT_SOURCE_DIR}/MG5_aMC/Delphes)
 endif()
 set(DELPHES_INC_DIR ${DELPHES_DIR} ${DELPHES_DIR}/external)
 set(DELPHES_LIB_DIR ${DELPHES_DIR})
@@ -64,9 +64,9 @@ endif()
 
 # PDG 数据生成和编译
 if(NOT PDG_PATH)
-    set(PDG_PATH ${CMAKE_SOURCE_DIR}/run/pdginfo)
+    set(PDG_PATH ${PROJECT_SOURCE_DIR}/run/pdginfo)
 endif()
-execute_process(COMMAND ${CMAKE_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} RESULT_VARIABLE RETCODE)
+execute_process(COMMAND ${PROJECT_SOURCE_DIR}/bin/pdg-gen ${PDG_PATH} RESULT_VARIABLE RETCODE)
 if(NOT RETCODE EQUAL 0)
     message(FATAL_ERROR "error generating pdginfo")
 endif()
@@ -110,7 +110,7 @@ message("passed test for string literal operator support")
 # 以下为静态库文件构建
 
 execute_process(COMMAND sh -c
-"ls ${CMAKE_SOURCE_DIR}/src/ad*.cpp | xargs echo -n"
+"ls ${PROJECT_SOURCE_DIR}/src/ad*.cpp | xargs echo -n"
 OUTPUT_VARIABLE AD_SOURCES RESULT_VARIABLE AD_STATUS
 )
 if(NOT AD_STATUS EQUAL 0)
