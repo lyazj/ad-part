@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+struct stat;
+
 class ADListDir {
 
 private:
@@ -26,5 +28,25 @@ public:
   std::vector<std::string> get_full_names() const;
 
   ADListDir &sort_by_numbers();
+
+};
+
+class ADStat {
+
+private:
+  struct stat *sbuf;
+
+public:
+  ADStat(const char *path);
+  ~ADStat();
+
+  bool exists() const { return sbuf; }
+  bool isreg() const;
+  bool isdir() const;
+  bool islnk() const;
+
+  size_t size() const;
+
+  explicit operator bool() const { return exists(); }
 
 };

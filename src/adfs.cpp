@@ -1,5 +1,7 @@
 #include "adfs.h"
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
@@ -119,4 +121,43 @@ ADListDir &ADListDir::sort_by_numbers()
   }
   entnames = move(names);
   return *this;
+}
+
+ADStat::ADStat(const char *path)
+{
+  sbuf = (struct stat *)malloc(sizeof *sbuf);
+  if(sbuf == NULL) throw bad_alloc();
+  int r = stat(path, sbuf);
+  if(r < 0) {
+    free(sbuf);
+    sbuf = NULL;
+    r = errno;
+    if(r == ENOENT) return;
+    throw runtime_error(path + ": "s + strerror(r));
+  }
+}
+
+ADStat::~ADStat()
+{
+  free(sbuf);
+}
+
+bool ADStat::isreg() const
+{
+  return S_ISREG(sbuf->st_mode);
+}
+
+bool ADStat::isdir() const
+{
+  return S_ISDIR(sbuf->st_mode);
+}
+
+bool ADStat::islnk() const
+{
+  return S_ISLNK(sbuf->st_mode);
+}
+
+size_t ADStat::size() const
+{
+  return sbuf->st_size;
 }
