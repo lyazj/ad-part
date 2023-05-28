@@ -144,20 +144,20 @@ ADStat::~ADStat()
 
 bool ADStat::isreg() const
 {
-  return S_ISREG(sbuf->st_mode);
+  return sbuf && S_ISREG(sbuf->st_mode);
 }
 
 bool ADStat::isdir() const
 {
-  return S_ISDIR(sbuf->st_mode);
+  return sbuf && S_ISDIR(sbuf->st_mode);
 }
 
 bool ADStat::islnk() const
 {
-  return S_ISLNK(sbuf->st_mode);
+  return sbuf && S_ISLNK(sbuf->st_mode);
 }
 
 size_t ADStat::size() const
 {
-  return sbuf->st_size;
+  return sbuf && sbuf->st_size;
 }
