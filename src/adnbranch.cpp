@@ -40,7 +40,7 @@ void *ADNBranchBase::get_data() const
 
 size_t ADNBranchBase::get_entry() const
 {
- return branch->GetReadEntry();
+  return branch->GetReadEntry();
 }
 
 size_t ADNBranchBase::read_entry(size_t i)
