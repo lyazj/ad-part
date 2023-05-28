@@ -145,7 +145,7 @@ if(NOT AD_NOTEST)
     endif()
     
     add_executable(root-test src/root-test.cpp)
-    target_link_libraries(root-test PUBLIC ${ROOT_LIBRARIES})
+    target_link_libraries(root-test PUBLIC ROOT::MathCore)
     
     add_executable(delphes-test src/delphes-test.cpp)
     target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree)
