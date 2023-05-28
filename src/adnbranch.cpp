@@ -20,7 +20,6 @@ ADNBranchBase::ADNBranchBase(TTree *tree,
   }
   branch->SetStatus(1);
   mbsize = mbsize_in;
-  curpos = (size_t)-1;
 }
 
 ADNBranchBase::~ADNBranchBase()
@@ -39,10 +38,14 @@ void *ADNBranchBase::get_data() const
   return addr;
 }
 
+size_t ADNBranchBase::get_entry() const
+{
+ return branch->GetReadEntry();
+}
+
 size_t ADNBranchBase::read_entry(size_t i)
 {
   size_t r = branch->GetEntry(i);
-  curpos = i;
   return r;
 }
 

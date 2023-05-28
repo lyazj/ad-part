@@ -11,19 +11,18 @@ class ADNBranchBase {
 protected:
   TBranch *branch;
   size_t mbsize;
-  size_t curpos;
 
 public:
   ADNBranchBase(TTree *tree, const char *brname, size_t mbsize);
   ~ADNBranchBase();
 
   TBranch *get_branch() const { return branch; }
-  size_t get_entry() const { return curpos; }
 
   size_t get_capacity() const;
   void reserve(size_t nmb);
   void *get_data() const;
 
+  size_t get_entry() const;
   size_t read_entry(size_t i);
   size_t read_entry_once(size_t i);
 
