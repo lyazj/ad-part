@@ -181,7 +181,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
 void ADJet::summary()
 {
   printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nunrec=%zu "
-      "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, nunrec, ncmuon, ndscrd);
+      "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nunrec, ndscrd);
 }
 
 bool ADJet::check(const Jet &jet)
