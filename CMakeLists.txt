@@ -77,7 +77,7 @@ if(NOT AD_NOPDG)
 endif()
 
 # 优化、调试和通用编译选项
-option(ENABLE_SANITIZER "compile and link sanitizing flags" OFF)
+option(ENABLE_SANITIZER "compile and link sanitizing flags" ON)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE DEBUG)
 endif()
