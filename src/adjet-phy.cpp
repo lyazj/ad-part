@@ -142,7 +142,8 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
       new((void *)&par[c++]) ADParticle(*(Tower *)obj, p4, pdg);
     } else {  // unrecognized type
       ++nunrec;
-      fprintf(stderr, "WARNING: unrecognized constituent type\n");
+      fprintf(stderr, "WARNING: "
+          "unrecognized constituent type: %s\n", obj->ClassName());
     }
   }
 
@@ -169,9 +170,11 @@ void ADJet::summary()
       "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, nunrec, ndscrd);
 }
 
-bool ADJet::check(const Jet &jet)  // XXX
+bool ADJet::check(const Jet &jet)
 {
-  // return jet.PT >= 500 && abs(jet.Eta) <= 2;
-  // return abs(jet.Eta) <= 2;
+#ifdef AD_DISABLE_JETCHECK
   return 1;
+#else  /* AD_DISABLE_JETCHECK */
+  return jet.PT >= 500 && abs(jet.Eta) <= 2;
+#endif  /* AD_DISABLE_JETCHECK */
 }

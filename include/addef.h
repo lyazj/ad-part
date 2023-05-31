@@ -20,6 +20,10 @@
 #define NRSLTCLASS  10
 #endif  /* NRSLTCLASS */
 
+#ifndef JET_BRANCH
+#define JET_BRANCH  "FatJet"_branch
+#endif  /* JET_BRANCH */
+
 struct ADException {
   virtual ~ADException() = default;
 };

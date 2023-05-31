@@ -19,8 +19,9 @@ class Args:
 args = Args()
 data_config = os.path.join(main_path, 'config/JetClass_full.yaml')
 data_config = weaver.utils.dataset.DataConfig.load(data_config, load_observers=False, load_reweight_info=False)
+model_path = os.path.join(main_path, 'src/python3/ParT_full.pt')
 model, model_info, _ = weaver.train.model_setup(args, data_config)
-# model.load_state_dict(torch.load(model_path, map_location='cpu'))  # XXX
+model.load_state_dict(torch.load(model_path, map_location='cpu'))
 model = model.cpu()
 model.eval()
 
