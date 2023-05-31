@@ -9,6 +9,7 @@ class Jet;
 class GenParticle;
 class Track;
 class Tower;
+class Muon;
 class ADPDGQuerier;
 class TLorentzVector;
 
@@ -63,6 +64,7 @@ public:
   ADParticle(const GenParticle &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
   ADParticle(const Track &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
   ADParticle(const Tower &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
+  ADParticle(const Muon &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
@@ -101,6 +103,7 @@ public:
   static size_t ngnpar;
   static size_t ntrack;
   static size_t ntower;
+  static size_t ncmuon;
   static size_t nunrec;
   static size_t ndscrd;
   static void summary();  // particle counting summary
