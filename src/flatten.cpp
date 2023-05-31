@@ -15,6 +15,9 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+  // Force line buffer output streams.
+  setlbf();
+
   if(argc != 3) {
     fprintf(stderr, "usage: %s <rootfile> <dumpfile>\n",
         get_invoc_short_name());

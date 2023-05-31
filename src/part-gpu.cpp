@@ -41,7 +41,9 @@ int main(int argc, char *argv[])
 
   // 运行环境
   Env env;
-  Session session(env, "part.onnx", SessionOptions(nullptr));
+  SessionOptions session_options;
+  OrtSessionOptionsAppendExecutionProvider_CUDA(session_options, 0);
+  Session session(env, "part.onnx", session_options);
   MemoryInfo memory_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
   // 输入张量
@@ -55,8 +57,8 @@ int main(int argc, char *argv[])
   output.emplace_back(new ADSoftmax);
 
   // 运行模型，读取输入，写入输出
-  RunOptions options;
-  ADRunner runner(input, output, memory_info, session, options, dump, part);
+  RunOptions run_options;
+  ADRunner runner(input, output, memory_info, session, run_options, dump, part);
   int64_t b = 0;
   int64_t n;
   do {

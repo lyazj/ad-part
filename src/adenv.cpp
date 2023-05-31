@@ -2,6 +2,7 @@
 #include <string>
 #include <errno.h>
 #include <unistd.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -24,4 +25,14 @@ void setenv_delphes()
 #endif  /* DELPHES_EXTERNAL_DIR */
 
   if(!incpath.empty()) setenv("CPLUS_INCLUDE_PATH", incpath.c_str(), 1);
+}
+
+void setlbf()
+{
+  setvbuf(stdout, NULL, _IOLBF, BUFSIZ);
+#ifdef AD_STDERR_NOBUF
+  setvbuf(stderr, NULL, _IONBF, BUFSIZ);
+#else  /* AD_STDERR_NOBUF */
+  setvbuf(stderr, NULL, _IOLBF, BUFSIZ);
+#endif  /* AD_STDERR_NOBUF */
 }

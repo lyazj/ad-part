@@ -69,6 +69,9 @@ public:
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
 
+private:
+  void preprocess();
+
 };
 
 

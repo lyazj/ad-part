@@ -5,6 +5,7 @@
 #include <TObject.h>
 #include <TLorentzVector.h>
 #include <new>
+#include <algorithm>
 #include <math.h>
 #include <stdio.h>
 
@@ -86,6 +87,7 @@ ADParticle::ADParticle(const GenParticle &gnpar,
   ADPDGInfo pdginfo = pdg[gnpar.PID];
   set_adpar_common(*this, gnpar, p4_jet, pdginfo);
   set_adpar_charge(*this, gnpar, p4_jet, pdginfo);
+  preprocess();
 }
 
 ADParticle::ADParticle(const Track &track,
@@ -95,12 +97,14 @@ ADParticle::ADParticle(const Track &track,
   set_adpar_common(*this, track, p4_jet, pdginfo);
   set_adpar_charge(*this, track, p4_jet, pdginfo);
   set_adpar_d0dzde(*this, track, p4_jet, pdginfo);
+  preprocess();
 }
 
 ADParticle::ADParticle(const Tower &tower,
     const TLorentzVector &p4_jet, const ADPDGQuerier &)
 {
   set_adpar_common(*this, tower, p4_jet, (ADPDGInfo)0);
+  preprocess();
 }
 
 ADParticle::ADParticle(const Muon &muon,
@@ -110,6 +114,20 @@ ADParticle::ADParticle(const Muon &muon,
   set_adpar_common(*this, muon, p4_jet, pdginfo);
   set_adpar_charge(*this, muon, p4_jet, pdginfo);
   set_adpar_d0dzde(*this, muon, p4_jet, pdginfo);
+  preprocess();
+}
+
+void ADParticle::preprocess()
+{
+  log_pt = (log_pt - 1.7) * 0.7;
+  log_e = (log_e - 2.0) * 0.7;
+  log_pt_rel = (log_pt_rel + 4.7) * 0.7;
+  log_e_rel = (log_e_rel + 4.7) * 0.7;
+  delta_r = (delta_r - 0.2) * 4.0;
+  d0 = tanh(d0);
+  d0_err = min<Feature>(max<Feature>(d0_err, 0.0), 1.0);
+  dz = tanh(dz);
+  dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
 }
 
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
@@ -181,7 +199,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
 void ADJet::summary()
 {
   printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nunrec=%zu "
-      "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nunrec, ndscrd);
+      "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, nunrec, ncmuon, ndscrd);
 }
 
 bool ADJet::check(const Jet &jet)

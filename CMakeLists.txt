@@ -77,7 +77,7 @@ if(NOT AD_NOPDG)
 endif()
 
 # 优化、调试和通用编译选项
-option(ENABLE_SANITIZER "compile and link sanitizing flags" ON)
+option(ENABLE_SANITIZER "compile and link sanitizing flags" OFF)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE DEBUG)
 endif()
@@ -160,6 +160,9 @@ if(NOT AD_NOEXEC)
     if(NOT AD_NOONNX)
         add_executable(part src/part.cpp)
         target_link_libraries(part PUBLIC adhep onnxruntime z)
+
+        add_executable(part-gpu src/part-gpu.cpp)
+        target_link_libraries(part-gpu PUBLIC adhep onnxruntime z)
     endif()
 
 endif()
