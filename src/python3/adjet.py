@@ -1,5 +1,6 @@
 import npgz
 import numpy as np
+import matplotlib.pyplot as plt
 
 Feature = np.float32
 NFEAT_JET = 10
@@ -41,6 +42,32 @@ JET_TAU1               =  6
 JET_TAU2               =  7
 JET_TAU3               =  8
 JET_TAU4               =  9
+
+CLS_NAME = [
+    r'$H \to b\bar b$',
+    r'$H \to c\bar c$',
+    r'$H \to gg$',
+    r'$H \to 4q$',
+    r'$H \to \ell\nu qq^\prime$',
+    r'$t \to bqq^\prime$',
+    r'$t \to b\ell\nu$',
+    r'$W \to qq^\prime$',
+    r'$Z \to q\bar q$',
+    r'$q/g$',
+]
+
+JET_FEAT_NAME = [
+    r'$p_\mathrm{T}$',
+    r'$\eta$',
+    r'$\phi$',
+    r'$E$',
+    r'nparticle',
+    r'sdmass',
+    r'tau1',
+    r'tau2',
+    r'tau3',
+    r'tau4',
+]
 
 class ADParticle:
 
@@ -143,16 +170,39 @@ class ADPFData:
     def jets(self):
         return [ADJet(j) for j in self.data]
 
+    def hist(self, index, *args, **kwargs):
+        plt.hist(self.data[:,index], *args, **kwargs)
+        plt.xlabel(JET_FEAT_NAME[index])
+        plt.ylabel('a.u.')
+        plt.grid()
+
 class ADCFData:
 
     def __init__(self, data):
         self.data = data.reshape(-1, NRSLT_CLS)
 
     def top1(self):
-        return np.argmax(data, axis=-1)
+        return np.argmax(self.data, axis=-1)
+
+class ADCollection:
+
+    def __init__(self, pf, cf):
+        data = [[] for _ in range(NRSLT_CLS)]
+        for jet, cls in zip(pf.data, cf.top1(), strict=True):
+            data[cls].append(jet)
+        self.data = [ADPFData(np.array(d)) for d in data]
+
+    def hist(self, index, *args, **kwargs):
+        kwargs.pop('label', None)
+        kwargs.pop('color', None)
+        for i, item in enumerate(self.data):
+            item.hist(index, *args, **kwargs, label=CLS_NAME[i])
 
 def load_pf(dumpfile: str):
     return ADPFData(np.fromgz(dumpfile, dtype=Feature))
 
 def load_cf(partfile: str):
-    return ADCFData(np.fromgz(dumpfile, dtype=Feature))
+    return ADCFData(np.fromgz(partfile, dtype=Feature))
+
+def collect(pf: ADPFData, cf: ADCFData):
+    return ADCollection(pf, cf)
