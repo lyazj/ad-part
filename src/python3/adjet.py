@@ -6,6 +6,7 @@ NFEAT_JET = 10
 NFEAT_PAR = 22
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
+NRSLT_CLS = 10
 
 PAR_LOG_PT             =  0
 PAR_LOG_E              =  1
@@ -110,7 +111,6 @@ class ADJet:
     def par(self):
         return self.data[NFEAT_JET:].reshape(NPAR_JET, NFEAT_PAR)
 
-    @property
     def particles(self):
         return [ADParticle(p) for p in self.par]
 
@@ -135,14 +135,24 @@ class ADJet:
     @property
     def tau4(self):   return self.data[9]
 
-class ADData:
+class ADPFData:
 
     def __init__(self, data):
         self.data = data.reshape(-1, NFEAT_TOT)
 
-    @property
     def jets(self):
         return [ADJet(j) for j in self.data]
 
-def load(dumpfile: str) -> list:
-    return ADData(np.fromgz(dumpfile, dtype=Feature))
+class ADCFData:
+
+    def __init__(self, data):
+        self.data = data.reshape(-1, NRSLT_CLS)
+
+    def top1(self):
+        return np.argmax(data, axis=-1)
+
+def load_pf(dumpfile: str):
+    return ADPFData(np.fromgz(dumpfile, dtype=Feature))
+
+def load_cf(partfile: str):
+    return ADCFData(np.fromgz(dumpfile, dtype=Feature))
