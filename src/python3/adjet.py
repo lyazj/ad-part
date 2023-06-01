@@ -135,6 +135,14 @@ class ADJet:
     @property
     def tau4(self):   return self.data[9]
 
+class ADData:
+
+    def __init__(self, data):
+        self.data = data.reshape(-1, NFEAT_TOT)
+
+    @property
+    def jets(self):
+        return [ADJet(j) for j in self.data]
+
 def load(dumpfile: str) -> list:
-    data = np.fromgz(dumpfile, dtype=Feature).reshape(-1, NFEAT_TOT)
-    return [ADJet(j) for j in data]
+    return ADData(np.fromgz(dumpfile, dtype=Feature))
