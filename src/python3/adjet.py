@@ -174,7 +174,6 @@ class ADPFData:
         plt.hist(self.data[:,index], *args, **kwargs)
         plt.xlabel(JET_FEAT_NAME[index])
         plt.ylabel('a.u.')
-        plt.grid()
 
 class ADCFData:
 
