@@ -16,11 +16,21 @@ import adjet
 import matplotlib.pyplot as plt
 
 collection = adjet.collect(adjet.load_pf(DUMPFILE), adjet.load_cf(PARTFILE))
+
 for i in range(adjet.NFEAT_JET):
-    collection.hist(i, bins=50, histtype='step')
+    collection.hist(i, bins=30, histtype='step', density=True)
     plt.legend(loc='upper right')
     plt.tight_layout()
     figpath = f'jet_feature_{i}.pdf'
+    print(f'creating {figpath}...')
+    plt.savefig(figpath)
+    plt.clf()
+
+for i in range(adjet.NFEAT_PAR):
+    collection.hist_par(i, bins=30, histtype='step', density=True)
+    plt.legend(loc='upper right')
+    plt.tight_layout()
+    figpath = f'particle_feature_{i}.pdf'
     print(f'creating {figpath}...')
     plt.savefig(figpath)
     plt.clf()

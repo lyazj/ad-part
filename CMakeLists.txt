@@ -77,10 +77,10 @@ if(NOT AD_NOPDG)
 endif()
 
 # 优化、调试和通用编译选项
-option(ENABLE_SANITIZER "compile and link with sanitizing flags" ON)
+option(ENABLE_SANITIZER "compile and link with sanitizing flags" OFF)
 option(ENABLE_GPROF "compile and link with gprof flags" OFF)
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE DEBUG)
+    set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL DEBUG)
     add_compile_options(-O0 -fno-omit-frame-pointer)

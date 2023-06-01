@@ -56,6 +56,31 @@ CLS_NAME = [
     r'$q/g$',
 ]
 
+PAR_FEAT_NAME = [
+    r'$\log p_\mathrm{T}$',
+    r'$\log E$',
+    r'$\log p_\mathrm{T, rel}$',
+    r'$\log E_\mathrm{rel}$',
+    r'$\Delta R$',
+    r'charge',
+    r'is_charged_hadron',
+    r'is_neutral_hadron',
+    r'is_photon',
+    r'is_electron',
+    r'is_muon',
+    r'$d_0$',
+    r'$d_{0, err}$',
+    r'$d_z$',
+    r'$d_{z, err}$',
+    r'$\Delta\eta$',
+    r'$\Delta\phi$',
+    r'$p_x$',
+    r'$p_y$',
+    r'$p_z$',
+    r'$E$',
+    r'mask',
+]
+
 JET_FEAT_NAME = [
     r'$p_\mathrm{T}$',
     r'$\eta$',
@@ -162,6 +187,14 @@ class ADJet:
     @property
     def tau4(self):   return self.data[9]
 
+    def hist_par(self, index, *args, strip_padding=True, **kwargs):
+        n = int(self.npar) if strip_padding else NPART_JET
+        kwargs = kwargs.copy()
+        if n == 0: kwargs['density'] = False
+        plt.hist(self.par[:n,index], *args, **kwargs)
+        plt.xlabel(PAR_FEAT_NAME[index])
+        plt.ylabel('a.u.')
+
 class ADPFData:
 
     def __init__(self, data):
@@ -170,9 +203,30 @@ class ADPFData:
     def jets(self):
         return [ADJet(j) for j in self.data]
 
+    def pars(self, strip_padding=True, index=None):
+        pars = []
+        for jet in self.jets():
+            n = int(jet.npar) if strip_padding else NPART_JET
+            if index is not None:
+                pars.extend(jet.par[:n, index])
+            else:
+                pars.extend(jet.par[:n])
+        pars = np.array(pars)
+        return pars
+
     def hist(self, index, *args, **kwargs):
+        kwargs = kwargs.copy()
+        if self.data.shape[0] == 0: kwargs['density'] = False
         plt.hist(self.data[:,index], *args, **kwargs)
         plt.xlabel(JET_FEAT_NAME[index])
+        plt.ylabel('a.u.')
+
+    def hist_par(self, index, *args, strip_padding=True, **kwargs):
+        pars = self.pars(strip_padding, index)
+        kwargs = kwargs.copy()
+        if len(pars) == 0: kwargs['density'] = False
+        plt.hist(pars, *args, **kwargs)
+        plt.xlabel(PAR_FEAT_NAME[index])
         plt.ylabel('a.u.')
 
 class ADCFData:
@@ -187,15 +241,31 @@ class ADCollection:
 
     def __init__(self, pf, cf):
         data = [[] for _ in range(NRSLT_CLS)]
-        for jet, cls in zip(pf.data, cf.top1(), strict=True):
+        for jet, cls in zip(pf.data, cf.top1()):
             data[cls].append(jet)
         self.data = [ADPFData(np.array(d)) for d in data]
 
     def hist(self, index, *args, **kwargs):
         kwargs.pop('label', None)
         kwargs.pop('color', None)
+        if 'range' not in kwargs:
+            data = np.concatenate([d.data[:,index] for d in self.data])
+            mean = np.mean(data)
+            std = np.std(data)
+            kwargs['range'] = (mean - 3 * std, mean + 3 * std)
         for i, item in enumerate(self.data):
             item.hist(index, *args, **kwargs, label=CLS_NAME[i])
+
+    def hist_par(self, index, *args, strip_padding=True, **kwargs):
+        kwargs.pop('label', None)
+        kwargs.pop('color', None)
+        if 'range' not in kwargs:
+            data = np.concatenate([d.pars(strip_padding, index) for d in self.data])
+            mean = np.mean(data)
+            std = np.std(data)
+            kwargs['range'] = (mean - 3 * std, mean + 3 * std)
+        for i, item in enumerate(self.data):
+            item.hist_par(index, *args, strip_padding=strip_padding, **kwargs, label=CLS_NAME[i])
 
 def load_pf(dumpfile: str):
     return ADPFData(np.fromgz(dumpfile, dtype=Feature))
