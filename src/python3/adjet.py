@@ -171,6 +171,8 @@ class ADPFData:
         return [ADJet(j) for j in self.data]
 
     def hist(self, index, *args, **kwargs):
+        kwargs = kwargs.copy()
+        if self.data.shape[0] == 0: kwargs['density'] = False
         plt.hist(self.data[:,index], *args, **kwargs)
         plt.xlabel(JET_FEAT_NAME[index])
         plt.ylabel('a.u.')
@@ -194,6 +196,11 @@ class ADCollection:
     def hist(self, index, *args, **kwargs):
         kwargs.pop('label', None)
         kwargs.pop('color', None)
+        if 'range' not in kwargs:
+            data = np.concatenate([d.data[:,index] for d in self.data])
+            mean = np.mean(data)
+            std = np.std(data)
+            kwargs['range'] = (mean - 3 * std, mean + 3 * std)
         for i, item in enumerate(self.data):
             item.hist(index, *args, **kwargs, label=CLS_NAME[i])
 
