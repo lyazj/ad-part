@@ -7,6 +7,40 @@ NFEAT_PAR = 22
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
 
+PAR_LOG_PT             =  0
+PAR_LOG_E              =  1
+PAR_LOG_PT_REL         =  2
+PAR_LOG_E_REL          =  3
+PAR_DELTA_R            =  4
+PAR_CHARGE             =  5
+PAR_IS_CHARGED_HADRON  =  6
+PAR_IS_NEUTRAL_HADRON  =  7
+PAR_IS_PHOTON          =  8
+PAR_IS_ELECTRON        =  9
+PAR_IS_MUON            = 10
+PAR_D0                 = 11
+PAR_D0_ERR             = 12
+PAR_DZ                 = 13
+PAR_DZ_ERR             = 14
+PAR_DETA               = 15
+PAR_DPHI               = 16
+PAR_PX                 = 17
+PAR_PY                 = 18
+PAR_PZ                 = 19
+PAR_E                  = 20
+PAR_MASK               = 21
+
+JET_PT                 =  0
+JET_ETA                =  1
+JET_PHI                =  2
+JET_E                  =  3
+JET_NPAR               =  4
+JET_SDMASS             =  5
+JET_TAU1               =  6
+JET_TAU2               =  7
+JET_TAU3               =  8
+JET_TAU4               =  9
+
 class ADParticle:
 
     def __init__(self, data):
@@ -61,7 +95,6 @@ class ADParticle:
     def e(self):                 return self.data[20]
     @property
     def mask(self):              return self.data[21]
-
 
 class ADJet:
 
