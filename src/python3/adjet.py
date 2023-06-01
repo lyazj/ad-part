@@ -187,7 +187,7 @@ class ADCollection:
 
     def __init__(self, pf, cf):
         data = [[] for _ in range(NRSLT_CLS)]
-        for jet, cls in zip(pf.data, cf.top1(), strict=True):
+        for jet, cls in zip(pf.data, cf.top1()):
             data[cls].append(jet)
         self.data = [ADPFData(np.array(d)) for d in data]
 
