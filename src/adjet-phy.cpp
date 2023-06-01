@@ -159,8 +159,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
       ++ngnpar;
       if(!check_par_common<GenParticle>(*obj)) { ++ndscrd; continue; }
       new((void *)&par[c++]) ADParticle(*(GenParticle *)obj, p4, pdg);
-    }
-    else if(obj->IsA() == Track::Class()) {
+    } else if(obj->IsA() == Track::Class()) {
       ++ntrack;
       if(!check_par_common<Track>(*obj)) { ++ndscrd; continue; }
       new((void *)&par[c++]) ADParticle(*(Track *)obj, p4, pdg);
