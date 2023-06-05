@@ -17,7 +17,7 @@ using namespace std;
 
 namespace {
 
-constexpr int DT_MAP(unsigned char d_type)
+int DT_MAP(unsigned char d_type)
 {
   switch(d_type) {
     case DT_BLK: return ADListDir::DT_BLK;

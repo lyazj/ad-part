@@ -12,7 +12,8 @@ template<class T>
 void write_features(const T &obj, gzFile file)
 {
   size_t s = obj.feature_end - obj.feature_begin;
-  size_t r = gzfwrite(obj.feature_begin, 1, s, file);
+  //size_t r = gzfwrite(obj.feature_begin, 1, s, file);
+  size_t r = gzwrite(file, obj.feature_begin, s);
   if(r != s) {
     int e;
     throw runtime_error(gzerror(file, &e));
@@ -23,7 +24,8 @@ template<class T>
 bool read_features(T &obj, gzFile file)
 {
   size_t s = obj.feature_end - obj.feature_begin;
-  size_t r = gzfread(obj.feature_begin, 1, s, file);
+  //size_t r = gzfread(obj.feature_begin, 1, s, file);
+  size_t r = gzread(file, obj.feature_begin, s);
   if(r != s) {
     int e;
     const char *msg = gzerror(file, &e);
