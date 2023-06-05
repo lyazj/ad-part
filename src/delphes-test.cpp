@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
   // Read rootfile and print the tree.
   auto file = make_unique<TFile>(rootfile, "read");
-  auto delphes = file->Get<TTree>("Delphes");
+  auto delphes = (TTree *)file->Get("Delphes");
   delphes->Print();
 
   return 0;

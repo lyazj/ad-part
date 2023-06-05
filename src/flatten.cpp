@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
   // Open rootfile and get Delphes tree.
   auto file = make_shared<TFile>(rootfile, "read");
-  auto delphes = file->Get<TTree>("Delphes");
+  auto delphes = (TTree *)file->Get("Delphes");
   Long64_t n = delphes->GetEntries();
   printf("%s: %llu events\n", rootfile, (unsigned long long)n);
 
