@@ -159,5 +159,5 @@ bool ADStat::islnk() const
 
 size_t ADStat::size() const
 {
-  return sbuf && sbuf->st_size;
+  return sbuf ? sbuf->st_size : 0;
 }
