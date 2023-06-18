@@ -162,6 +162,9 @@ if(NOT AD_NOEXEC)
 
     add_executable(flatten src/flatten.cpp)
     target_link_libraries(flatten PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
+
+    add_executable(ntuple src/ntuple.cpp)
+    target_link_libraries(ntuple PUBLIC adhep ROOT::Tree z)
     
     if(NOT AD_NOONNX)
         add_executable(part src/part.cpp)
