@@ -108,6 +108,7 @@ int main(int argc, char *argv[])
       printf("%s: %zu entries processed\n", dumpfile, n);
     }
   }
+  tree->Write();
 
   // Finish.
   printf("%s: %zu entries total\n", dumpfile, n);
