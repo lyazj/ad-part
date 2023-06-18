@@ -39,34 +39,49 @@ int main(int argc, char *argv[])
   }
 
   // In-memory data structure.
-  vector<pair<const char *, vector<Feature>>> data = {
-    {"part_pt_log", { }},
-    {"part_e_log", { }},
-    {"part_logptrel", { }},
-    {"part_logerel", { }},
-    {"part_deltaR", { }},
-    {"part_charge", { }},
+  vector<pair<const char *, Feature>> sdata = {
+    {"label_QCD",  0},
+    {"label_Hbb",  0},
+    {"label_Hcc",  0},
+    {"label_Hgg",  0},
+    {"label_H4q",  0},
+    {"label_Hqql", 0},
+    {"label_Zqq",  0},
+    {"label_Wqq",  0},
+    {"label_Tbqq", 0},
+    {"label_Tbl",  0},
+  };
+  vector<pair<const char *, vector<Feature>>> vdata = {
+    {"part_pt_log",          { }},
+    {"part_e_log",           { }},
+    {"part_logptrel",        { }},
+    {"part_logerel",         { }},
+    {"part_deltaR",          { }},
+    {"part_charge",          { }},
     {"part_isChargedHadron", { }},
     {"part_isNeutralHadron", { }},
-    {"part_isPhoton", { }},
-    {"part_isElectron", { }},
-    {"part_isMuon", { }},
-    {"part_d0", { }},
-    {"part_d0err", { }},
-    {"part_dz", { }},
-    {"part_dzerr", { }},
-    {"part_deta", { }},
-    {"part_dphi", { }},
-    {"part_px", { }},
-    {"part_py", { }},
-    {"part_pz", { }},
-    {"part_energy", { }},
-    {"part_mask", { }},
+    {"part_isPhoton",        { }},
+    {"part_isElectron",      { }},
+    {"part_isMuon",          { }},
+    {"part_d0",              { }},
+    {"part_d0err",           { }},
+    {"part_dz",              { }},
+    {"part_dzerr",           { }},
+    {"part_deta",            { }},
+    {"part_dphi",            { }},
+    {"part_px",              { }},
+    {"part_py",              { }},
+    {"part_pz",              { }},
+    {"part_energy",          { }},
+    {"part_mask",            { }},
   };
 
   // Create ROOT TTree with desired branches.
   auto tree = make_shared<TTree>("tree", "tree");
-  for(auto &[name, buf] : data) {
+  for(auto &[name, buf] : sdata) {
+    tree->Branch(name, &buf);
+  }
+  for(auto &[name, buf] : vdata) {
     tree->Branch(name, &buf);
     buf.reserve(NPARTIFLOW);
   }
@@ -75,14 +90,16 @@ int main(int argc, char *argv[])
   size_t n = 0;
   ADJet jet;
   while(jet.read(dump)) {
-    for(auto &[name, buf] : data) {
+    // XXX: sdata is not yet contained in dump, and will be
+    // filled with zero in root.
+    for(auto &[name, buf] : vdata) {
       buf.clear();
     }
     size_t npar = jet.npar;
     for(size_t i = 0; i < npar; ++i) {
       Feature *feature = (Feature *)jet.par[i].feature_begin;
       size_t j = 0;
-      for(auto &[name, buf] : data) {
+      for(auto &[name, buf] : vdata) {
         buf.push_back(feature[j++]);
       }
     }

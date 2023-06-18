@@ -70,17 +70,3 @@ labels:
    # type: custom
    # value: 
    #    truth_label: label.argmax(1)
-
-observers:
-   - jet_pt
-   - jet_eta
-   - jet_phi
-   - jet_energy
-   - jet_nparticles
-   - jet_sdmass
-   - jet_tau1
-   - jet_tau2
-   - jet_tau3
-   - jet_tau4
-
-weights:
