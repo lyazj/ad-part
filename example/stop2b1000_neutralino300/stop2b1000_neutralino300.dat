@@ -1,0 +1,11 @@
+#!/usr/bin/env mg5_aMC
+
+import model MSSM_SLHA2
+define p = g u c d s u~ c~ d~ s~
+define j = g u c d s u~ c~ d~ s~
+define p = p b b~
+define j = j b b~
+generate p p > t1 t1~
+output stop2b1000_neutralino300
+display diagrams
+!rm -rf stop2b1000_neutralino300
