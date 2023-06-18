@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(main_path, 'src/python3'))
 import uproot
 import npgz
 import numpy as np
+import matplotlib.pyplot as plt
 
 labels = [
     'label_QCD',
@@ -51,3 +52,12 @@ result = np.hstack([w_scores.mean(axis=0).reshape(-1, 1), a_scores.mean(axis=0).
 print('[weaver     adpart    ]')
 print('[---------------------]')
 print(*result, sep='\n')
+
+# Draw y-x plot for the two groups of features.
+plt.figure(1, dpi=150)
+plt.plot([0, 1], [0, 1], color='green')
+plt.plot(w_scores.flatten(), a_scores.flatten(), '.', color='black', alpha=0.5)
+plt.xlabel('weaver')
+plt.ylabel('adpart')
+plt.tight_layout()
+plt.savefig('part-cmp.png')
