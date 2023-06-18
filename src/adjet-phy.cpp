@@ -128,19 +128,6 @@ void ADParticle::preprocess()
   d0_err = min<Feature>(max<Feature>(d0_err, 0.0), 1.0);
   dz = tanh(dz);
   dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
-
-  // ------------------------------------------------------------
-  // Added on Jun 18 2023 by <lyazj@github.com>
-  // The model designer's coding implies that each feature
-  // should be clipped within the interval [-5.0, 5.0] after
-  // proper normalization.
-  Feature *b = (Feature *)feature_begin;
-  Feature *e = (Feature *)feature_end;
-  while(b != e) {
-    *b = min<Feature>(max<Feature>(*b, -5.0), 5.0);
-    ++b;
-  }
-  // ------------------------------------------------------------
 }
 
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
