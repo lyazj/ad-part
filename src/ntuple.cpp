@@ -87,10 +87,12 @@ int main(int argc, char *argv[])
       }
     }
     tree->Fill();
-    ++n;
+    if((++n % 1000) == 0) {
+      printf("%s: %zu entries processed\n", dumpfile, n);
+    }
   }
 
   // Finish.
-  printf("%s: %zu entries processed\n", dumpfile, n);
+  printf("%s: %zu entries total\n", dumpfile, n);
   return 0;
 }
