@@ -137,7 +137,7 @@ void ADParticle::preprocess()
   Feature *b = (Feature *)feature_begin;
   Feature *e = (Feature *)feature_end;
   while(b != e) {
-    *b = min<Feature>(max<Feature>(dz_err, -5.0), 5.0);
+    *b = min<Feature>(max<Feature>(*b, -5.0), 5.0);
     ++b;
   }
   // ------------------------------------------------------------
