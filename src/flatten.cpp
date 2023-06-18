@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     auto file = make_shared<TFile>(rootfile, "read");
     auto delphes = (TTree *)file->Get("Delphes");
     Long64_t n = delphes->GetEntries();
-    printf("%s: %llu events\n", rootfile, (unsigned long long)n);
+    printf("%s: %llu events total\n", rootfile, (unsigned long long)n);
 
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
@@ -62,6 +62,9 @@ int main(int argc, char *argv[])
           ADJet jet(pdg, *brjet[j]);
           jet.write(dump);
         } catch(const ADInvalidJet &) { }
+      }
+      if((i + 1) % 1000 == 0) {
+        printf("%s: %llu events processed\n", rootfile, (unsigned long long)(i + 1));
       }
     }
   }

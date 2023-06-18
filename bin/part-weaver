@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# != 2 ]; then
+    >&2 echo "usage: $(basename "$0") <input> <output>"
+    exit 1
+fi
+
+exec weaver --predict --data-test $(readlink -f "$1") \
+    --data-config $(dirname "$0")/../config/JetClass_ntuple.yaml \
+    --network-config $(dirname "$0")/../src/python3/example_ParticleTransformer.py \
+    --model-prefix $(dirname "$0")/../src/python3/ParT_full.pt \
+    --gpus 0,1,2,3 --batch-size 512 \
+    --predict-output $(readlink -f "$2")

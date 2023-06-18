@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+
+if len(sys.argv) != 3:
+    print(f'usage: {os.path.basename(sys.argv[0])} <part-weaver> <part-adpart>', file=sys.stderr)
+    sys.exit(1)
+WPATH = sys.argv[1]
+APATH = sys.argv[2]
+
+main_path = os.path.join(os.path.dirname(__file__), '..')
+sys.path.insert(0, os.path.join(main_path, 'src/python3'))
+
+import uproot
+import npgz
+import numpy as np
+
+labels = [
+    'label_QCD',
+    'label_Hbb',
+    'label_Hcc',
+    'label_Hgg',
+    'label_H4q',
+    'label_Hqql',
+    'label_Zqq',
+    'label_Wqq',
+    'label_Tbqq',
+    'label_Tbl',
+]
+
+# Load output from weaver.
+w_scores = None
+w_file = uproot.open(WPATH)
+w_events = w_file['Events']
+w_prefix = 'score_'
+w_index = 0
+for w_branch in w_events:
+    if w_branch.name[:len(w_prefix)] == w_prefix:
+        w_array = w_branch.array(library='np')
+        if w_scores is None:
+            w_scores = np.empty(shape=(len(w_array), len(labels)))
+        w_scores[:,w_index] = w_array
+        w_index += 1
+
+# Load output from adpart.
+a_scores = np.fromgz(APATH, dtype='float32').reshape(-1, 10)
+
+# List them together.
+result = np.hstack([w_scores.mean(axis=0).reshape(-1, 1), a_scores.mean(axis=0).reshape(-1, 1)])
+print('[weaver     adpart    ]')
+print('[---------------------]')
+print(*result, sep='\n')
