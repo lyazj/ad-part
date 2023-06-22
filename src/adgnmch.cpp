@@ -104,13 +104,11 @@ const ADDecayGraph G_H_QQ { P_H, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) 
 const ADDecayGraph G_H_GG { P_H, { new ADDecayGraph(P_G), new ADDecayGraph(P_G) } };
 
 const ADDecayGraph G_H_QQQQ { P_H, {
-  new ADDecayGraph { P_H },
   new ADDecayGraph { P_V, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
   new ADDecayGraph { P_V, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
 } };
 
 const ADDecayGraph G_H_QQL { P_H, {
-  new ADDecayGraph { P_H },
   new ADDecayGraph { P_V, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
   new ADDecayGraph { P_V, { new ADDecayGraph(P_L) } },
 } };
