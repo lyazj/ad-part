@@ -16,118 +16,32 @@
 
 using namespace std;
 
-void ADGenMatcher::set_gnpars(TClonesArray *arr)
-{
-  lastcc.clear();
-  daumap.clear();
-  gnpars.clear();
-
-  // Loop over entries.
-  Int_t n = arr->GetEntries();
-  for(Int_t i = 0; i < n; ++i) {
-    add_gnpar(arr, i);
-  }
-
-  // Match decay graphs.
-  for(const ADGnparSP &gnpar : gnpars) {
-    for(const ADDGMchSP &dgm : dgms) {
-      dgm->add_gnpar(gnpar);
-    }
-  }
-}
-
-ADGnparSP ADGenMatcher::add_gnpar(TClonesArray *arr, int id)
-{
-  // Safely cast obj to gnpar.
-  TObject *obj = arr->At(id);
-  if(obj->IsA() != GenParticle::Class()) {
-    throw invalid_argument("unexpected type: "s + obj->ClassName());
-  }
-  GenParticle *gnpar = (GenParticle *)obj;
-
-  // Reentry avoidance.
-  {
-    auto it = lastcc.find(gnpar);
-    if(it != lastcc.end()) return it->second;
-  }
-  ADGnparSP cc = NULL;
-
-  // Share daughter lists with same (D1, D2).
-  shared_ptr<vector<ADGnparSP>> daus;
-  Int_t d1 = gnpar->D1, d2 = gnpar->D2;
-  int64_t key = ((int64_t)d1 << 32) | (d2 & 0xffffffff);
-  {
-    auto it = daumap.find(key);
-    if(it != daumap.end()) daus = it->second;
-  }
-  if(!daus) {
-    daus.reset(new vector<ADGnparSP>);
-    if(d1 >= 0) for(Int_t d = d1; d <= d2; ++d) {
-      ADGnparSP dau = add_gnpar(arr, d);
-      if(dau) {
-        daus->push_back(dau);
-        if(dau->pid == gnpar->PID) {
-          if(cc == NULL || cc->p4.Pt() < dau->p4.Pt()) cc = dau;
-        }
-      }
-    }
-    daumap.emplace(key, daus);
-  } else {
-    for(const ADGnparSP &dau : *daus) {
-      if(dau->pid == gnpar->PID) {
-        if(cc == NULL || cc->p4.Pt() < dau->p4.Pt()) cc = dau;
-      }
-    }
-  }
-
-  // Add the particle conditionally.
-  if(cc == NULL && pidsel.test(gnpar->PID)) {
-    cc.reset(new ADGnpar{id, gnpar->PID, 0, gnpar->P4(), daus});
-    gnpars.push_back(cc);
-  }
-
-  lastcc.emplace(gnpar, cc);
-  return cc;
-}
-
-void ADGenMatcher::print_gnpars() const
-{
-  for(const ADGnparSP &gnpar : gnpars) {
-    cout << setw(8) << gnpar->id << setw(8) << gnpar->pid;
-    for(const ADGnparSP &gndau : *gnpar->daus) {
-      cout << setw(8) << gndau->id;
-    }
-    cout << endl;
-  };
-}
-
-ADPIDSelector P_T   (unordered_set<int>{6, -6});
-ADPIDSelector P_W   (unordered_set<int>{24, -24});
-ADPIDSelector P_C   (unordered_set<int>{4, -4});
-ADPIDSelector P_Q   (unordered_set<int>{1, 2, 3, 4, -1, -2, -3, -4});
-ADPIDSelector P_B   (unordered_set<int>{5, -5});
-ADPIDSelector P_E   (unordered_set<int>{11, -11});
-ADPIDSelector P_NE  (unordered_set<int>{12});
-ADPIDSelector P_M   (unordered_set<int>{13, -13});
-ADPIDSelector P_NM  (unordered_set<int>{14});
-ADPIDSelector P_H   (unordered_set<int>{25});
-ADPIDSelector P_G   (unordered_set<int>{21});
-ADPIDSelector P_Z   (unordered_set<int>{23});
-ADPIDSelector P_L   (unordered_set<int>{11, -11, 13, -13});
-ADPIDSelector P_V   (unordered_set<int>{23, 24, -24});
-ADPIDSelector P_QCD (unordered_set<int>{1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6, 21});
+ADPIDSelector P_T   { 6, -6 };
+ADPIDSelector P_W   { 24, -24 };
+ADPIDSelector P_C   { 4, -4 };
+ADPIDSelector P_Q   { 1, 2, 3, 4, -1, -2, -3, -4 };
+ADPIDSelector P_B   { 5, -5 };
+ADPIDSelector P_E   { 11, -11 };
+ADPIDSelector P_NE  { 12 };
+ADPIDSelector P_M   { 13, -13 };
+ADPIDSelector P_NM  { 14 };
+ADPIDSelector P_H   { 25 };
+ADPIDSelector P_G   { 21 };
+ADPIDSelector P_Z   { 23 };
+ADPIDSelector P_L   { 11, -11, 13, -13 };
+ADPIDSelector P_V   { 23, 24, -24 };
+ADPIDSelector P_QCD { 1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6, 21 };
 
 void ADDecayGraph::add_dau(const ADDecayGSP &dau) {
-  assert(!dau->par);
   dau->par = this;
-  pidsel_all.merge(dau->pidsel_all);
-  daus.push_back(dau);
+  pidsel_union.merge(dau->pidsel_union);
+  daus.emplace_back(dau);
 }
 
-ADDecayGraph::ADDecayGraph(const ADDecayGraph &other) {
-  pidsel = other.pidsel;
-  pidsel_all = other.pidsel_all;
-  for(const ADDecayGSP &dau : other.daus) add_dau(std::make_shared<ADDecayGraph>(*dau));
+void ADDecayGraph::add_dau(ADDecayGSP &&dau) {
+  dau->par = this;
+  pidsel_union.merge(dau->pidsel_union);
+  daus.emplace_back(move(dau));  // No significant difference.
 }
 
 bool ADDecayGraph::set_gnpar(const ADGnparSP &gnpar_in)
@@ -136,143 +50,92 @@ bool ADDecayGraph::set_gnpar(const ADGnparSP &gnpar_in)
     gnpar = gnpar_in;
     return true;
   }
-  return false;
+  return false;  // Nothing changed.
 }
 
-const ADDecayGraph G_T_BCQ { P_T, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_W, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_C),
-    make_shared<ADDecayGraph>(P_Q),
-  }),
-}};
-
-const ADDecayGraph G_T_BQQ { P_T, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_W, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_Q),
-    make_shared<ADDecayGraph>(P_Q),
-  }),
-}};
-
-const ADDecayGraph G_T_BC { P_T, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_W, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_C),
-  }),
-}};
-
-const ADDecayGraph G_T_BQ { P_T, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_W, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_Q),
-  }),
-}};
-
-const ADDecayGraph G_T_BEN { P_T, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_W, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_E),
-    make_shared<ADDecayGraph>(P_NE),
-  }),
-}};
-
-const ADDecayGraph G_T_BMN { P_T, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_W, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_M),
-    make_shared<ADDecayGraph>(P_NM),
-  }),
-}};
-
-const ADDecayGraph G_W_CQ { P_W, {
-  make_shared<ADDecayGraph>(P_C),
-  make_shared<ADDecayGraph>(P_Q),
-}};
-
-const ADDecayGraph G_W_QQ { P_W, {
-  make_shared<ADDecayGraph>(P_Q),
-  make_shared<ADDecayGraph>(P_Q),
-}};
-
-const ADDecayGraph G_Z_BB { P_Z, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_B),
-}};
-
-const ADDecayGraph G_Z_CC { P_Z, {
-  make_shared<ADDecayGraph>(P_C),
-  make_shared<ADDecayGraph>(P_C),
-}};
-
-const ADDecayGraph G_Z_QQ { P_Z, {
-  make_shared<ADDecayGraph>(P_Q),
-  make_shared<ADDecayGraph>(P_Q),
-}};
-
-const ADDecayGraph G_H_BB { P_H, {
-  make_shared<ADDecayGraph>(P_B),
-  make_shared<ADDecayGraph>(P_B),
-}};
-
-const ADDecayGraph G_H_CC { P_H, {
-  make_shared<ADDecayGraph>(P_C),
-  make_shared<ADDecayGraph>(P_C),
-}};
-
-const ADDecayGraph G_H_QQ { P_H, {
-  make_shared<ADDecayGraph>(P_Q),
-  make_shared<ADDecayGraph>(P_Q),
-}};
-
-const ADDecayGraph G_H_GG { P_H, {
-  make_shared<ADDecayGraph>(P_G),
-  make_shared<ADDecayGraph>(P_G),
-}};
-
-const ADDecayGraph G_H_QQQQ { P_H, {
-  make_shared<ADDecayGraph>(P_V, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_Q),
-    make_shared<ADDecayGraph>(P_Q),
-  }),
-  make_shared<ADDecayGraph>(P_V, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_Q),
-    make_shared<ADDecayGraph>(P_Q),
-  }),
-}};
-
-const ADDecayGraph G_H_QQL { P_H, {
-  make_shared<ADDecayGraph>(P_V, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_Q),
-    make_shared<ADDecayGraph>(P_Q),
-  }),
-  make_shared<ADDecayGraph>(P_V, vector<ADDecayGSP> {
-    make_shared<ADDecayGraph>(P_L),
-  }),
-}};
-
-const ADDecayGraph G_QCD { P_QCD, {
-  make_shared<ADDecayGraph>(P_QCD),
-}};
-
-void ADDGMatcher::add_gnpar(const ADGnparSP &gnpar)
+void ADDecayGraph::serialize(std::vector<ADDecayGraph *> &s)
 {
-  if(graph->set_gnpar(gnpar)) add_gnpar(1);
-}
-
-void ADDGMatcher::add_gnpar(size_t i)
-{
-  if(i == serial.size()) return record_entry();
-  ADDecayGraph *g = serial[i];
-  for(const ADGnparSP &dau : *g->get_par()->get_gnpar()->daus) {
-    if(dau->tag || !g->set_gnpar(dau)) continue;
-    dau->tag = 1;
-    add_gnpar(i + 1);
-    dau->tag = 0;
+  s.push_back(this);
+  for(const ADDecayGSP &dau : daus) {
+    dau->serialize(s);
   }
 }
 
-void ADDGMatcher::record_entry()
+const ADDecayGraph G_T_BCQ { P_T, {
+  new ADDecayGraph { P_B },
+  new ADDecayGraph { P_W, { new ADDecayGraph(P_C), new ADDecayGraph(P_Q) } },
+} };
+
+const ADDecayGraph G_T_BQQ { P_T, {
+  new ADDecayGraph { P_B },
+  new ADDecayGraph { P_W, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
+} };
+
+const ADDecayGraph G_T_BC { P_T, {
+  new ADDecayGraph { P_B },
+  new ADDecayGraph { P_W, { new ADDecayGraph(P_C) } },
+} };
+
+const ADDecayGraph G_T_BQ { P_T, {
+  new ADDecayGraph { P_B },
+  new ADDecayGraph { P_W, { new ADDecayGraph(P_Q) } },
+} };
+
+const ADDecayGraph G_T_BEN { P_T, {
+  new ADDecayGraph { P_B },
+  new ADDecayGraph { P_W, { new ADDecayGraph(P_E), new ADDecayGraph(P_NE) } },
+} };
+
+const ADDecayGraph G_T_BMN { P_T, {
+  new ADDecayGraph { P_B },
+  new ADDecayGraph { P_W, { new ADDecayGraph(P_M), new ADDecayGraph(P_NM) } },
+} };
+
+const ADDecayGraph G_W_CQ { P_W, { new ADDecayGraph(P_C), new ADDecayGraph(P_Q) } };
+const ADDecayGraph G_W_QQ { P_W, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } };
+
+const ADDecayGraph G_Z_BB { P_Z, { new ADDecayGraph(P_B), new ADDecayGraph(P_B) } };
+const ADDecayGraph G_Z_CC { P_Z, { new ADDecayGraph(P_C), new ADDecayGraph(P_C) } };
+const ADDecayGraph G_Z_QQ { P_Z, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } };
+
+const ADDecayGraph G_H_BB { P_H, { new ADDecayGraph(P_B), new ADDecayGraph(P_B) } };
+const ADDecayGraph G_H_CC { P_H, { new ADDecayGraph(P_C), new ADDecayGraph(P_C) } };
+const ADDecayGraph G_H_QQ { P_H, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } };
+const ADDecayGraph G_H_GG { P_H, { new ADDecayGraph(P_G), new ADDecayGraph(P_G) } };
+
+const ADDecayGraph G_H_QQQQ { P_H, {
+  new ADDecayGraph { P_H },
+  new ADDecayGraph { P_V, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
+  new ADDecayGraph { P_V, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
+} };
+
+const ADDecayGraph G_H_QQL { P_H, {
+  new ADDecayGraph { P_H },
+  new ADDecayGraph { P_V, { new ADDecayGraph(P_Q), new ADDecayGraph(P_Q) } },
+  new ADDecayGraph { P_V, { new ADDecayGraph(P_L) } },
+} };
+
+const ADDecayGraph G_QCD { P_QCD, { new ADDecayGraph(P_QCD) } };  // XXX
+
+void ADDGMatcher::add_gnpar(const ADGnparSP &gnpar)
+{
+  if(graph->set_gnpar(gnpar)) add_gnpar(1);  // Root matching goes first.
+}
+
+void ADDGMatcher::add_gnpar(size_t i)  // Then enumerate all possible cases.
+{
+  if(i == serial.size()) return record_entry();  // Success.
+  ADDecayGraph *g = serial[i];
+  // Trail object of parent node must be valid as matching is performed in pre-order.
+  for(const ADGnparSP &dau : *g->get_par()->get_gnpar()->daus) {
+    if(dau->tag || !g->set_gnpar(dau)) continue;  // Duplicate matching is avoided with TAG.
+    dau->tag = 1;  // Means already used for trail matching.
+    add_gnpar(i + 1);  // Move on for a deeper recursion.
+    dau->tag = 0;  // Backtrace.
+  }
+}
+
+void ADDGMatcher::record_entry()  // XXX: The records are permutation-sensitive.
 {
   vector<ADGnparSP> entry;
   entry.reserve(serial.size());
@@ -298,41 +161,120 @@ void ADDGMatcher::print_gnpars() const
   };
 }
 
-void ADDecayGraph::serialize(std::vector<ADDecayGraph *> &s)
+void ADGenMatcher::set_gnpars(TClonesArray *arr)
 {
-  s.push_back(this);
-  for(const ADDecayGSP &dau : daus) {
-    dau->serialize(s);
+  lastcc.clear();
+  daumap.clear();
+  gnpars.clear();
+
+  // Loop over entries.
+  Int_t n = arr->GetEntries();
+  for(Int_t i = 0; i < n; ++i) {
+    add_gnpar(arr, i);  // Irrelevant ones are discarded.
   }
+
+  // Match decay graphs.
+  for(const ADGnparSP &gnpar : gnpars) {
+    for(const ADDGMtchrSP &dgm : dgms) {
+      dgm->add_gnpar(gnpar);
+    }
+  }
+}
+
+ADGnparSP ADGenMatcher::add_gnpar(TClonesArray *arr, int id)
+{
+  // Safely cast OBJ to GenParticle *.
+  TObject *obj = arr->At(id);
+  if(obj->IsA() != GenParticle::Class()) {
+    throw invalid_argument("unexpected type: "s + obj->ClassName());
+  }
+  GenParticle *gnpar = (GenParticle *)obj;
+
+  // Reentry avoidance.
+  {
+    auto it = lastcc.find(gnpar);
+    if(it != lastcc.end()) return it->second;
+  }
+  ADGnparSP cc = NULL;
+
+  // Share daughter lists with same (D1, D2).
+  shared_ptr<vector<ADGnparSP>> daus;
+  Int_t d1 = gnpar->D1, d2 = gnpar->D2;
+  int64_t key = ((int64_t)d1 << 32) | (d2 & 0xffffffff);
+  {
+    auto it = daumap.find(key);
+    if(it != daumap.end()) daus = it->second;
+  }
+  if(!daus) {
+    daus.reset(new vector<ADGnparSP>);
+    if(d1 >= 0) for(Int_t d = d1; d <= d2; ++d) {
+      ADGnparSP dau = add_gnpar(arr, d);  // DFS
+      if(dau) {  // Should be discarded otherwise.
+        daus->push_back(dau);
+        if(dau->pid == gnpar->PID) {  // Higher-pT C.C. is preferred.
+          if(cc == NULL || cc->p4.Pt() < dau->p4.Pt()) cc = dau;
+        }
+      }
+    }
+    daumap.emplace(key, daus);
+  } else {  // Perform C.C. matching only.
+    for(const ADGnparSP &dau : *daus) {
+      if(dau->pid == gnpar->PID) {
+        if(cc == NULL || cc->p4.Pt() < dau->p4.Pt()) cc = dau;
+      }
+    }
+  }
+
+  // Add the particle conditionally.
+  //   CC not NULL: intermediate state -> discard
+  //   PID test failed: out of domain -> discard
+  if(cc == NULL && pidsel.test(gnpar->PID)) {
+    cc.reset(new ADGnpar{id, gnpar->PID, 0, gnpar->P4(), daus});
+    gnpars.push_back(cc);
+  }
+
+  lastcc.emplace(gnpar, cc);
+  return cc;
+}
+
+void ADGenMatcher::print_gnpars() const
+{
+  for(const ADGnparSP &gnpar : gnpars) {
+    cout << setw(8) << gnpar->id << setw(8) << gnpar->pid;
+    for(const ADGnparSP &gndau : *gnpar->daus) {
+      cout << setw(8) << gndau->id;
+    }
+    cout << endl;
+  };
 }
 
 ADGenMatcher::ADGenMatcher()
 {
   // highest priority
-  add_dgm(make_shared<ADDGMatcher>("T_BCQ",  make_shared<ADDecayGraph>(G_T_BCQ)));
-  add_dgm(make_shared<ADDGMatcher>("T_BQQ",  make_shared<ADDecayGraph>(G_T_BQQ)));
-  add_dgm(make_shared<ADDGMatcher>("T_BC",   make_shared<ADDecayGraph>(G_T_BC)));
-  add_dgm(make_shared<ADDGMatcher>("T_BQ",   make_shared<ADDecayGraph>(G_T_BQ)));
-  add_dgm(make_shared<ADDGMatcher>("T_BEN",  make_shared<ADDecayGraph>(G_T_BEN)));
-  add_dgm(make_shared<ADDGMatcher>("T_BMN",  make_shared<ADDecayGraph>(G_T_BMN)));
-  add_dgm(make_shared<ADDGMatcher>("H_QQQQ", make_shared<ADDecayGraph>(G_H_QQQQ)));
-  add_dgm(make_shared<ADDGMatcher>("H_QQL",  make_shared<ADDecayGraph>(G_H_QQL)));
-  add_dgm(make_shared<ADDGMatcher>("H_BB",   make_shared<ADDecayGraph>(G_H_BB)));
-  add_dgm(make_shared<ADDGMatcher>("H_CC",   make_shared<ADDecayGraph>(G_H_CC)));
-  add_dgm(make_shared<ADDGMatcher>("H_QQ",   make_shared<ADDecayGraph>(G_H_QQ)));
-  add_dgm(make_shared<ADDGMatcher>("H_GG",   make_shared<ADDecayGraph>(G_H_GG)));
-  add_dgm(make_shared<ADDGMatcher>("W_CQ",   make_shared<ADDecayGraph>(G_W_CQ)));
-  add_dgm(make_shared<ADDGMatcher>("W_QQ",   make_shared<ADDecayGraph>(G_W_QQ)));
-  add_dgm(make_shared<ADDGMatcher>("Z_BB",   make_shared<ADDecayGraph>(G_Z_BB)));
-  add_dgm(make_shared<ADDGMatcher>("Z_CC",   make_shared<ADDecayGraph>(G_Z_CC)));
-  add_dgm(make_shared<ADDGMatcher>("Z_QQ",   make_shared<ADDecayGraph>(G_Z_QQ)));
-  add_dgm(make_shared<ADDGMatcher>("QCD",    make_shared<ADDecayGraph>(G_QCD)));
+  add_dgm("T_BCQ", G_T_BCQ);
+  add_dgm("T_BQQ", G_T_BQQ);
+  add_dgm("T_BC", G_T_BC);
+  add_dgm("T_BQ", G_T_BQ);
+  add_dgm("T_BEN", G_T_BEN);
+  add_dgm("T_BMN", G_T_BMN);
+  add_dgm("H_QQQQ", G_H_QQQQ);
+  add_dgm("H_QQL", G_H_QQL);
+  add_dgm("H_BB", G_H_BB);
+  add_dgm("H_CC", G_H_CC);
+  add_dgm("H_QQ", G_H_QQ);
+  add_dgm("H_GG", G_H_GG);
+  add_dgm("W_CQ", G_W_CQ);
+  add_dgm("W_QQ", G_W_QQ);
+  add_dgm("Z_BB", G_Z_BB);
+  add_dgm("Z_CC", G_Z_CC);
+  add_dgm("Z_QQ", G_Z_QQ);
+  add_dgm("QCD", G_QCD);
   // lowest priority
 }
 
 void ADGenMatcher::print_dgms() const
 {
-  for(const ADDGMchSP &dgm : dgms) {
+  for(const ADDGMtchrSP &dgm : dgms) {
     dgm->print_ngnpar();
   }
 }
@@ -343,12 +285,13 @@ ADGenMatchResult ADDGMatcher::match(Jet *jet, double dr)
   const vector<ADGnparSP> *matching = NULL;
   double dr_sum_min = INFINITY;
 
+  // The entry with minimal DR_SUM is used.
   for(const auto &entry : gnpars) {
     bool matched = true;
     double dr_sum = 0.0;
     for(const ADGnparSP &gnpar : entry) {
       double dr_cur = p4.DeltaR(gnpar->p4);
-      if(dr_cur > dr) {
+      if(dr_cur > dr) {  // DR is the common upper bound of Delta-R.
         matched = false;
         break;
       }
@@ -366,7 +309,8 @@ ADGenMatchResult ADDGMatcher::match(Jet *jet, double dr)
 
 ADGenMatchResult ADGenMatcher::match(Jet *jet, double dr)
 {
-  for(const ADDGMchSP &dgm : dgms) {
+  // The first matching is used.
+  for(const ADDGMtchrSP &dgm : dgms) {
     ADGenMatchResult rst = dgm->match(jet, dr);
     if(rst.name) return rst;
   }
