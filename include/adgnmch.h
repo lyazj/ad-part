@@ -147,7 +147,7 @@ private:
   std::vector<ADDGMtchrSP> dgms;  // In descending order of priority.
   ADPIDSelector pidsel;  // Union of accepting domains of DGMS.
   std::unordered_map<GenParticle *, ADGnparSP> lastcc;  // Inner DS for duplication elimination.
-  std::unordered_map<int64_t, std::shared_ptr<std::vector<ADGnparSP>>> daumap;  // A possible time- and memory-saving mechanism.
+  std::unordered_map<uint64_t, std::shared_ptr<std::vector<ADGnparSP>>> daumap;  // A possible time- and memory-saving mechanism.
   std::vector<ADGnparSP> gnpars;  // Filtered by PIDSEL.
 
   // Graphs should be added in descending order of priority.

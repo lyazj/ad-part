@@ -198,7 +198,7 @@ ADGnparSP ADGenMatcher::add_gnpar(TClonesArray *arr, int id)
   // Share daughter lists with same (D1, D2).
   shared_ptr<vector<ADGnparSP>> daus;
   Int_t d1 = gnpar->D1, d2 = gnpar->D2;
-  int64_t key = ((int64_t)d1 << 32) | (d2 & 0xffffffff);
+  uint64_t key = ((uint64_t)d1 << 32) | (d2 & 0xffffffff);
   {
     auto it = daumap.find(key);
     if(it != daumap.end()) daus = it->second;
