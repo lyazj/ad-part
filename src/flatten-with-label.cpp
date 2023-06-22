@@ -69,11 +69,15 @@ int main(int argc, char *argv[])
       printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
-        ADGenMatchResult r = matcher.match(brjet[j], 0.8);
+        ADGenMatchResult r = matcher.match(brjet[j], 1.5);
         if(!r.name) {
           printf("result: null\n");
         } else {
-          printf("result: %s %lg\n", r.name, r.dr_mean);
+          printf("result: %-8s%10.6lf", r.name, r.dr_mean);
+          for(const ADGnparSP &gnpar : r.gnpars) {
+            printf("%6d(%4d)", gnpar->id, gnpar->pid);
+          }
+          printf("\n");
         }
         printf("\n");
         try {
