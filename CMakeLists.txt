@@ -80,7 +80,7 @@ endif()
 option(ENABLE_SANITIZER "compile and link with sanitizing flags" OFF)
 option(ENABLE_GPROF "compile and link with gprof flags" OFF)
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RELEASE)
+    set(CMAKE_BUILD_TYPE DEBUG)
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL DEBUG)
     add_compile_options(-O0 -fno-omit-frame-pointer)
@@ -162,6 +162,9 @@ if(NOT AD_NOEXEC)
 
     add_executable(flatten src/flatten.cpp)
     target_link_libraries(flatten PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
+
+    add_executable(flatten-with-label src/flatten-with-label.cpp)
+    target_link_libraries(flatten-with-label PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
 
     add_executable(ntuple src/ntuple.cpp)
     target_link_libraries(ntuple PUBLIC adhep ROOT::Tree z)
