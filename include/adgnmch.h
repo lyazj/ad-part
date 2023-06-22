@@ -49,7 +49,7 @@ public:
 };
 
 // Implement HEP notations of particles.
-extern ADPIDSelector P_T, P_W, P_C, P_Q, P_B, P_E, P_NE, P_M, P_NM, P_H, P_G, P_Z, P_L, P_V, P_QCD;
+extern const ADPIDSelector P_T, P_W, P_C, P_Q, P_B, P_E, P_NE, P_M, P_NM, P_H, P_G, P_Z, P_L, P_V, P_QCD;
 
 // Perform decay-determined GenParticle selection and classification.
 class ADDecayGraph;

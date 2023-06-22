@@ -16,21 +16,21 @@
 
 using namespace std;
 
-ADPIDSelector P_T   { 6, -6 };
-ADPIDSelector P_W   { 24, -24 };
-ADPIDSelector P_C   { 4, -4 };
-ADPIDSelector P_Q   { 1, 2, 3, 4, -1, -2, -3, -4 };
-ADPIDSelector P_B   { 5, -5 };
-ADPIDSelector P_E   { 11, -11 };
-ADPIDSelector P_NE  { 12 };
-ADPIDSelector P_M   { 13, -13 };
-ADPIDSelector P_NM  { 14 };
-ADPIDSelector P_H   { 25 };
-ADPIDSelector P_G   { 21 };
-ADPIDSelector P_Z   { 23 };
-ADPIDSelector P_L   { 11, -11, 13, -13 };
-ADPIDSelector P_V   { 23, 24, -24 };
-ADPIDSelector P_QCD { 1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6, 21 };
+const ADPIDSelector P_T   { 6, -6 };
+const ADPIDSelector P_W   { 24, -24 };
+const ADPIDSelector P_C   { 4, -4 };
+const ADPIDSelector P_Q   { 1, 2, 3, 4, -1, -2, -3, -4 };
+const ADPIDSelector P_B   { 5, -5 };
+const ADPIDSelector P_E   { 11, -11 };
+const ADPIDSelector P_NE  { 12 };
+const ADPIDSelector P_M   { 13, -13 };
+const ADPIDSelector P_NM  { 14 };
+const ADPIDSelector P_H   { 25 };
+const ADPIDSelector P_G   { 21 };
+const ADPIDSelector P_Z   { 23 };
+const ADPIDSelector P_L   { 11, -11, 13, -13 };
+const ADPIDSelector P_V   { 23, 24, -24 };
+const ADPIDSelector P_QCD { 1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6, 21 };
 
 void ADDecayGraph::add_dau(const ADDecayGSP &dau) {
   dau->par = this;
