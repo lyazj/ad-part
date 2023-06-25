@@ -27,3 +27,5 @@
 struct ADException {
   virtual ~ADException() = default;
 };
+
+extern const char *class_names[NRSLTCLASS];

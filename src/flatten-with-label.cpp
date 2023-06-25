@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
       matcher.set_gnpars(brgpar.get_data());
       //matcher.print_gnpars();
       //matcher.print_dgms();
-      printf("\n");
+      //printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
         ADGenMatchResult r = matcher.match(brjet[j], 1.5);
@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
         } catch(const ADInvalidJet &) { }
       }
       if((i + 1) % 1000 == 0) {
+        ADJet::summary();
         printf("%s: %llu events processed\n", rootfile, (unsigned long long)(i + 1));
       }
     }

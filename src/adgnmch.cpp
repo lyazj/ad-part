@@ -164,6 +164,7 @@ void ADGenMatcher::set_gnpars(TClonesArray *arr)
   lastcc.clear();
   daumap.clear();
   gnpars.clear();
+  for(ADDGMtchrSP &matcher : dgms) matcher->clear_gnpar();
 
   // Loop over entries.
   Int_t n = arr->GetEntries();

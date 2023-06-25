@@ -131,6 +131,7 @@ public:
 
   // User interface for adding GenParticles for matching.
   void add_gnpar(const ADGnparSP &gnpar);
+  void clear_gnpar() { gnpars.clear(); }
   void print_gnpars() const;  // Debugging use (detailed).
   void print_ngnpar() const;  // Debugging use (concise).
 

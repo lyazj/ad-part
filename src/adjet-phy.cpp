@@ -22,6 +22,7 @@ size_t ADJet::nparfc;
 size_t ADJet::nunrec;
 size_t ADJet::ndscrd;
 size_t ADJet::nunmch;
+size_t ADJet::nclass[NRSLTCLASS];
 
 namespace {
 
@@ -82,23 +83,24 @@ void set_adpar_d0dzde(ADParticle &adpar, const DelphesClass &par,
 // max_{i: size_t}{(size_t)(float)i == i}
 constexpr auto NPAR_MAX = 0x1000000;
 
-Feature name_to_label(const char *name)
+int name_to_label(const char *name)
 {
+  if(name == NULL) return -1;
   static unordered_map<string, Feature> data = {
-    {"QCD",    0.0},
-    {"H_BB",   1.0},
-    {"H_CC",   2.0},
-    {"H_GG",   3.0},
-    {"H_QQQQ", 4.0},
-    {"H_QQL",  5.0},
-    {"Z_QQ",   6.0},
-    {"W_QQ",   7.0},
-    {"T_BQQ",  8.0},
-    {"T_BEN",  9.0},
-    {"T_BMN",  9.0},
+    {"QCD",    0},
+    {"H_BB",   1},
+    {"H_CC",   2},
+    {"H_GG",   3},
+    {"H_QQQQ", 4},
+    {"H_QQL",  5},
+    {"Z_QQ",   6},
+    {"W_QQ",   7},
+    {"T_BQQ",  8},
+    {"T_BEN",  9},
+    {"T_BMN",  9},
   };
   auto it = data.find(name);
-  if(it == data.end()) return -1.0;
+  if(it == data.end()) return -2;
   return it->second;
 }
 
@@ -166,8 +168,9 @@ void ADParticle::preprocess()
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet()
 {
   ++nadjet;
-  Feature l = name_to_label(name);
-  if(l < 0.0) { ++nunmch; throw ADInvalidJet(); }
+  int l = name_to_label(name);
+  if(l < 0) { ++nunmch; throw ADInvalidJet(); }
+  ++nclass[l];
   if(!check(jet)) throw ADInvalidJet();
   ++nvalid;
 
@@ -237,8 +240,12 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
 
 void ADJet::summary()
 {
-  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nparfc=%zu nunrec=%zu ndscrd=%zu"
-      " nunmch=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nparfc, nunrec, ndscrd, nunmch);
+  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu"
+      " ncmuon=%zu nparfc=%zu nunrec=%zu ndscrd=%zu nunmch=%zu\n",
+      nadjet, nvalid, ngnpar, ntrack, ntower,
+      ncmuon, nparfc, nunrec, ndscrd, nunmch);
+  for(int i = 0; i < NRSLTCLASS; ++i) printf("%s=%-8zu", class_names[i], nclass[i]);
+  printf("\n");
 }
 
 bool ADJet::check(const Jet &jet)
