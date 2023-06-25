@@ -12,6 +12,7 @@ class Tower;
 class Muon;
 class ADPDGQuerier;
 class TLorentzVector;
+class ParticleFlowCandidate;
 
 // classes to be defined
 class ADParticle;
@@ -65,6 +66,7 @@ public:
   ADParticle(const Track &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
   ADParticle(const Tower &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
   ADParticle(const Muon &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
+  ADParticle(const ParticleFlowCandidate &, const TLorentzVector &p4_jet, const ADPDGQuerier &);
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
@@ -108,6 +110,7 @@ public:
   static size_t ntrack;
   static size_t ntower;
   static size_t ncmuon;
+  static size_t nparfc;
   static size_t nunrec;
   static size_t ndscrd;
   static size_t nunmch;

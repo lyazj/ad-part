@@ -18,6 +18,7 @@ size_t ADJet::ngnpar;
 size_t ADJet::ntrack;
 size_t ADJet::ntower;
 size_t ADJet::ncmuon;
+size_t ADJet::nparfc;
 size_t ADJet::nunrec;
 size_t ADJet::ndscrd;
 size_t ADJet::nunmch;
@@ -139,6 +140,16 @@ ADParticle::ADParticle(const Muon &muon,
   preprocess();
 }
 
+ADParticle::ADParticle(const ParticleFlowCandidate &pfc,
+    const TLorentzVector &p4_jet, const ADPDGQuerier &pdg)
+{
+  ADPDGInfo pdginfo = pdg[13];
+  set_adpar_common(*this, pfc, p4_jet, pdginfo);
+  set_adpar_charge(*this, pfc, p4_jet, pdginfo);
+  set_adpar_d0dzde(*this, pfc, p4_jet, pdginfo);
+  preprocess();
+}
+
 void ADParticle::preprocess()
 {
   log_pt = (log_pt - 1.7) * 0.7;
@@ -196,6 +207,10 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
       ++ncmuon;
       if(!check_par_common<Muon>(*obj)) { ++ndscrd; continue; }
       new((void *)&par[c++]) ADParticle(*(Muon *)obj, p4, pdg);
+    } else if(obj->IsA() == ParticleFlowCandidate::Class()) {
+      ++nparfc;
+      if(!check_par_common<ParticleFlowCandidate>(*obj)) { ++ndscrd; continue; }
+      new((void *)&par[c++]) ADParticle(*(ParticleFlowCandidate *)obj, p4, pdg);
     } else {  // unrecognized type
       ++nunrec;
       fprintf(stderr, "WARNING: "
@@ -222,8 +237,8 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
 
 void ADJet::summary()
 {
-  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nunrec=%zu ndscrd=%zu"
-      " nunmch=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nunrec, ndscrd, nunmch);
+  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nparfc=%zu nunrec=%zu ndscrd=%zu"
+      " nunmch=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nparfc, nunrec, ndscrd, nunmch);
 }
 
 bool ADJet::check(const Jet &jet)
