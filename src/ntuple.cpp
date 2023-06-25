@@ -90,8 +90,12 @@ int main(int argc, char *argv[])
   size_t n = 0;
   ADJet jet;
   while(jet.read(dump)) {
-    // XXX: sdata is not yet contained in dump, and will be
-    // filled with zero in root.
+    int label = jet.label;
+    assert(label >= 0 && label < NRSLTCLASS);
+    for(auto &[name, buf] : sdata) {
+      buf = 0.0;
+    }
+    sdata[label].second = 1.0;
     for(auto &[name, buf] : vdata) {
       buf.clear();
     }
