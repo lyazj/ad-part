@@ -22,6 +22,7 @@ size_t ADJet::nparfc;
 size_t ADJet::nunrec;
 size_t ADJet::ndscrd;
 size_t ADJet::nunmch;
+size_t ADJet::nirrlv;
 size_t ADJet::nclass[NRSLTCLASS];
 
 namespace {
@@ -85,7 +86,6 @@ constexpr auto NPAR_MAX = 0x1000000;
 
 int name_to_label(const char *name)
 {
-  if(name == NULL) return -1;
   static unordered_map<string, Feature> data = {
     {"QCD",    0},
     {"H_BB",   1},
@@ -93,14 +93,18 @@ int name_to_label(const char *name)
     {"H_GG",   3},
     {"H_QQQQ", 4},
     {"H_QQL",  5},
+    {"Z_BB",   6},
+    {"Z_CC",   6},
     {"Z_QQ",   6},
+    {"W_CQ",   7},
     {"W_QQ",   7},
+    {"T_BCQ",  8},
     {"T_BQQ",  8},
     {"T_BEN",  9},
     {"T_BMN",  9},
   };
   auto it = data.find(name);
-  if(it == data.end()) return -2;
+  if(it == data.end()) return -1;
   return it->second;
 }
 
@@ -168,8 +172,13 @@ void ADParticle::preprocess()
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet()
 {
   ++nadjet;
+  if(name == NULL) { ++nunmch; throw ADInvalidJet(); }
   int l = name_to_label(name);
-  if(l < 0) { ++nunmch; throw ADInvalidJet(); }
+  if(l < 0) {
+    ++nirrlv;
+    //fprintf(stderr, "WARNING: irrelevant class: %s\n", name);
+    throw ADInvalidJet();
+  }
   ++nclass[l];
   if(!check(jet)) throw ADInvalidJet();
   ++nvalid;
@@ -240,10 +249,10 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
 
 void ADJet::summary()
 {
-  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu"
-      " ncmuon=%zu nparfc=%zu nunrec=%zu ndscrd=%zu nunmch=%zu\n",
-      nadjet, nvalid, ngnpar, ntrack, ntower,
-      ncmuon, nparfc, nunrec, ndscrd, nunmch);
+  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu"
+      " nparfc=%zu nunrec=%zu ndscrd=%zu nunmch=%zu nirrlv=%zu\n",
+      nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon,
+      nparfc, nunrec, ndscrd, nunmch, nirrlv);
   for(int i = 0; i < NRSLTCLASS; ++i) printf("%s=%-8zu", class_names[i], nclass[i]);
   printf("\n");
 }

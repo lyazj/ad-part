@@ -114,6 +114,7 @@ public:
   static size_t nunrec;
   static size_t ndscrd;
   static size_t nunmch;
+  static size_t nirrlv;
   static size_t nclass[NRSLTCLASS];
   static void summary();  // particle counting summary
 
