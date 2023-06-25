@@ -149,7 +149,7 @@ ADParticle::ADParticle(const Muon &muon,
 ADParticle::ADParticle(const ParticleFlowCandidate &pfc,
     const TLorentzVector &p4_jet, const ADPDGQuerier &pdg)
 {
-  ADPDGInfo pdginfo = pdg[13];
+  ADPDGInfo pdginfo = pdg[pfc.PID];
   set_adpar_common(*this, pfc, p4_jet, pdginfo);
   set_adpar_charge(*this, pfc, p4_jet, pdginfo);
   set_adpar_d0dzde(*this, pfc, p4_jet, pdginfo);
