@@ -4,7 +4,6 @@
 #include "adtype.h"
 #include "adbranch.h"
 #include "adjet.h"
-#include "adgnmch.h"
 #include <classes/DelphesClasses.h>
 #include <TFile.h>
 #include <TTree.h>
@@ -13,8 +12,6 @@
 #include <stdio.h>
 
 using namespace std;
-
-register_branch("Particle"_pack, "GenParticle"_type);
 
 int main(int argc, char *argv[])
 {
@@ -41,8 +38,6 @@ int main(int argc, char *argv[])
   // NOTE: Do this before loading rootfile.
   setenv_delphes();
 
-  ADGenMatcher matcher;
-
   // Traverse input rootfiles.
   for(int a = 1; a < argc - 1; ++a) {
     // Open rootfile and get Delphes tree.
@@ -54,7 +49,6 @@ int main(int argc, char *argv[])
 
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
-    auto brgpar = get_branch(delphes, "Particle"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ++i) {
@@ -62,30 +56,14 @@ int main(int argc, char *argv[])
       delphes->GetEntry(i);
 
       // Parse and dump data.
-      matcher.set_gnpars(brgpar.get_data());
-      //matcher.print_gnpars();
-      //matcher.print_dgms();
-      //printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
-        ADGenMatchResult r = matcher.match(brjet[j], 1.5);
-        //if(!r.name) {
-        //  printf("result: null\n");
-        //} else {
-        //  printf("result: %-8s%10.6lf", r.name, r.dr_mean);
-        //  for(const ADGnparSP &gnpar : r.gnpars) {
-        //    printf("%6d(%4d)", gnpar->id, gnpar->pid);
-        //  }
-        //  printf("\n");
-        //}
-        //printf("\n");
         try {
-          ADJet jet(pdg, *brjet[j], r.name);
+          ADJet jet(pdg, *brjet[j], "QCD");
           jet.write(dump);
         } catch(const ADInvalidJet &) { }
       }
       if((i + 1) % 1000 == 0) {
-        ADJet::summary();
         printf("%s: %llu events processed\n", rootfile, (unsigned long long)(i + 1));
       }
     }
