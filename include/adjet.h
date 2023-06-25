@@ -89,12 +89,13 @@ public:
   Feature tau2;
   Feature tau3;
   Feature tau4;
+  Feature label;
   char feature_end[0];
 
   ADParticle *par;
 
   ADJet();
-  ADJet(const ADPDGQuerier &, const Jet &);
+  ADJet(const ADPDGQuerier &, const Jet &, const char *name);
   ~ADJet();
   static bool check(const Jet &);  // keep(true) or cut(false)
 
@@ -109,6 +110,7 @@ public:
   static size_t ncmuon;
   static size_t nunrec;
   static size_t ndscrd;
+  static size_t nunmch;
   static void summary();  // particle counting summary
 
 };

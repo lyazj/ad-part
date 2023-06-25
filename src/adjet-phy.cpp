@@ -6,6 +6,7 @@
 #include <TLorentzVector.h>
 #include <new>
 #include <algorithm>
+#include <unordered_map>
 #include <math.h>
 #include <stdio.h>
 
@@ -19,6 +20,7 @@ size_t ADJet::ntower;
 size_t ADJet::ncmuon;
 size_t ADJet::nunrec;
 size_t ADJet::ndscrd;
+size_t ADJet::nunmch;
 
 namespace {
 
@@ -79,6 +81,26 @@ void set_adpar_d0dzde(ADParticle &adpar, const DelphesClass &par,
 // max_{i: size_t}{(size_t)(float)i == i}
 constexpr auto NPAR_MAX = 0x1000000;
 
+Feature name_to_label(const char *name)
+{
+  static unordered_map<string, Feature> data = {
+    {"QCD",    0.0},
+    {"H_BB",   1.0},
+    {"H_CC",   2.0},
+    {"H_GG",   3.0},
+    {"H_QQQQ", 4.0},
+    {"H_QQL",  5.0},
+    {"Z_QQ",   6.0},
+    {"W_QQ",   7.0},
+    {"T_BQQ",  8.0},
+    {"T_BEN",  9.0},
+    {"T_BMN",  9.0},
+  };
+  auto it = data.find(name);
+  if(it == data.end()) return -1.0;
+  return it->second;
+}
+
 }  // namespace
 
 ADParticle::ADParticle(const GenParticle &gnpar,
@@ -130,9 +152,11 @@ void ADParticle::preprocess()
   dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
 }
 
-ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
+ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet()
 {
   ++nadjet;
+  Feature l = name_to_label(name);
+  if(l < 0.0) { ++nunmch; throw ADInvalidJet(); }
   if(!check(jet)) throw ADInvalidJet();
   ++nvalid;
 
@@ -150,6 +174,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
   tau2 = jet.Tau[1];
   tau3 = jet.Tau[2];
   tau4 = jet.Tau[3];
+  label = l;
 
   // constituents
   Long64_t c = 0;  // particle counter
@@ -197,8 +222,8 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet) : ADJet()
 
 void ADJet::summary()
 {
-  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nunrec=%zu "
-      "ndscrd=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nunrec, ndscrd);
+  printf("nadjet=%zu nvalid=%zu ngnpar=%zu ntrack=%zu ntower=%zu ncmuon=%zu nunrec=%zu ndscrd=%zu"
+      " nunmch=%zu\n", nadjet, nvalid, ngnpar, ntrack, ntower, ncmuon, nunrec, ndscrd, nunmch);
 }
 
 bool ADJet::check(const Jet &jet)

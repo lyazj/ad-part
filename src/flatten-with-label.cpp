@@ -53,8 +53,7 @@ int main(int argc, char *argv[])
     printf("%s: %llu events total\n", rootfile, (unsigned long long)n);
 
     // Set up branches.
-    // auto brjet = get_branch(delphes, JET_BRANCH);
-    auto brjet = get_branch(delphes, "Jet"_branch);  // DEBUG
+    auto brjet = get_branch(delphes, JET_BRANCH);
     auto brgpar = get_branch(delphes, "Particle"_branch);
 
     // Traverse entries.
@@ -65,23 +64,23 @@ int main(int argc, char *argv[])
       // Parse and dump data.
       matcher.set_gnpars(brgpar.get_data());
       //matcher.print_gnpars();
-      matcher.print_dgms();
+      //matcher.print_dgms();
       printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
         ADGenMatchResult r = matcher.match(brjet[j], 1.5);
-        if(!r.name) {
-          printf("result: null\n");
-        } else {
-          printf("result: %-8s%10.6lf", r.name, r.dr_mean);
-          for(const ADGnparSP &gnpar : r.gnpars) {
-            printf("%6d(%4d)", gnpar->id, gnpar->pid);
-          }
-          printf("\n");
-        }
-        printf("\n");
+        //if(!r.name) {
+        //  printf("result: null\n");
+        //} else {
+        //  printf("result: %-8s%10.6lf", r.name, r.dr_mean);
+        //  for(const ADGnparSP &gnpar : r.gnpars) {
+        //    printf("%6d(%4d)", gnpar->id, gnpar->pid);
+        //  }
+        //  printf("\n");
+        //}
+        //printf("\n");
         try {
-          ADJet jet(pdg, *brjet[j]);
+          ADJet jet(pdg, *brjet[j], r.name);
           jet.write(dump);
         } catch(const ADInvalidJet &) { }
       }

@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
         try {
-          ADJet jet(pdg, *brjet[j]);
+          ADJet jet(pdg, *brjet[j], "QCD");
           jet.write(dump);
         } catch(const ADInvalidJet &) { }
       }

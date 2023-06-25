@@ -127,6 +127,7 @@ private:
 
 public:
   ADDGMatcher(const char *n, const ADDecayGSP &g) : name(n), graph(g), serial(g->serialize()) { }
+  ADDGMatcher(const ADDGMatcher &) = delete;
 
   // User interface for adding GenParticles for matching.
   void add_gnpar(const ADGnparSP &gnpar);
@@ -159,6 +160,7 @@ private:
 
 public:
   ADGenMatcher();  // Graphs are added here.
+  ADGenMatcher(const ADGenMatcher &) = delete;
 
   void set_gnpars(TClonesArray *);  // Each entry of ARRAY must points to GenParticle.
   ADGenMatchResult match(Jet *, double);  // Should be called after set_gnpars().
