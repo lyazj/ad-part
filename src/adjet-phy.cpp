@@ -87,20 +87,20 @@ constexpr auto NPAR_MAX = 0x1000000;
 int name_to_label(const char *name)
 {
   static unordered_map<string, Feature> data = {
-    {"QCD",    0},
-    {"H_BB",   1},
-    {"H_CC",   2},
-    {"H_GG",   3},
-    {"H_QQQQ", 4},
-    {"H_QQL",  5},
-    {"Z_BB",   6},
+    {"QCD",    0},  // QCD
+    {"H_BB",   1},  // H_BB
+    {"H_CC",   2},  // H_CC
+    {"H_GG",   3},  // H_GG
+    {"H_QQQQ", 4},  // H_QQQQ
+    {"H_QQL",  5},  // H_QQL
+    {"Z_BB",   6},  // Z_QQ
     {"Z_CC",   6},
     {"Z_QQ",   6},
-    {"W_CQ",   7},
+    {"W_CQ",   7},  // W_QQ
     {"W_QQ",   7},
-    {"T_BCQ",  8},
+    {"T_BCQ",  8},  // T_BQQ
     {"T_BQQ",  8},
-    {"T_BEN",  9},
+    {"T_BEN",  9},  // T_BL
     {"T_BMN",  9},
   };
   auto it = data.find(name);
