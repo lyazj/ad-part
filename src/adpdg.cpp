@@ -40,7 +40,7 @@ ADPDGQuerier::ADPDGQuerier(const char *pdgfile)
    * <lyazj@github.com> added on Jun 26 2023
    * This is a strange setting but does matter a lot.
    */
-  data.emplace(buf[0], PT_NEUTRAL_HADRON);
+  data.emplace(0, PT_NEUTRAL_HADRON);
 
   // If this fails, move construction must not be performed.
   // No memory leak is possible.
