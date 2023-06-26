@@ -36,6 +36,12 @@ ADPDGQuerier::ADPDGQuerier(const char *pdgfile)
     data.emplace(buf[0], buf[1]);
   }
 
+  /*
+   * <lyazj@github.com> added on Jun 26 2023
+   * This is a strange setting but does matter a lot.
+   */
+  data.emplace(buf[0], PT_NEUTRAL_HADRON);
+
   // If this fails, move construction must not be performed.
   // No memory leak is possible.
   internal = new Internal { .data = move(data) };

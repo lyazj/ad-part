@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
       //printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
-        ADGenMatchResult r = matcher.match(brjet[j], 1.5);
+        ADGenMatchResult r = matcher.match(brjet[j], 0.8);
         //if(!r.name) {
         //  printf("result: null\n");
         //} else {
