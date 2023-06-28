@@ -31,7 +31,7 @@ Strategy: adopting the first match among groups
 
 Criteria: $\Delta R \leq 0.8$ for each vertex, and the entry with the lowest $\Delta R$ in the group is adopted
 
-Motivation: inclusion relationships, e.g. $\mathrm{G\_T\_BCQ} \supset \mathrm{G\_W\_CQ}$
+Motivation: inclusion relationships, e.g. $\mathrm{G\underline{}T\underline{}BCQ} \supset \mathrm{G\underline{}W\underline{}CQ}$
 
 ```c++
 const ADPIDSelector P_T   { 6, -6 };
@@ -108,6 +108,9 @@ const ADDecayGraph G_QCD { P_QCD, { new ADDecayGraph(P_QCD) } };  // XXX
 ## Test
 
 * delphes_stop2b1000_neutralino300: 
+
   QCD=8564 W_QQ=4186 T_BQQ=28394 T_BL=2020  ACC: 0.74607
+
 * delphes_njets:
+
   QCD=890656  ACC: 0.67394
