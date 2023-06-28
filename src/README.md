@@ -21,7 +21,7 @@ Implementation: depth-first search (DFS)
 Two steps:
 
 * serialization: decay graph $\to$ topological sequence (or decay tree $\to$ pre-order sequence)
-* recursion: $\mathrm{SEQ} ::= [~~]\ |\ [\,\mathrm{VTX},\, \mathrm{SEQ}\,]$, where $\mathrm{VTX}$ denotes an accepting domain of gen-particles
+* recursion: $\mathrm{SEQ} ::= [~~]\ |\ [\mathrm{VTX}, \mathrm{SEQ}]$, where $\mathrm{VTX}$ denotes an accepting domain of gen-particles
 
 Output: gen-particle sequences, all of the same length to $\mathrm{SEQ}$, permutation sensitive but not harmful
 
