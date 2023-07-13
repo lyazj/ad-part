@@ -1,12 +1,14 @@
 #include "addef.h"
 #include "adjet.h"
 #include "adpdg.h"
+#include "adecf.h"
 #include <classes/DelphesClasses.h>
 #include <TObject.h>
 #include <TLorentzVector.h>
 #include <new>
 #include <algorithm>
 #include <unordered_map>
+#include <vector>
 #include <math.h>
 #include <stdio.h>
 
@@ -240,6 +242,13 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   // feature updating
   if(c > NPAR_MAX) throw ADOverflow();
   npar = c;
+  vector<TLorentzVector> p4s;
+  p4s.reserve(c);
+  for(int i = 0; i < c; ++i) {
+    p4s.push_back({par[i].px, par[i].py, par[i].pz, par[i].e});
+  }
+  n2 = N2(ECF_N2_BETA, p4s.data(), min<int>(p4s.size(), ECF_N2_NP4), p4.Pt());
+  n3 = N3(ECF_N3_BETA, p4s.data(), min<int>(p4s.size(), ECF_N3_NP4), p4.Pt());
 
   // padding
   while(c < NPARTIFLOW) {

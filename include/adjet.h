@@ -91,6 +91,8 @@ public:
   Feature tau2;
   Feature tau3;
   Feature tau4;
+  Feature n2;
+  Feature n3;
   Feature label;
   char feature_end[0];
 
