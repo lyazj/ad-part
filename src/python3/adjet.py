@@ -95,6 +95,9 @@ JET_FEAT_NAME = [
     r'tau2',
     r'tau3',
     r'tau4',
+    r'n2',
+    r'n3',
+    r'label',
 ]
 
 class ADParticle:
