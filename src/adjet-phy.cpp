@@ -9,8 +9,9 @@
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
-#include <math.h>
+#include <stdexcept>
 #include <stdio.h>
+#include <math.h>
 
 using namespace std;
 
@@ -247,8 +248,16 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   for(int i = 0; i < c; ++i) {
     p4s.push_back({par[i].px, par[i].py, par[i].pz, par[i].e});
   }
-  n2 = N2(ECF_N2_BETA, p4s.data(), min<int>(p4s.size(), ECF_N2_NP4), p4.Pt());
-  n3 = N3(ECF_N3_BETA, p4s.data(), min<int>(p4s.size(), ECF_N3_NP4), p4.Pt());
+  try {
+    n2 = N2(ECF_N2_BETA, p4s.data(), min<int>(p4s.size(), ECF_N2_NP4), p4.Pt());
+  } catch(const invalid_argument &) {
+    n2 = 0.0;
+  }
+  try {
+    n3 = N3(ECF_N3_BETA, p4s.data(), min<int>(p4s.size(), ECF_N3_NP4), p4.Pt());
+  } catch(const invalid_argument &) {
+    n3 = 0.0;
+  }
 
   // padding
   while(c < NPARTIFLOW) {
