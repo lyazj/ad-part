@@ -156,6 +156,10 @@ if(NOT AD_NOTEST)
     add_executable(delphes-test src/delphes-test.cpp)
     target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree)
 
+    add_executable(ecf-test src/ecf-test.cpp src/adecf.cpp)
+    target_link_libraries(ecf-test ROOT::Physics)
+    target_compile_definitions(ecf-test PUBLIC ECF_DEBUG)
+
 endif()
 
 if(NOT AD_NOEXEC)
