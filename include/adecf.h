@@ -1,5 +1,5 @@
 /*
- * ecf - Provide energy correlation functions.
+ * adecf.h - Provide energy correlation functions.
  */
 #pragma once
 
