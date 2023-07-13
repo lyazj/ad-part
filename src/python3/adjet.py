@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 Feature = np.float32
-NFEAT_JET = 10
+NFEAT_JET = 13
 NFEAT_PAR = 22
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
@@ -42,6 +42,9 @@ JET_TAU1               =  6
 JET_TAU2               =  7
 JET_TAU3               =  8
 JET_TAU4               =  9
+JET_N2                 = 10
+JET_N3                 = 11
+JET_LABEL              = 12
 
 CLS_NAME = [
     r'$H \to b\bar b$',
