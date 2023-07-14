@@ -13,6 +13,10 @@
 
 using namespace std;
 
+#ifndef JET_BRANCH
+#define JET_BRANCH  "FatJet"_branch
+#endif  /* JET_BRANCH */
+
 int main(int argc, char *argv[])
 {
   // Force line-buffered output streams.

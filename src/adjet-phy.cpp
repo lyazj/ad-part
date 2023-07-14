@@ -15,6 +15,22 @@
 
 using namespace std;
 
+#ifndef ECF_N2_NP4
+#define ECF_N2_NP4  128
+#endif  /* ECF_N2_NP4 */
+
+#ifndef ECF_N2_BETA
+#define ECF_N2_BETA  1.0
+#endif  /* ECF_N2_BETA */
+
+#ifndef ECF_N3_NP4
+#define ECF_N3_NP4  32
+#endif  /* ECF_N3_NP4 */
+
+#ifndef ECF_N3_BETA
+#define ECF_N3_BETA  2.0
+#endif  /* ECF_N3_BETA */
+
 size_t ADJet::nadjet;
 size_t ADJet::nvalid;
 size_t ADJet::ngnpar;

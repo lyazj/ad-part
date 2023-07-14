@@ -14,6 +14,14 @@
 
 using namespace std;
 
+#ifndef JET_BRANCH
+#define JET_BRANCH  "FatJet"_branch
+#endif  /* JET_BRANCH */
+
+#ifndef GNMCH_DETR
+#define GNMCH_DETR  0.8
+#endif  /* GNMCH_DETR */
+
 register_branch("Particle"_pack, "GenParticle"_type);
 
 int main(int argc, char *argv[])
@@ -68,7 +76,7 @@ int main(int argc, char *argv[])
       //printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
-        ADGenMatchResult r = matcher.match(brjet[j], 0.8);
+        ADGenMatchResult r = matcher.match(brjet[j], GNMCH_DETR);
         //if(!r.name) {
         //  printf("result: null\n");
         //} else {

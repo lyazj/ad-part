@@ -47,16 +47,16 @@ JET_N3                 = 11
 JET_LABEL              = 12
 
 CLS_NAME = [
+    r'$q/g$',
     r'$H \to b\bar b$',
     r'$H \to c\bar c$',
     r'$H \to gg$',
     r'$H \to 4q$',
     r'$H \to \ell\nu qq^\prime$',
+    r'$Z \to q\bar q$',
+    r'$W \to qq^\prime$',
     r'$t \to bqq^\prime$',
     r'$t \to b\ell\nu$',
-    r'$W \to qq^\prime$',
-    r'$Z \to q\bar q$',
-    r'$q/g$',
 ]
 
 PAR_FEAT_NAME = [
@@ -192,6 +192,12 @@ class ADJet:
     def tau3(self):   return self.data[8]
     @property
     def tau4(self):   return self.data[9]
+    @property
+    def n2(self):     return self.data[10]
+    @property
+    def n3(self):     return self.data[11]
+    @property
+    def label(self):  return self.data[12]
 
     def hist_par(self, index, *args, strip_padding=True, **kwargs):
         n = int(self.npar) if strip_padding else NPART_JET
@@ -243,6 +249,14 @@ class ADCFData:
     def top1(self):
         return np.argmax(self.data, axis=-1)
 
+class ADPFLabel:
+
+    def __init__(self, pf):
+        self.data = np.array([j.jet[JET_LABEL] for j in pf.jets()]).astype('int')
+
+    def top1(self):
+        return self.data
+
 class ADCollection:
 
     def __init__(self, pf, cf):
@@ -279,5 +293,6 @@ def load_pf(dumpfile: str):
 def load_cf(partfile: str):
     return ADCFData(np.fromgz(partfile, dtype=Feature))
 
-def collect(pf: ADPFData, cf: ADCFData):
+def collect(pf: ADPFData, cf: ADCFData = None):
+    if cf is None: cf = ADPFLabel(pf)
     return ADCollection(pf, cf)

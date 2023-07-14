@@ -5,6 +5,7 @@
 #include <TTree.h>
 #include <zlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <vector>
 #include <memory>
 
@@ -40,6 +41,18 @@ int main(int argc, char *argv[])
 
   // In-memory data structure.
   vector<pair<const char *, Feature>> sdata = {
+    {"jet_pt",     0},
+    {"jet_eta",    0},
+    {"jet_phi",    0},
+    {"jet_e",      0},
+    {"jet_npar",   0},
+    {"jet_sdmass", 0},
+    {"jet_tau1",   0},
+    {"jet_tau2",   0},
+    {"jet_tau3",   0},
+    {"jet_tau4",   0},
+    {"jet_n2",     0},
+    {"jet_n3",     0},
     {"label_QCD",  0},
     {"label_Hbb",  0},
     {"label_Hcc",  0},
@@ -89,13 +102,31 @@ int main(int argc, char *argv[])
   // Copy data.
   size_t n = 0;
   ADJet jet;
+  auto jdata_begin = sdata.begin();
+  auto jdata_end = jdata_begin;
+  while(jdata_end != sdata.end() && !strncmp(jdata_end->first, "jet_", 4)) {
+    ++jdata_end;
+  }
+  auto ldata_begin = jdata_end;
+  auto ldata_end = sdata.end();
   while(jet.read(dump)) {
+
+    // Jet features.
+    {
+      Feature *feature = (Feature *)jet.feature_begin;
+      for(auto it = jdata_begin; it != jdata_end; ++it) {
+        it->second = *feature++;
+      }
+    }
+
+    // Labels.
     int label = jet.label;
     assert(label >= 0 && label < NRSLTCLASS);
-    for(auto &[name, buf] : sdata) {
-      buf = 0.0;
+    for(auto it = ldata_begin; it != ldata_end; ++it) {
+      it->second = distance(ldata_begin, it) == label;
     }
-    sdata[label].second = 1.0;
+
+    // Particle features.
     for(auto &[name, buf] : vdata) {
       buf.clear();
     }
@@ -107,6 +138,7 @@ int main(int argc, char *argv[])
         buf.push_back(feature[j++]);
       }
     }
+
     tree->Fill();
     if((++n % 1000) == 0) {
       printf("%s: %zu entries processed\n", dumpfile, n);
