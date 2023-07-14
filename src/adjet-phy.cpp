@@ -127,6 +127,11 @@ int name_to_label(const char *name)
   return it->second;
 }
 
+double nan_to_zero(double num)
+{
+  return isnan(num) ? 0.0 : num;
+}
+
 }  // namespace
 
 ADParticle::ADParticle(const GenParticle &gnpar,
@@ -274,6 +279,9 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   } catch(const invalid_argument &) {
     n3 = 0.0;
   }
+  tau21 = nan_to_zero(tau2 / tau1);
+  tau32 = nan_to_zero(tau3 / tau2);
+  tau43 = nan_to_zero(tau4 / tau3);
 
   // padding
   while(c < NPARTIFLOW) {
