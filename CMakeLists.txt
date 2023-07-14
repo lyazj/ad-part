@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.13)
 project(ad-part VERSION 0.0.1)
 
 # 定制化选项
-#add_compile_definitions(JET_BRANCH="Jet"_branch)
-#add_compile_definitions(GNMCH_DETR=1.5)
+add_compile_definitions(JET_BRANCH="Jet"_branch)
+add_compile_definitions(GNMCH_DETR=1.5)
+add_compile_definitions(AD_DISABLE_JETCHECK)
 
 # 设置项目包含目录、库目录和可执行文件目录
 include_directories(${PROJECT_SOURCE_DIR}/include)
