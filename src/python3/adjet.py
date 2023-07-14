@@ -44,10 +44,10 @@ JET_TAU3               =  8
 JET_TAU4               =  9
 JET_N2                 = 10
 JET_N3                 = 11
-JET_LABEL              = 12
-JET_TAU21              = 13
-JET_TAU32              = 14
-JET_TAU43              = 15
+JET_TAU21              = 12
+JET_TAU32              = 13
+JET_TAU43              = 14
+JET_LABEL              = 15
 
 CLS_NAME = [
     r'$q/g$',
@@ -200,13 +200,13 @@ class ADJet:
     @property
     def n3(self):     return self.data[11]
     @property
-    def label(self):  return self.data[12]
+    def tau21(self):  return self.data[12]
     @property
-    def tau21(self):  return self.data[13]
+    def tau32(self):  return self.data[13]
     @property
-    def tau32(self):  return self.data[14]
+    def tau43(self):  return self.data[14]
     @property
-    def tau43(self):  return self.data[15]
+    def label(self):  return self.data[15]
 
     def hist_par(self, index, *args, strip_padding=True, **kwargs):
         n = int(self.npar) if strip_padding else NPART_JET
