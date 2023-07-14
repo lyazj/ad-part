@@ -93,6 +93,9 @@ public:
   Feature tau4;
   Feature n2;
   Feature n3;
+  Feature tau21;
+  Feature tau32;
+  Feature tau43;
   Feature label;
   char feature_end[0];
 

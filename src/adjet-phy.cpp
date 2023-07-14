@@ -274,6 +274,9 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   } catch(const invalid_argument &) {
     n3 = 0.0;
   }
+  tau21 = tau2 / tau1;
+  tau32 = tau3 / tau2;
+  tau43 = tau4 / tau3;
 
   // padding
   while(c < NPARTIFLOW) {
