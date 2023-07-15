@@ -132,6 +132,38 @@ double nan_to_zero(double num)
   return isnan(num) ? 0.0 : num;
 }
 
+void sort_by_pt_desc(ADParticle *b, ADParticle *e)
+{
+  // Initialize sequential index.
+  size_t n = distance(b, e);
+  vector<size_t> index(n);
+  for(size_t i = 0; i < n; ++i) {
+    index[i] = i;
+  }
+
+  // Reorder the index by pT descendingly.
+  decltype(auto) larger_pt = [b](size_t i, size_t j) {
+    return b[i].log_pt > b[j].log_pt;
+  };
+  sort(index.begin(), index.end(), larger_pt);
+
+  // Now b[i] should become b[index[i]] after sorting by pT descendingly.
+  // And it's feasible to reorder b in linear time.
+  for(size_t i = 0; i < n; ++i) {
+    size_t j = index[i];
+    if(j == i) continue;  // No need to move.
+
+    ADParticle bj = b[j];  // Expected value at b[i]. This consumes b[j].
+    while(j != i) {
+      b[j] = b[index[j]];  // Reordering. This consumes b[index[j]].
+      swap(j, index[j]);  // index[j] == j: b[j] is ready.
+                          // j := index[j]: b[index[j]] is consumed.
+    }
+    b[j] = bj;  // b[j] must have been consumed.
+    //index[j] = j;  // Not needed as index[j] will no longer be accessed.
+  }
+}
+
 }  // namespace
 
 ADParticle::ADParticle(const GenParticle &gnpar,
@@ -255,11 +287,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   }
 
   // sorting
-  // TODO better performance
-  auto larger_pt = [](const ADParticle &p, const ADParticle &q) {
-    return p.log_pt > q.log_pt;
-  };
-  sort(par, par + c, larger_pt);
+  sort_by_pt_desc(par, par + c);
 
   // feature updating
   if(c > NPAR_MAX) throw ADOverflow();
