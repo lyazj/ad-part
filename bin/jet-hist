@@ -9,7 +9,7 @@ if len(sys.argv) not in [2, 3, 4]:
 DUMPFILE = sys.argv[1]
 PARTFILE = None if len(sys.argv) <= 2 else sys.argv[2]
 if PARTFILE == '-': PARTFILE = None
-NORMALIZE = False if len(sys.argv) <= 3 else bool(sys.argv[3])
+NORMALIZE = True if len(sys.argv) <= 3 else bool(sys.argv[3])
 
 main_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, os.path.join(main_path, 'src/python3'))
@@ -19,11 +19,18 @@ import matplotlib.pyplot as plt
 
 collection = adjet.collect(adjet.load_pf(DUMPFILE), None if not PARTFILE else adjet.load_cf(PARTFILE))
 
-for i, name in zip([adjet.JET_N2, adjet.JET_N3], ['n2', 'n3']):
+for i, name in zip([
+    adjet.JET_SDMASS,
+    adjet.JET_N2,
+    adjet.JET_N3,
+    adjet.JET_TAU21,
+    adjet.JET_TAU32,
+    adjet.JET_TAU43,
+], ['sdmass', 'n2', 'n3', 'tau21', 'tau32', 'tau43']):
     collection.hist(i, bins=30, histtype='step', density=NORMALIZE)
     plt.legend(loc='upper right')
     plt.tight_layout()
-    figpath = f'ecf_{name}{"_norm" if NORMALIZE else ""}.pdf'
+    figpath = f'jet_{name}{"_norm" if NORMALIZE else ""}.pdf'
     print(f'creating {figpath}...')
     plt.savefig(figpath)
     plt.clf()
