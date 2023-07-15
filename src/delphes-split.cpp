@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   for(Long64_t i = 0; i < n; i += unitsize) {
     // Determine partition name.
     char part_buf[64];
-    sprintf(part_buf, "%06zu", part_num);
+    sprintf(part_buf, "%06zu", part_num + 1);
     string outname = dotsplit(basename(rootfile)).first + "_" + part_buf + ".root";
 
     // Open partition file to write.
