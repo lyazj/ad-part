@@ -56,6 +56,10 @@ int main(int argc, char *argv[])
     // Open rootfile and get Delphes tree.
     const char *rootfile = argv[a];  // rootfile to read
     auto file = make_shared<TFile>(rootfile, "read");
+    if(!file->IsOpen()) {
+      fprintf(stderr, "ERROR: error opening rootfile\n");
+      continue;
+    }
     auto delphes = (TTree *)file->Get("Delphes");
     Long64_t n = delphes->GetEntries();
     printf("%s: %llu events total\n", rootfile, (unsigned long long)n);
