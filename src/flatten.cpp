@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
           jet.write(dump);
         } catch(const ADInvalidJet &) { }
       }
-      if((i + 1) % 1000 == 0) {
+      if((i + 1) % 100 == 0) {
         ADJet::summary();
         printf("%s: %llu events processed\n", rootfile, (unsigned long long)(i + 1));
       }
