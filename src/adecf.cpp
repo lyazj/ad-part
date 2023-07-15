@@ -9,6 +9,10 @@
 
 using namespace std;
 
+#ifdef ECF_DEBUG
+#define ECF_INFO
+#endif  /* ECF_DEBUG */
+
 namespace {
 
 class ECFCalculator {
@@ -114,6 +118,10 @@ void ecf_invalid_argument(const char *name)
 
 double ecf(int q, int N, double beta, const TLorentzVector *p4, int np4, double pt_jet)
 {
+#ifdef ECF_INFO
+  clog << "ECF call: q=" << q << " N=" << N << " beta=" << beta << " np4=" << np4 << endl;
+#endif  /* ECF_INFO */
+
   // Perform argument validation.
   if(N <= 0 || N > np4) ecf_invalid_argument("N");
   if(q <= 0 || q > N * (N - 1) / 2) ecf_invalid_argument("q");
