@@ -88,18 +88,21 @@ PAR_FEAT_NAME = [
 ]
 
 JET_FEAT_NAME = [
-    r'$p_\mathrm{T}$',
+    r'$p_{\mathrm{T}}$',
     r'$\eta$',
     r'$\phi$',
     r'$E$',
-    r'nparticle',
-    r'sdmass',
-    r'tau1',
-    r'tau2',
-    r'tau3',
-    r'tau4',
-    r'n2',
-    r'n3',
+    r'$N_{\mathrm{particle}}$',
+    r'$m_{\mathrm{SD}}$',
+    r'$\tau_{1}$',
+    r'$\tau_{2}$',
+    r'$\tau_{3}$',
+    r'$\tau_{4}$',
+    r'$n_{2}$',
+    r'$n_{3}$',
+    r'$\tau_{21}$',
+    r'$\tau_{32}$',
+    r'$\tau_{43}$',
     r'label',
 ]
 
