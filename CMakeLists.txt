@@ -164,6 +164,9 @@ endif()
 
 if(NOT AD_NOEXEC)
 
+    add_executable(delphes-split src/delphes-split.cpp)
+    target_link_libraries(delphes-split PUBLIC adhep Delphes ROOT::Tree ROOT::Physics)
+
     add_executable(flatten src/flatten.cpp)
     target_link_libraries(flatten PUBLIC adhep Delphes ROOT::Tree ROOT::Physics z)
 

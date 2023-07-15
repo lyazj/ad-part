@@ -161,3 +161,17 @@ size_t ADStat::size() const
 {
   return sbuf ? sbuf->st_size : 0;
 }
+
+string basename(const string &path)
+{
+  size_t pos = path.rfind("/");
+  if(pos == path.npos) return path;
+  return path.substr(pos + 1);
+}
+
+pair<string, string> dotsplit(const string &path)
+{
+  size_t pos = path.rfind(".");
+  if(pos == path.npos) return { path, "" };
+  return { path.substr(0, pos), path.substr(pos + 1) };
+}

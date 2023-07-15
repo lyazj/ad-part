@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <utility>
 
 struct stat;
 
@@ -50,3 +51,6 @@ public:
   explicit operator bool() const { return exists(); }
 
 };
+
+std::string basename(const std::string &);
+std::pair<std::string, std::string> dotsplit(const std::string &);
