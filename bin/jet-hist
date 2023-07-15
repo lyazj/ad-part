@@ -20,13 +20,15 @@ import matplotlib.pyplot as plt
 collection = adjet.collect(adjet.load_pf(DUMPFILE), None if not PARTFILE else adjet.load_cf(PARTFILE))
 
 for i, name in zip([
+    adjet.JET_NPAR,
+    adjet.JET_PT,
     adjet.JET_SDMASS,
     adjet.JET_N2,
     adjet.JET_N3,
     adjet.JET_TAU21,
     adjet.JET_TAU32,
     adjet.JET_TAU43,
-], ['sdmass', 'n2', 'n3', 'tau21', 'tau32', 'tau43']):
+], ['npar', 'pt', 'sdmass', 'n2', 'n3', 'tau21', 'tau32', 'tau43']):
     collection.hist(i, bins=30, histtype='step', density=NORMALIZE)
     plt.legend(loc='upper right')
     plt.tight_layout()
