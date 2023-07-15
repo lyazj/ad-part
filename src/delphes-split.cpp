@@ -5,6 +5,7 @@
 #include <TTree.h>
 #include <TClonesArray.h>
 #include <vector>
+#include <utility>
 #include <string>
 #include <memory>
 #include <stdio.h>
@@ -50,13 +51,13 @@ int main(int argc, char *argv[])
   // Set up branches of interest.
   vector<pair<const char *, TClonesArray *>> branches;
   for(const auto &[name, type] : {
-    pair<const char *, const char *>{"Jet", "Jet"},
-    pair<const char *, const char *>{"FatJet", "Jet"},
-    pair<const char *, const char *>{"Particle", "GenParticle"},
-    pair<const char *, const char *>{"Track", "Track"},
-    pair<const char *, const char *>{"Tower", "Tower"},
-    pair<const char *, const char *>{"Muon", "Muon"},
-    pair<const char *, const char *>{"ParticleFlowCandidate", "ParticleFlowCandidate"},
+    make_pair("Jet", "Jet"),
+    make_pair("FatJet", "Jet"),
+    make_pair("Particle", "GenParticle"),
+    make_pair("Track", "Track"),
+    make_pair("Tower", "Tower"),
+    make_pair("Muon", "Muon"),
+    make_pair("ParticleFlowCandidate", "ParticleFlowCandidate"),
   }) {
     TBranch *branch = delphes->GetBranch(name);
     if(branch == NULL) continue;
