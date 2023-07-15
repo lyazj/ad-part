@@ -24,7 +24,7 @@ using namespace std;
 #endif  /* ECF_N2_BETA */
 
 #ifndef ECF_N3_NP4
-#define ECF_N3_NP4  32
+#define ECF_N3_NP4  128
 #endif  /* ECF_N3_NP4 */
 
 #ifndef ECF_N3_BETA
