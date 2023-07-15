@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 project(ad-part VERSION 0.0.1)
 
+# 定制化选项
+SET(CMAKE_BUILD_TYPE RELEASE)
+
 # 设置项目包含目录、库目录和可执行文件目录
 include_directories(${PROJECT_SOURCE_DIR}/include)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
