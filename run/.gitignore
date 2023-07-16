@@ -1,0 +1,9 @@
+*.root
+*.gz
+*.log
+*.png
+*.pdf
+pdginfo
+part.onnx
+part-preprocess.json
+tiny/
