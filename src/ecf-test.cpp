@@ -15,7 +15,7 @@ int main()
   p4[3].SetPtEtaPhiE(100, 3, 0, 1e10);
   p4[4].SetPtEtaPhiE(100, 4, 0, 1e10);
   p4[5].SetPtEtaPhiE(100, 5, 0, 1e10);
-  cout << ecf(2, 3, 1, p4, np4, accumulate(p4, p4 + np4, TLorentzVector()).Pt()) << endl;
-  cout << ecf(2, 4, 1, p4, np4, accumulate(p4, p4 + np4, TLorentzVector()).Pt()) << endl;
+  cout << ecf(3, p4, np4, accumulate(p4, p4 + np4, TLorentzVector()).Pt(), 2, 1) << endl;
+  cout << ecf(4, p4, np4, accumulate(p4, p4 + np4, TLorentzVector()).Pt(), 2, 1) << endl;
   return 0;
 }

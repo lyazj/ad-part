@@ -3,6 +3,8 @@
 #include <string>
 #include <stdexcept>
 #include <algorithm>
+#include <vector>
+#include <utility>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -18,9 +20,8 @@ namespace {
 class ECFCalculator {
 private:
   // Parameters.
-  int q;
   int N;
-  double beta;
+  const vector<pair<int, double>> &q_beta;
 
   // Input data.
   const TLorentzVector *p4;
@@ -28,62 +29,46 @@ private:
   double pt_jet;
 
   // Buffers.
-  int *index;
-  double *DeltaR;
+  vector<int> index;
+  vector<double> DeltaR;
+  vector<double> result;
 
 public:
-  ECFCalculator(int q, int N, double beta, const TLorentzVector *p4, int np4, double pt_jet);
-  ~ECFCalculator();
-  double calculate() const;
-  double calculate_recursion(int i, double pt_ratio) const;
-  double calculate_min_deltar_multiplication() const;
+  ECFCalculator(int N, const TLorentzVector *p4, int np4, double pt_jet, const vector<pair<int, double>> &q_beta);
+  const vector<double> &calculate();
+
+private:
+  void calculate_recursion(int i, double pt_ratio);
+  void calculate_min_deltar_multiplication(double pt_ratio);
 };
 
-ECFCalculator::ECFCalculator(int q_in, int N_in, double beta_in,
-    const TLorentzVector *p4_in, int np4_in, double pt_jet_in)
-    : q(q_in), N(N_in), beta(beta_in), p4(p4_in), np4(np4_in), pt_jet(pt_jet_in)
+ECFCalculator::ECFCalculator(int N_in, const TLorentzVector *p4_in, int np4_in, double pt_jet_in, const vector<pair<int, double>> &q_beta_in)
+    : N(N_in), q_beta(q_beta_in), p4(p4_in), np4(np4_in), pt_jet(pt_jet_in), index(N), DeltaR(N * (N - 1) / 2)
 {
-  // Allocate buffers.
-  index = NULL;
-  DeltaR = NULL;
-  try {
-    index = new int[N];
-    DeltaR = new double[N * (N - 1) / 2];
-  } catch(const bad_alloc &) {
-    delete[] index;
-    delete[] DeltaR;
-    throw;
-  }
+  // empty
 }
 
-ECFCalculator::~ECFCalculator()
+const vector<double> &ECFCalculator::calculate()
 {
-  // Deallocate buffers.
-  delete[] index;
-  delete[] DeltaR;
+  result.assign(q_beta.size(), 0.0);  // pre-sum zeroing
+  calculate_recursion(0, 1.0);
+  return result;
 }
 
-double ECFCalculator::calculate() const
-{
-  return calculate_recursion(0, 1.0);
-}
-
-double ECFCalculator::calculate_recursion(int i, double pt_ratio) const
+void ECFCalculator::calculate_recursion(int i, double pt_ratio)
 {
   // Recursion exit.
-  if(i == N) return pt_ratio * calculate_min_deltar_multiplication();
+  if(i == N) return calculate_min_deltar_multiplication(pt_ratio);
 
   // Recursion.
-  double r = 0.0;
   int k = i == 0 ? 0 : index[i - 1] + 1;
   for(; k <= np4 - N + i; ++k) {
     index[i] = k;
-    r += calculate_recursion(i + 1, pt_ratio * (p4[k].Pt() / pt_jet));
+    calculate_recursion(i + 1, pt_ratio * (p4[k].Pt() / pt_jet));
   }
-  return r;
 }
 
-double ECFCalculator::calculate_min_deltar_multiplication() const
+void ECFCalculator::calculate_min_deltar_multiplication(double pt_ratio)
 {
   // Iterate over permutations.
   int k = 0;
@@ -92,21 +77,24 @@ double ECFCalculator::calculate_min_deltar_multiplication() const
       DeltaR[k++] = p4[index[i]].DeltaR(p4[index[j]]);
     }
   }
+  sort(DeltaR.begin(), DeltaR.end());
 
-  // Multiplicate q minimal values.
-  sort(DeltaR, DeltaR + k);
-  double r = 1.0;
-  for(int i = 0; i < q; ++i) r *= pow(DeltaR[i], beta);
+  // Compute result for each (q, beta) pair.
+  size_t p = 0;
+  for(auto [q, beta] : q_beta) {
+    double r = 1.0;
+    for(int i = 0; i < q; ++i) r *= pow(DeltaR[i], beta);
 
 #ifdef ECF_DEBUG
-  clog << "ECF candidate:";
-  for(int j = 0; j < N; ++j) clog << " " << index[j];
-  clog << ":";
-  for(int i = 0; i < k; ++i) clog << " " << fixed << setprecision(3) << DeltaR[i];
-  clog << ": " << r << endl;
+    clog << defaultfloat << "ECF candidate (q=" << q << " beta=" << beta << "):";
+    for(int j = 0; j < N; ++j) clog << " " << index[j];
+    clog << ":";
+    for(int i = 0; i < k; ++i) clog << " " << fixed << setprecision(3) << DeltaR[i];
+    clog << ": " << r << endl;
 #endif  /* ECF_DEBUG */
 
-  return r;
+    result[p++] += pt_ratio * r;
+  }
 }
 
 void ecf_invalid_argument(const char *name)
@@ -116,30 +104,33 @@ void ecf_invalid_argument(const char *name)
 
 }  // namespace
 
-double ecf(int q, int N, double beta, const TLorentzVector *p4, int np4, double pt_jet)
+vector<double> ecf(int N, const TLorentzVector *p4, int np4, double pt_jet, const vector<pair<int, double>> &q_beta)
 {
+  for(auto [q, beta] : q_beta) {
 #ifdef ECF_INFO
-  clog << "ECF call: q=" << q << " N=" << N << " beta=" << beta << " np4=" << np4 << endl;
+    clog << "ECF call: q=" << q << " N=" << N << " beta=" << beta << " np4=" << np4 << endl;
 #endif  /* ECF_INFO */
 
-  // Perform argument validation.
-  if(N <= 0 || N > np4) ecf_invalid_argument("N");
-  if(q <= 0 || q > N * (N - 1) / 2) ecf_invalid_argument("q");
-  if(beta <= 0) ecf_invalid_argument("beta");
+    // Perform argument validation.
+    if(N <= 0 || N > np4) ecf_invalid_argument("N");
+    if(q <= 0 || q > N * (N - 1) / 2) ecf_invalid_argument("q");
+    if(beta <= 0) ecf_invalid_argument("beta");
+  }
 
-  return ECFCalculator(q, N, beta, p4, np4, pt_jet).calculate();
+  return ECFCalculator(N, p4, np4, pt_jet, q_beta).calculate();
+}
+
+double ecf(int N, const TLorentzVector *p4, int np4, double pt_jet, int q, double beta)
+{
+  return ecf(N, p4, np4, pt_jet, {{q, beta}})[0];
 }
 
 double N2(double beta, const TLorentzVector *p4, int np4, double pt_jet)
 {
-  double e_2_3_beta = ecf(2, 3, beta, p4, np4, pt_jet);
-  double e_1_2_beta = ecf(1, 2, beta, p4, np4, pt_jet);
-  return e_2_3_beta / (e_1_2_beta * e_1_2_beta);
+  return ecf(3, p4, np4, pt_jet, 2, beta) / ecf(2, p4, np4, pt_jet, 1, beta);
 }
 
 double N3(double beta, const TLorentzVector *p4, int np4, double pt_jet)
 {
-  double e_2_4_beta = ecf(2, 4, beta, p4, np4, pt_jet);
-  double e_1_3_beta = ecf(1, 3, beta, p4, np4, pt_jet);
-  return e_2_4_beta / (e_1_3_beta * e_1_3_beta);
+  return ecf(4, p4, np4, pt_jet, 2, beta) / ecf(3, p4, np4, pt_jet, 1, beta);
 }
