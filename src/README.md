@@ -114,3 +114,55 @@ const ADDecayGraph G_QCD { P_QCD, { new ADDecayGraph(P_QCD) } };  // XXX
 * delphes_njets:
 
   QCD=890656  ACC: 0.67394
+
+# IRC jet features
+
+## Soft dropped mass
+
+![](resource/sdmass-cms.png)
+
+![](resource/jet_sdmass_norm-1.png)
+
+## N-subjettiness
+
+![](resource/tau-cms.png)
+
+<img src="resource/jet_tau21_norm-1.png" style="width:50%" /><img src="resource/jet_tau32_norm-1.png" style="width:50%" />
+
+<img src="resource/jet_tau21-1.png" style="width:50%" /><img src="resource/jet_tau32-1.png" style="width:50%" />
+
+## Energy correlation functions
+
+![](resource/ecf-algo.png)
+
+![](resource/ecf-cms-3.png)
+
+![](resource/jet_n3_norm-1.png)
+
+![](resource/ecf-cms-2.png)
+
+![](resource/jet_n2_norm-1.png)
+
+## Precise and Efficient implementation of ECF calculations
+
+<img src="resource/ecf-equ.png" style="height:5em" />
+
+Implementation:
+
+* $\sum\limits_{1 \leq i_1 < \dots < i_N \leq N_C}$: recursion
+* $\prod\limits_{1 \leq k \leq N}$: multiplication on recursion
+* $\prod\limits_{m = 1}^q$: enumeration and sorting
+
+Time complexity: $O\left(\mathrm C_{N_\mathrm{par}}^N\frac{N(N - 1)}{2}\log\left(\frac{N(N - 1)}{2}\right)\right) \approx O\left(\mathrm C_{N_\mathrm{par}}^N\frac{N(N - 1)}{2}\right), N \leq 128$
+
+Space complexity: $O\left(N + \frac{N(N - 1)}{2}\log\left(\frac{N(N - 1)}{2}\right)\right)$
+
+![](resource/jet_npar_norm-1.png)
+
+Our worst case: $N_\mathrm{par} = 128$, $N = 4$, then $O\left(\mathrm C_{N_\mathrm{par}}^N\frac{N(N - 1)}{2}\right) \approx O(6 \times 10^7)$
+
+However, consider $N_\mathrm{par} = 128$, $N = 5$, then $O\left(\mathrm C_{N_\mathrm{par}}^N\frac{N(N - 1)}{2}\right) \approx O(3 \times 10^9)$, which is very expensive do precise computation
+
+Experimental result: several seconds (OK!)
+
+Acceleration: multi-process parallelism (easy and fast)
