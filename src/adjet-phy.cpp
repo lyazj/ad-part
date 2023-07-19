@@ -15,21 +15,9 @@
 
 using namespace std;
 
-#ifndef ECF_N2_NP4
-#define ECF_N2_NP4  128
-#endif  /* ECF_N2_NP4 */
-
-#ifndef ECF_N2_BETA
-#define ECF_N2_BETA  1.0
-#endif  /* ECF_N2_BETA */
-
-#ifndef ECF_N3_NP4
-#define ECF_N3_NP4  128
-#endif  /* ECF_N3_NP4 */
-
-#ifndef ECF_N3_BETA
-#define ECF_N3_BETA  2.0
-#endif  /* ECF_N3_BETA */
+#ifndef ECF_NP4
+#define ECF_NP4  128
+#endif  /* ECF_NP4 */
 
 size_t ADJet::nadjet;
 size_t ADJet::nvalid;
@@ -292,20 +280,27 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   // feature updating
   if(c > NPAR_MAX) throw ADOverflow();
   npar = c;
-  vector<TLorentzVector> p4s;
-  p4s.reserve(c);
-  for(int i = 0; i < c; ++i) {
-    p4s.push_back({par[i].px, par[i].py, par[i].pz, par[i].e});
-  }
-  try {
-    n2 = N2(ECF_N2_BETA, p4s.data(), min<int>(p4s.size(), ECF_N2_NP4), p4.Pt());
-  } catch(const invalid_argument &) {
-    n2 = 0.0;
-  }
-  try {
-    n3 = N3(ECF_N3_BETA, p4s.data(), min<int>(p4s.size(), ECF_N3_NP4), p4.Pt());
-  } catch(const invalid_argument &) {
-    n3 = 0.0;
+  {
+    // Prepare ECF inputs and parameters.
+    int np4 = min<int>(ECF_NP4, c);
+    vector<TLorentzVector> p4s;
+    p4s.reserve(np4);
+    for(int i = 0; i < np4; ++i) {
+      p4s.push_back({par[i].px, par[i].py, par[i].pz, par[i].e});
+    }
+    vector<tuple<int, int, double, int, int, double>> N_q_beta = {
+      {3, 2, 1.0, 2, 1, 1.0},
+      {4, 2, 1.0, 3, 1, 1.0},
+    };
+
+    // Calculate ECF ratios.
+    ECFRatioCalculator ecf_calc(p4s.data(), np4, p4.Pt(), N_q_beta);
+    ecf_calc.calculate();
+    vector<double> ecf_results = ecf_calc.get_results();
+
+    // Write ECF results.
+    n2 = ecf_results[0];
+    n3 = ecf_results[1];
   }
   tau21 = nan_to_zero(tau2 / tau1);
   tau32 = nan_to_zero(tau3 / tau2);
