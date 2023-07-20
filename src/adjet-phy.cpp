@@ -101,7 +101,7 @@ constexpr auto NPAR_MAX = 0x1000000;
 
 int name_to_label(const char *name)
 {
-  static unordered_map<string, Feature> data = {
+  static unordered_map<string, int> data = {
     {"QCD",    0},  // QCD
     {"H_BB",   1},  // H_BB
     {"H_CC",   2},  // H_CC
@@ -123,9 +123,10 @@ int name_to_label(const char *name)
   return it->second;
 }
 
-double nan_to_zero(double num)
+template<class T>
+T nan_to_zero(T num)
 {
-  return isnan(num) ? 0.0 : num;
+  return isnan(num) ? T(0) : num;
 }
 
 void sort_by_pt_desc(ADParticle *b, ADParticle *e)
@@ -160,7 +161,7 @@ void sort_by_pt_desc(ADParticle *b, ADParticle *e)
   }
 }
 
-Feature get_ftrec(const Jet &jet)
+double get_ftrec(const Jet &jet)
 {
   //if(jet.NSubJetsSoftDropped < 3) return 100.0;
 
