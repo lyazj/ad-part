@@ -52,6 +52,7 @@ ECFCalculatorN::ECFCalculatorN(int N_in, const TLorentzVector *p4_in, int np4_in
 
 void ECFCalculatorN::calculate()
 {
+  if(q_beta.empty()) return;
   result.assign(q_beta.size(), 0.0);  // pre-sum zeroing
   calculate_recursion(0, 1.0);
 }

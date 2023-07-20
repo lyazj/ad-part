@@ -18,8 +18,10 @@ int main()
   double pt_jet = accumulate(p4, p4 + np4, TLorentzVector()).Pt();
 
   vector<tuple<int, int, double>> N_q_beta = {
+    {3, 3, 1.0},
     {3, 2, 1.0},
     {4, 2, 1.0},
+    {4, 3, 1.0},
     {0, 2, 1.0},  // invalid
     {3, 0, 1.0},  // invalid
     {3, 2, 0.0},  // invalid

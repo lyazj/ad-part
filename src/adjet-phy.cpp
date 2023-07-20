@@ -290,7 +290,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
     }
     vector<tuple<int, int, double, int, int, double>> N_q_beta = {
       {3, 2, 1.0, 2, 1, 1.0},
-      {4, 2, 1.0, 3, 1, 1.0},
+      {4, 2, 2.0, 3, 1, 2.0},
     };
 
     // Calculate ECF ratios.
