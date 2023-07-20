@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 Feature = np.float32
-NFEAT_JET = 16
+NFEAT_JET = 26
 NFEAT_PAR = 22
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
@@ -42,12 +42,22 @@ JET_TAU1               =  6
 JET_TAU2               =  7
 JET_TAU3               =  8
 JET_TAU4               =  9
-JET_N2                 = 10
-JET_N3                 = 11
-JET_TAU21              = 12
-JET_TAU32              = 13
-JET_TAU43              = 14
-JET_LABEL              = 15
+JET_N2_0               = 10
+JET_N3_0               = 11
+JET_N3_1               = 12
+JET_N3_2               = 13
+JET_N3_3               = 14
+JET_N3_4               = 15
+JET_N3_5               = 16
+JET_N3_6               = 17
+JET_N3_7               = 18
+JET_N3_8               = 19
+JET_N3_9               = 20
+JET_N3_10              = 21
+JET_TAU21              = 22
+JET_TAU32              = 23
+JET_TAU43              = 24
+JET_LABEL              = 25
 
 CLS_NAME = [
     r'$q/g$',
@@ -98,8 +108,18 @@ JET_FEAT_NAME = [
     r'$\tau_{2}$',
     r'$\tau_{3}$',
     r'$\tau_{4}$',
-    r'$n_{2}$',
-    r'$n_{3}$',
+    r'$n_{2,0}$',
+    r'$n_{3,0}$',
+    r'$n_{3,1}$',
+    r'$n_{3,2}$',
+    r'$n_{3,3}$',
+    r'$n_{3,4}$',
+    r'$n_{3,5}$',
+    r'$n_{3,6}$',
+    r'$n_{3,7}$',
+    r'$n_{3,8}$',
+    r'$n_{3,9}$',
+    r'$n_{3,10}$',
     r'$\tau_{21}$',
     r'$\tau_{32}$',
     r'$\tau_{43}$',
@@ -199,17 +219,37 @@ class ADJet:
     @property
     def tau4(self):   return self.data[9]
     @property
-    def n2(self):     return self.data[10]
+    def n2_0(self):   return self.data[10]
     @property
-    def n3(self):     return self.data[11]
+    def n3_0(self):   return self.data[11]
     @property
-    def tau21(self):  return self.data[12]
+    def n3_1(self):   return self.data[12]
     @property
-    def tau32(self):  return self.data[13]
+    def n3_2(self):   return self.data[13]
     @property
-    def tau43(self):  return self.data[14]
+    def n3_3(self):   return self.data[14]
     @property
-    def label(self):  return self.data[15]
+    def n3_4(self):   return self.data[15]
+    @property
+    def n3_5(self):   return self.data[16]
+    @property
+    def n3_6(self):   return self.data[17]
+    @property
+    def n3_7(self):   return self.data[18]
+    @property
+    def n3_8(self):   return self.data[19]
+    @property
+    def n3_9(self):   return self.data[20]
+    @property
+    def n3_10(self):  return self.data[21]
+    @property
+    def tau21(self):  return self.data[22]
+    @property
+    def tau32(self):  return self.data[23]
+    @property
+    def tau43(self):  return self.data[24]
+    @property
+    def label(self):  return self.data[25]
 
     def hist_par(self, index, *args, strip_padding=True, **kwargs):
         n = int(self.npar) if strip_padding else NPART_JET

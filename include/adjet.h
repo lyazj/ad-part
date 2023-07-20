@@ -81,6 +81,7 @@ class ADJet {
 
 public:
   char feature_begin[0];
+
   Feature pt;
   Feature eta;
   Feature phi;
@@ -91,12 +92,27 @@ public:
   Feature tau2;
   Feature tau3;
   Feature tau4;
-  Feature n2;
-  Feature n3;
+
+  char ecf_begin[0];
+  Feature n2_0;
+  Feature n3_0;
+  Feature n3_1;
+  Feature n3_2;
+  Feature n3_3;
+  Feature n3_4;
+  Feature n3_5;
+  Feature n3_6;
+  Feature n3_7;
+  Feature n3_8;
+  Feature n3_9;
+  Feature n3_10;
+  char ecf_end[0];
+
   Feature tau21;
   Feature tau32;
   Feature tau43;
   Feature label;
+
   char feature_end[0];
 
   ADParticle *par;

@@ -289,8 +289,21 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
       p4s.push_back({par[i].px, par[i].py, par[i].pz, par[i].e});
     }
     vector<tuple<int, int, double, int, int, double>> N_q_beta = {
-      {3, 2, 1.0, 2, 1, 1.0},
-      {4, 2, 2.0, 3, 1, 2.0},
+      // n2
+      /*  0 */ {3, 2, 1.0, 2, 1, 1.0},
+
+      // n3
+      /*  0 */ {2, 1, 2.0, 2, 1, 1.0},
+      /*  1 */ {3, 1, 4.0, 3, 2, 2.0},
+      /*  2 */ {3, 3, 1.0, 3, 1, 4.0},
+      /*  3 */ {3, 3, 1.0, 3, 2, 2.0},
+      /*  4 */ {3, 3, 2.0, 3, 3, 4.0},
+      /*  5 */ {4, 1, 4.0, 3, 1, 2.0},
+      /*  6 */ {4, 1, 2.0, 3, 1, 1.0},
+      /*  7 */ {4, 2, 0.5, 3, 1, 0.5},
+      /*  8 */ {4, 2, 1.0, 3, 1, 1.0},
+      /*  9 */ {4, 2, 1.0, 3, 2, 0.5},
+      /* 10 */ {4, 2, 2.0, 3, 1, 2.0},
     };
 
     // Calculate ECF ratios.
@@ -299,8 +312,11 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
     vector<double> ecf_results = ecf_calc.get_results();
 
     // Write ECF results.
-    n2 = ecf_results[0];
-    n3 = ecf_results[1];
+    auto ecf_it = ecf_results.begin();
+    Feature *feature = (Feature *)ecf_begin;
+    while(ecf_it != ecf_results.end() && feature != (Feature *)ecf_end) {
+      *feature++ = *ecf_it++;
+    }
   }
   tau21 = nan_to_zero(tau2 / tau1);
   tau32 = nan_to_zero(tau3 / tau2);
