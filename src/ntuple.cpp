@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
     {"jet_tau21",  0},
     {"jet_tau32",  0},
     {"jet_tau43",  0},
+    {"jet_ftrec",  0},
     {"label_QCD",  0},
     {"label_Hbb",  0},
     {"label_Hcc",  0},

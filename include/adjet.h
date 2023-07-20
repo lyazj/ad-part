@@ -111,6 +111,7 @@ public:
   Feature tau21;
   Feature tau32;
   Feature tau43;
+  Feature ftrec;
   Feature label;
 
   char feature_end[0];

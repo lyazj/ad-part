@@ -19,6 +19,14 @@ using namespace std;
 #define ECF_NP4  128
 #endif  /* ECF_NP4 */
 
+#ifndef M_W
+#define M_W  80.379  /* GeV */
+#endif  /* M_W */
+
+#ifndef M_T
+#define M_T  172.500  /* GeV */
+#endif  /* M_T */
+
 size_t ADJet::nadjet;
 size_t ADJet::nvalid;
 size_t ADJet::ngnpar;
@@ -150,6 +158,25 @@ void sort_by_pt_desc(ADParticle *b, ADParticle *e)
     b[j] = bj;  // b[j] must have been consumed.
     //index[j] = j;  // Not needed as index[j] will no longer be accessed.
   }
+}
+
+Feature get_ftrec(const Jet &jet)
+{
+  //if(jet.NSubJetsSoftDropped < 3) return 100.0;
+
+  double m[3], m3 = 0.0;
+  for(size_t i = 0; i < 3; ++i) {  // Requires zero padding after the end.
+    m3 += (m[i] = jet.SoftDroppedP4[i + 1].M());
+  }
+  double r = INFINITY;
+  for(size_t i = 0; i < 3; ++i) {
+    double m2 = 0.0;
+    for(size_t j = 0; j < 3; ++j) {  // Avoid subtraction from the sum to be more precise.
+      if(j != i) m2 += m[j];
+    }
+    r = min(r, abs(((m2 / m3) / ((double)M_W / (double)M_T)) - 1.0));
+  }
+  return r;
 }
 
 }  // namespace
@@ -321,6 +348,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   tau21 = nan_to_zero(tau2 / tau1);
   tau32 = nan_to_zero(tau3 / tau2);
   tau43 = nan_to_zero(tau4 / tau3);
+  ftrec = get_ftrec(jet);
 
   // padding
   while(c < NPARTIFLOW) {

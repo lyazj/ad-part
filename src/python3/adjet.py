@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 Feature = np.float32
-NFEAT_JET = 26
+NFEAT_JET = 27
 NFEAT_PAR = 22
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
@@ -57,7 +57,8 @@ JET_N3_10              = 21
 JET_TAU21              = 22
 JET_TAU32              = 23
 JET_TAU43              = 24
-JET_LABEL              = 25
+JET_FTREC              = 25
+JET_LABEL              = 26
 
 CLS_NAME = [
     r'$q/g$',
@@ -123,6 +124,7 @@ JET_FEAT_NAME = [
     r'$\tau_{21}$',
     r'$\tau_{32}$',
     r'$\tau_{43}$',
+    r'$f_{t,\mathrm{rec}}$',
     r'label',
 ]
 
@@ -249,7 +251,9 @@ class ADJet:
     @property
     def tau43(self):  return self.data[24]
     @property
-    def label(self):  return self.data[25]
+    def ftrec(self):  return self.data[25]
+    @property
+    def label(self):  return self.data[26]
 
     def hist_par(self, index, *args, strip_padding=True, **kwargs):
         n = int(self.npar) if strip_padding else NPART_JET
