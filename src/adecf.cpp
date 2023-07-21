@@ -10,9 +10,9 @@
 
 using namespace std;
 
-#ifdef ECF_DEBUG
+#if defined ECF_DEBUG && !defined ECF_INFO
 #define ECF_INFO
-#endif  /* ECF_DEBUG */
+#endif  /* ECF_DEBUG implies ECF_INFO */
 
 namespace {
 
