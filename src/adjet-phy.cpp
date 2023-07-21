@@ -27,6 +27,10 @@ using namespace std;
 #define M_T  172.500  /* GeV */
 #endif  /* M_T */
 
+#ifndef FTREC_MAX
+#define FTREC_MAX  5.0
+#endif  /* FTREC_MAX */
+
 size_t ADJet::nadjet;
 size_t ADJet::nvalid;
 size_t ADJet::ngnpar;
@@ -163,19 +167,21 @@ void sort_by_pt_desc(ADParticle *b, ADParticle *e)
 
 double get_ftrec(const Jet &jet)
 {
-  //if(jet.NSubJetsSoftDropped < 3) return 100.0;
+  if(jet.NSubJetsSoftDropped < 3) return FTREC_MAX;
 
   double m[3], m3 = 0.0;
   for(size_t i = 0; i < 3; ++i) {  // Requires zero padding after the end.
     m3 += (m[i] = jet.SoftDroppedP4[i + 1].M());
   }
-  double r = INFINITY;
+  double r = FTREC_MAX;
   for(size_t i = 0; i < 3; ++i) {
     double m2 = 0.0;
     for(size_t j = 0; j < 3; ++j) {  // Avoid subtraction from the sum to be more precise.
       if(j != i) m2 += m[j];
     }
-    r = min(r, abs(((m2 / m3) / ((double)M_W / (double)M_T)) - 1.0));
+    double ri = abs(((m2 / m3) / ((double)M_W / (double)M_T)) - 1.0);
+    if(ri >= FTREC_MAX) fprintf(stderr, "WARNING: ftrec value exceeded: %lf\n", ri);
+    r = min(r, ri);
   }
   return r;
 }

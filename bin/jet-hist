@@ -24,11 +24,12 @@ for i, name in zip([
     adjet.JET_PT,
     adjet.JET_SDMASS,
     adjet.JET_N2_0,
-    adjet.JET_N3_10,
+    *[getattr(adjet, f'JET_N3_{i}') for i in range(11)],
     adjet.JET_TAU21,
     adjet.JET_TAU32,
     adjet.JET_TAU43,
-], ['npar', 'pt', 'sdmass', 'n2_0', 'n3_10', 'tau21', 'tau32', 'tau43']):
+    adjet.JET_FTREC,
+], ['npar', 'pt', 'sdmass', 'n2_0', *[f'n3_{i}' for i in range(11)], 'tau21', 'tau32', 'tau43', 'ftrec']):
     collection.hist(i, bins=30, histtype='step', density=NORMALIZE)
     plt.legend(loc='upper right')
     plt.tight_layout()
