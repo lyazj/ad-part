@@ -2,7 +2,7 @@
 #include "adenv.h"
 #include "adtensor.h"
 #include "adrunner.h"
-#include <onnxruntime_cxx_api.h>
+#include "adonnx.h"
 #include <vector>
 #include <memory>
 #include <stdio.h>

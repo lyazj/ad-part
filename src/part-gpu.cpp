@@ -2,7 +2,7 @@
 #include "adenv.h"
 #include "adtensor.h"
 #include "adrunner.h"
-#include <onnxruntime_cxx_api.h>
+#include "adonnx.h"
 #include <vector>
 #include <memory>
 #include <stdio.h>
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   // 运行环境
   Env env;
   SessionOptions session_options;
-  OrtSessionOptionsAppendExecutionProvider_CUDA(session_options, 0);
+  ignore_value(OrtSessionOptionsAppendExecutionProvider_CUDA(session_options, 0));
   Session session(env, "part.onnx", session_options);
   MemoryInfo memory_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 

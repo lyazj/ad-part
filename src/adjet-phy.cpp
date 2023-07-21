@@ -74,7 +74,7 @@ void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
   adpar.d0_err = 0.0;  // padding
   adpar.dz = 0.0; // padding
   adpar.dz_err = 0.0;  // padding
-  adpar.deta = (p4.Eta() > 0 ? : -1) * (p4.Eta() - p4_jet.Eta());
+  adpar.deta = (p4.Eta() > 0 ? 1 : -1) * (p4.Eta() - p4_jet.Eta());
   adpar.dphi = p4.DeltaPhi(p4_jet);
   adpar.px = p4.Px();
   adpar.py = p4.Py();

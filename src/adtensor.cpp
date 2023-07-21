@@ -1,7 +1,7 @@
 #include "addef.h"
 #include "adtensor.h"
 #include "adjet.h"
-#include <onnxruntime_cxx_api.h>
+#include "adonnx.h"
 #include <stdexcept>
 #include <new>
 #include <array>

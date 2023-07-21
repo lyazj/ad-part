@@ -1,7 +1,7 @@
 #include "adrunner.h"
 #include "adtensor.h"
 #include "adjet.h"
-#include <onnxruntime_cxx_api.h>
+#include "adonnx.h"
 
 using namespace std;
 

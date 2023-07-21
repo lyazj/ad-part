@@ -1,4 +1,5 @@
-#include <onnxruntime_cxx_api.h>
+#include "adonnx.h"
+#include "adenv.h"
 #include <vector>
 #include <utility>
 #include <iostream>
@@ -17,7 +18,7 @@ int main()
   // 运行环境
   Env env;
   SessionOptions options;
-  OrtSessionOptionsAppendExecutionProvider_CUDA(options, 0);
+  ignore_value(OrtSessionOptionsAppendExecutionProvider_CUDA(options, 0));
   Session session(env, "test-model.onnx", options);
   MemoryInfo memory_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
