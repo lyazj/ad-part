@@ -154,7 +154,7 @@ if(NOT AD_NOTEST)
     target_link_libraries(root-test PUBLIC ROOT::MathCore)
     
     add_executable(delphes-test src/delphes-test.cpp)
-    target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree)
+    target_link_libraries(delphes-test PUBLIC adhep Delphes ROOT::Tree ROOT::Physics)
 
     add_executable(ecf-test src/ecf-test.cpp src/adecf.cpp)
     target_link_libraries(ecf-test ROOT::Physics)

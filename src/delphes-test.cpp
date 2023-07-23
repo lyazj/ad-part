@@ -19,6 +19,9 @@ int main(int argc, char *argv[])
   // NOTE: Do this before loading rootfile.
   setenv_delphes();
 
+  // Link libdelphes.so.
+  Jet();
+
   // Read rootfile and print the tree.
   auto file = make_unique<TFile>(rootfile, "read");
   auto delphes = (TTree *)file->Get("Delphes");
