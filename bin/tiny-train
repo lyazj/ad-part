@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+
+if len(sys.argv) != 1:
+    print(f'usage: {os.path.basename(sys.argv[0])}', file=sys.stderr)
+    sys.exit(1)
+
+main_path = os.path.join(os.path.dirname(__file__), '..')
+sys.path.insert(0, os.path.join(main_path, 'src/python3'))
+
+import tiny
+import torch
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+bic = tiny.TinyBinaryClassifier(3)
+
+# [TODO] train bic and save weights
