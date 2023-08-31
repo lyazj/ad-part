@@ -77,18 +77,24 @@ def get_batch(x, batch_id):
 def get_acc_of_classes(top1, label):
     # True condition: top1 == label.bool().to(top1.dtype)
     top1_acc = (top1 == label.bool().to(top1.dtype)).to(tiny.device, training.dtype)
-    class_acc = np.empty(adjet.NRSLT_CLS)
+    class_acc = np.empty(adjet.NRSLT_CLS, dtype=data.dtype)
+    class_cnt = np.empty(adjet.NRSLT_CLS, dtype=data.dtype)
     for class_id in range(class_acc.shape[0]):
         weight = (label == create_tensor(class_id)).to(tiny.device, training.dtype)
         weight_sum = weight.sum()
+        class_cnt[class_id] = weight_sum
         if weight_sum == 0.0:  # no data labeled as this class
             class_acc[class_id] = -1.0
             continue
         class_acc[class_id] = (top1_acc * weight).sum() / weight_sum
-    return class_acc
+    return class_acc, class_cnt
 
-def format_acc_of_classes(class_acc):
-    return ' '.join(['%6.3f'] * len(class_acc)) % tuple(class_acc)
+def format_acc_of_classes(class_acc, class_cnt):
+    numbers = np.hstack([
+        class_acc.reshape(-1, 1),
+        class_cnt.reshape(-1, 1),
+    ]).flatten()
+    return ' '.join(['%6.3f(%.0f)'] * len(class_acc)) % tuple(numbers)
 
 def train_one_epoch(epoch_id):
     print('Epoch %03d\n----------------------------------------' % epoch_id)
@@ -104,8 +110,8 @@ def train_one_epoch(epoch_id):
         batch_loss.backward()
         optimizer.step()
     training_top1 = torch.concat(training_top1)
-    training_acc = get_acc_of_classes(training_top1, training[:,-1:])
-    print('training acc:', format_acc_of_classes(training_acc), end='\n\n')
+    training_acc, training_cnt = get_acc_of_classes(training_top1, training[:,-1:])
+    print('training acc:', format_acc_of_classes(training_acc, training_cnt), end='\n\n')
 
     model.eval()
     validation_top1 = []
@@ -116,8 +122,8 @@ def train_one_epoch(epoch_id):
             print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
             validation_top1.append(batch_top1)
     validation_top1 = torch.concat(validation_top1)
-    validation_acc = get_acc_of_classes(validation_top1, validation[:,-1:])
-    print('validation acc:', format_acc_of_classes(validation_acc), end='\n\n')
+    validation_acc, validation_cnt = get_acc_of_classes(validation_top1, validation[:,-1:])
+    print('validation acc:', format_acc_of_classes(validation_acc, validation_cnt), end='\n\n')
 
 for epoch_id in range(10):
     train_one_epoch(epoch_id)
