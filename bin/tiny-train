@@ -5,16 +5,21 @@ import sys
 
 # [DEBUG]
 #if len(sys.argv) != 2 and len(sys.argv) != 3:
-#    print(f'usage: {os.path.basename(sys.argv[0])} <pf-file> [ <cf-file> ]', file=sys.stderr)
+#    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ]', file=sys.stderr)
 #    sys.exit(1)
-#PF_FILE = sys.argv[1]
-#CF_FILE = sys.argv[2] if len(argv) > 2 else None
-PF_FILE = '../run/example.gz'
-CF_FILE = None
+#PF_FILES = sys.argv[1].split(':')
+#CF_FILES = sys.argv[2].split(':') if len(argv) > 2 else None
+PF_FILES = ['../run/example.gz']
+CF_FILES = None
+
+# [TODO] Support data after ParT.
+if CF_FILES is not None:
+    raise NotImplemented('expect not CF_FILES yet')
 
 main_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, os.path.join(main_path, 'src/python3'))
 
+import numpy as np
 import time
 import math
 import tiny
@@ -25,10 +30,6 @@ import functools
 
 logging.basicConfig(level=logging.INFO)
 
-# [XXX]
-if CF_FILE is not None:
-    raise NotImplemented('expect not CF_FILE yet')
-
 # Configuration and utilities functions.
 tiny.device = 'cpu'
 #tiny.device = 'cuda:0'
@@ -36,7 +37,8 @@ dtype = torch.float32
 create_tensor = functools.partial(torch.tensor, dtype=dtype, device=tiny.device)
 nodename = os.popen('uname -n').read().strip() or 'anonymous'
 timestamp = str(int(time.time()))
-model_directory = os.path.join(main_path, 'run', 'tiny', '%s-%s' % (nodename, timestamp))
+model_directory = os.path.abspath(os.path.join(main_path, 'run', 'tiny', '%s-%s' % (nodename, timestamp)))
+print('model directory: %s' % model_directory)
 os.makedirs(model_directory)
 
 def split_training_validation(x, validation_ratio):
@@ -51,9 +53,15 @@ loss_func = torch.nn.functional.binary_cross_entropy
 optimizer = torch.optim.Adam(model.parameters())
 
 # Data for training and validation.
-data = adjet.load_pf(PF_FILE).data[:,:adjet.NFEAT_JET]
-training, validation = split_training_validation(data, 0.2)
-print('%s: training=%05d validation=%05d' % (PF_FILE, training.shape[0], validation.shape[0]))
+training = []
+validation = []
+for (i, PF_FILE) in enumerate(PF_FILES):
+    data = adjet.load_pf(PF_FILE).data[:,:adjet.NFEAT_JET]
+    t, v= split_training_validation(data, 0.2)
+    print('loading %s: training=%05d validation=%05d' % (PF_FILE, t.shape[0], v.shape[0]))
+    training.append(t); validation.append(v)
+training, validation = map(np.concatenate, (training, validation))
+print('total loaded: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
 training_input, training_label = training[:,:-1], training[:,-1:].astype('bool')
 training_input, training_label = map(create_tensor, (training_input, training_label))
 validation_input, validation_label = validation[:,:-1], validation[:,-1:].astype('bool')
