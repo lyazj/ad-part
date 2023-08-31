@@ -76,16 +76,19 @@ def get_batch(x, batch_id):
 
 def get_acc_of_classes(top1, label):
     # True condition: top1 == label.bool().to(top1.dtype)
-    top1_acc = create_tensor(top1 == label.bool().to(top1.dtype))
+    top1_acc = (top1 == label.bool().to(top1.dtype)).to(tiny.device, training.dtype)
     class_acc = np.empty(adjet.NRSLT_CLS)
     for class_id in range(class_acc.shape[0]):
-        weight = create_tensor(label == create_tensor(class_id))
+        weight = (label == create_tensor(class_id)).to(tiny.device, training.dtype)
         weight_sum = weight.sum()
-        if weight_sum.cpu() == 0.0:  # no data labeled as this class
+        if weight_sum == 0.0:  # no data labeled as this class
             class_acc[class_id] = -1.0
             continue
-        class_acc[class_id] = ((top1_acc * weight) / weight_sum).cpu()
+        class_acc[class_id] = (top1_acc * weight).sum() / weight_sum
     return class_acc
+
+def format_acc_of_classes(class_acc):
+    return ' '.join(['%6.3f'] * len(class_acc)) % tuple(class_acc)
 
 def train_one_epoch(epoch_id):
     print('Epoch %03d\n----------------------------------------' % epoch_id)
@@ -94,7 +97,7 @@ def train_one_epoch(epoch_id):
     model.train()
     training_top1 = []
     for batch_id in range(num_training_batches):
-        batch_input, batch_label, batch_label_bin = get_batch(training, batch_id)
+        batch_input, _, batch_label_bin = get_batch(training, batch_id)
         _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
         print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
         training_top1.append(batch_top1)
@@ -102,19 +105,19 @@ def train_one_epoch(epoch_id):
         optimizer.step()
     training_top1 = torch.concat(training_top1)
     training_acc = get_acc_of_classes(training_top1, training[:,-1:])
-    print('training acc:', training_acc, end='\n\n')
+    print('training acc:', format_acc_of_classes(training_acc), end='\n\n')
 
     model.eval()
     validation_top1 = []
     with torch.no_grad():
         for batch_id in range(num_validation_batches):
-            batch_input, batch_label, batch_label_bin = get_batch(validation, batch_id)
+            batch_input, _, batch_label_bin = get_batch(validation, batch_id)
             _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
             print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
             validation_top1.append(batch_top1)
     validation_top1 = torch.concat(validation_top1)
     validation_acc = get_acc_of_classes(validation_top1, validation[:,-1:])
-    print('validation acc:', validation_acc, end='\n\n')
+    print('validation acc:', format_acc_of_classes(validation_acc), end='\n\n')
 
 for epoch_id in range(10):
     train_one_epoch(epoch_id)
