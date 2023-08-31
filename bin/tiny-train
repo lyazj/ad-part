@@ -67,21 +67,24 @@ training_input, training_label = map(create_tensor, (training_input, training_la
 validation_input, validation_label = validation[:,:-1], validation[:,-1:].astype('bool')
 validation_input, validation_label = map(create_tensor, (validation_input, validation_label))
 
+def forward(data_input, data_label):
+    data_output = model(data_input)
+    loss = loss_func(data_output, data_label)
+    acc = ((data_output > 0.5) == data_label).to(dtype).mean()
+    return data_output, loss, acc
+
 def train_one_epoch(epoch_id):
     optimizer.zero_grad()
 
     model.train()
-    training_output = model(training_input)
-    training_loss = loss_func(training_output, training_label)
-    training_acc = ((training_output > 0.5) == training_label).to(dtype).mean()
+    training_output, training_loss, training_acc = forward(training_input, training_label)
     training_loss.backward()
     optimizer.step()
 
     model.eval()
     with torch.no_grad():
-        validation_output = model(validation_input)
-        validation_loss = loss_func(validation_output, validation_label)
-        validation_acc = ((validation_output > 0.5) == validation_label).to(dtype).mean()
+        validation_output, validation_loss, validation_acc = forward(validation_input, validation_label)
+
     print('Epoch %03d: training_loss=%.3f training_acc=%.3f validation_loss=%.3f validation_acc=%.3f'
           % (epoch_id, training_loss, training_acc, validation_loss, validation_acc))
     torch.save(model.state_dict(), os.path.join(model_directory, '%03d' % epoch_id))
