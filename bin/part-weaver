@@ -8,10 +8,12 @@ fi
 if [ -z "$CUDA_VISIBLE_DEVICES" ]; then
     export CUDA_VISIBLE_DEVICES=0
 fi
+NGPU=$(echo "$CUDA_VISIBLE_DEVICES" | sed 's/,/\n/g' | wc -l)
+GPUS=$(seq 0 $[NGPU - 1] | xargs echo | sed 's/ /,/g')
 
 exec weaver --predict --data-test $(readlink -f "$1") \
     --data-config $(dirname "$0")/../config/JetClass_ntuple.yaml \
     --network-config $(dirname "$0")/../src/python3/example_ParticleTransformer.py \
     --model-prefix $(dirname "$0")/../src/python3/ParT_full.pt \
-    --gpus "$CUDA_VISIBLE_DEVICES" --batch-size 512 \
+    --gpus "$GPUS" --batch-size 512 \
     --predict-output $(readlink -f "$2")
