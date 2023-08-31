@@ -31,11 +31,12 @@ import torch
 import logging
 import functools
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 # Configuration.
 if DEVICE is not None: tiny.device = DEVICE
 create_tensor = functools.partial(torch.tensor, dtype=torch.float32, device=tiny.device)
+batch_size = 128
 
 def split_training_validation(x, validation_ratio):
     num = x.shape[0]
@@ -49,37 +50,58 @@ loss_func = torch.nn.functional.binary_cross_entropy
 optimizer = torch.optim.Adam(model.parameters())
 
 # Data for training and validation.
-training = []
-validation = []
+data = []
 for (i, PF_FILE) in enumerate(PF_FILES):
-    data = adjet.load_pf(PF_FILE).data[:,:adjet.NFEAT_JET]
-    print('loading %s' % PF_FILE)
-    t, v= split_training_validation(data, 0.2)
-    print('splitting %s: training=%05d validation=%05d' % (PF_FILE, t.shape[0], v.shape[0]))
-    training.append(t); validation.append(v)
-training, validation = map(np.concatenate, (training, validation))
-print('total loaded: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
+    logging.info('loading %s' % PF_FILE)
+    d = adjet.load_pf(PF_FILE).data[:,:adjet.NFEAT_JET]
+    logging.info('%05d samples loaded from %s' % (d.shape[0], PF_FILE))
+    data.append(d)
+logging.info('combining and shuffling data')
+data = np.concatenate(data)
+np.random.shuffle(data)
+logging.info('total loaded: num_samples=%05d' % (data.shape[0]))
+training, validation = split_training_validation(data, 0.2)
+logging.info('data ready in main memory: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
 training_input, training_label = training[:,:-1], training[:,-1:].astype('bool')
 training_input, training_label = map(create_tensor, (training_input, training_label))
 validation_input, validation_label = validation[:,:-1], validation[:,-1:].astype('bool')
-print('data loaded to main memory successfully')
 validation_input, validation_label = map(create_tensor, (validation_input, validation_label))
-print('data copied to GPU memory successfully')
+logging.info('data copied to GPU memory successfully')
+num_training_batches = (training_input.shape[0] + batch_size - 1) // batch_size
+num_validation_batches = (validation_input.shape[0] + batch_size - 1) // batch_size
+
+def get_batch(batch_id, x):
+    return x[batch_id * batch_size : (batch_id + 1) * batch_size]
 
 def train_one_epoch(epoch_id):
+    print('Epoch %03d\n----------------------------------------' % epoch_id)
     optimizer.zero_grad()
-
+    training_loss, training_acc = 0.0, 0.0
+    validation_loss, validation_acc = 0.0, 0.0
+    
     model.train()
-    training_output, training_loss, training_acc = model.run(training_input, training_label, loss_func)
-    training_loss.backward()
-    optimizer.step()
+    for batch_id in range(num_training_batches):
+        batch_input, batch_label = map(functools.partial(get_batch, batch_id), (training_input, training_label))
+        batch_output, batch_loss, batch_acc = model.run(batch_input, batch_label, loss_func)
+        print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc))
+        training_loss += batch_loss * batch_output.shape[0]
+        training_acc += batch_acc * batch_output.shape[0]
+        batch_loss.backward()
+        optimizer.step()
 
     model.eval()
     with torch.no_grad():
-        validation_output, validation_loss, validation_acc = model.run(validation_input, validation_label, loss_func)
+        for batch_id in range(num_validation_batches):
+            batch_input, batch_label = map(functools.partial(get_batch, batch_id), (validation_input, validation_label))
+            batch_output, batch_loss, batch_acc = model.run(batch_input, batch_label, loss_func)
+            print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc))
+            validation_loss += batch_loss * batch_output.shape[0]
+            validation_acc += batch_acc * batch_output.shape[0]
 
+    training_loss, training_acc = map(lambda x: x / training_input.shape[0], (training_loss, training_acc))
+    validation_loss, validation_acc = map(lambda x: x / validation_input.shape[0], (validation_loss, validation_acc))
     print('Epoch %03d: training_loss=%.3f training_acc=%.3f validation_loss=%.3f validation_acc=%.3f'
-          % (epoch_id, training_loss, training_acc, validation_loss, validation_acc))
+          % (epoch_id, training_loss, training_acc, validation_loss, validation_acc), end='\n\n')
     torch.save(model.state_dict(), os.path.join(MODEL_DIR, '%03d' % epoch_id))
 
 for epoch_id in range(100):
