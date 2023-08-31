@@ -147,8 +147,9 @@ class TinyClassifier(TinyTransformer):
     def run(self, data_input, data_label, loss_func=torch.nn.functional.cross_entropy):
         data_output = self(data_input)
         loss = loss_func(data_output, data_label)
-        acc = (data_output.argmax(-1, True) == data_label).to(data_output.dtype).mean()
-        return data_output, loss, acc
+        data_output_top1 = data_output.argmax(-1, True)
+        data_output_acc = (data_output_top1 == data_label).to(data_output.dtype)
+        return data_output, loss, data_output_top1, data_output_acc
 
 # binary classifier
 class TinyBinaryClassifier(TinyClassifier):
@@ -159,5 +160,6 @@ class TinyBinaryClassifier(TinyClassifier):
     def run(self, data_input, data_label, loss_func=torch.nn.functional.binary_cross_entropy):
         data_output = self(data_input)
         loss = loss_func(data_output, data_label)
-        acc = ((data_output > 0.5) == data_label).to(data_output.dtype).mean()
-        return data_output, loss, acc
+        data_output_top1 = data_output > 0.5
+        data_output_acc = (data_output_top1 == data_label).to(data_output.dtype)
+        return data_output, loss, data_output_top1, data_output_acc

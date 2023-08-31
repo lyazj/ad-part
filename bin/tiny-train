@@ -62,47 +62,59 @@ np.random.shuffle(data)
 logging.info('total loaded: num_samples=%05d' % (data.shape[0]))
 training, validation = split_training_validation(data, 0.2)
 logging.info('data ready in main memory: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
-training_input, training_label = training[:,:-1], training[:,-1:].astype('bool')
-training_input, training_label = map(create_tensor, (training_input, training_label))
-validation_input, validation_label = validation[:,:-1], validation[:,-1:].astype('bool')
-validation_input, validation_label = map(create_tensor, (validation_input, validation_label))
+training, validation = map(create_tensor, (training, validation))
 logging.info('data copied to GPU memory successfully')
-num_training_batches = (training_input.shape[0] + batch_size - 1) // batch_size
-num_validation_batches = (validation_input.shape[0] + batch_size - 1) // batch_size
+num_training_batches = (training.shape[0] + batch_size - 1) // batch_size
+num_validation_batches = (validation.shape[0] + batch_size - 1) // batch_size
 
-def get_batch(batch_id, x):
-    return x[batch_id * batch_size : (batch_id + 1) * batch_size]
+def get_batch(x, batch_id):
+    batch = x[batch_id * batch_size : (batch_id + 1) * batch_size]
+    batch_input, batch_label = batch[:,:-1], batch[:,-1:]
+    batch_label_bin = batch_label.bool().to(batch_label.dtype)
+    batch_label = batch_label.to(torch.int32)
+    return batch_input, batch_label, batch_label_bin
+
+def get_acc_of_classes(top1, label):
+    # True condition: top1 == label.bool().to(top1.dtype)
+    top1_acc = create_tensor(top1 == label.bool().to(top1.dtype))
+    class_acc = np.empty(adjet.NRSLT_CLS)
+    for class_id in range(class_acc.shape[0]):
+        weight = create_tensor(label == create_tensor(class_id))
+        weight_sum = weight.sum()
+        if weight_sum.cpu() == 0.0:  # no data labeled as this class
+            class_acc[class_id] = -1.0
+            continue
+        class_acc[class_id] = ((top1_acc * weight) / weight_sum).cpu()
+    return class_acc
 
 def train_one_epoch(epoch_id):
     print('Epoch %03d\n----------------------------------------' % epoch_id)
     optimizer.zero_grad()
-    training_loss, training_acc = 0.0, 0.0
-    validation_loss, validation_acc = 0.0, 0.0
-    
+
     model.train()
+    training_top1 = []
     for batch_id in range(num_training_batches):
-        batch_input, batch_label = map(functools.partial(get_batch, batch_id), (training_input, training_label))
-        batch_output, batch_loss, batch_acc = model.run(batch_input, batch_label, loss_func)
-        print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc))
-        training_loss += batch_loss * batch_output.shape[0]
-        training_acc += batch_acc * batch_output.shape[0]
+        batch_input, batch_label, batch_label_bin = get_batch(training, batch_id)
+        _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
+        print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+        training_top1.append(batch_top1)
         batch_loss.backward()
         optimizer.step()
+    training_top1 = torch.concat(training_top1)
+    training_acc = get_acc_of_classes(training_top1, training[:,-1:])
+    print('training acc:', training_acc, end='\n\n')
 
     model.eval()
+    validation_top1 = []
     with torch.no_grad():
         for batch_id in range(num_validation_batches):
-            batch_input, batch_label = map(functools.partial(get_batch, batch_id), (validation_input, validation_label))
-            batch_output, batch_loss, batch_acc = model.run(batch_input, batch_label, loss_func)
-            print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc))
-            validation_loss += batch_loss * batch_output.shape[0]
-            validation_acc += batch_acc * batch_output.shape[0]
-
-    training_loss, training_acc = map(lambda x: x / training_input.shape[0], (training_loss, training_acc))
-    validation_loss, validation_acc = map(lambda x: x / validation_input.shape[0], (validation_loss, validation_acc))
-    print('Epoch %03d: training_loss=%.3f training_acc=%.3f validation_loss=%.3f validation_acc=%.3f'
-          % (epoch_id, training_loss, training_acc, validation_loss, validation_acc), end='\n\n')
-    torch.save(model.state_dict(), os.path.join(MODEL_DIR, '%03d' % epoch_id))
+            batch_input, batch_label, batch_label_bin = get_batch(validation, batch_id)
+            _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
+            print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+            validation_top1.append(batch_top1)
+    validation_top1 = torch.concat(validation_top1)
+    validation_acc = get_acc_of_classes(validation_top1, validation[:,-1:])
+    print('validation acc:', validation_acc, end='\n\n')
 
 for epoch_id in range(10):
     train_one_epoch(epoch_id)
