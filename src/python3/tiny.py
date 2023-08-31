@@ -127,7 +127,7 @@ class TinyTransformer(TinySequential):
     def __init__(self, input_dim, embed_dims, decode_dims, num_blocks=2, activate=None,
                  embed_activate=torch.nn.ReLU, decode_activate=torch.nn.ReLU, *args, **kwargs):
         layers = []
-        layers.append((torch.nn.BatchNorm1d(input_dim), 1))
+        layers.append((torch.nn.BatchNorm1d(input_dim).to(device), 1))
         layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate), 1))
         if len(embed_dims): input_dim = embed_dims[-1]
         for _ in range(num_blocks):

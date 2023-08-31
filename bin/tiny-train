@@ -88,14 +88,14 @@ def get_acc_of_classes(top1, label):
             class_acc[class_id] = -1.0
             continue
         class_acc[class_id] = (top1_acc * weight).sum() / weight_sum
-    return class_acc, class_cnt
+    return class_acc, class_cnt, top1_acc.mean()
 
-def format_acc_of_classes(class_acc, class_cnt):
+def format_acc_of_classes(class_acc, class_cnt, acc):
     numbers = np.hstack([
         class_acc.reshape(-1, 1),
         class_cnt.reshape(-1, 1),
     ]).flatten()
-    return ' '.join(['%6.3f(%.0f)'] * len(class_acc)) % tuple(numbers)
+    return '%.3f(%.0f) | ' % (acc, class_cnt.sum()) + ' '.join(['%.3f(%.0f)'] * len(class_acc)) % tuple(numbers)
 
 def train_one_epoch(epoch_id):
     print('Epoch %03d\n----------------------------------------' % epoch_id)
@@ -106,13 +106,13 @@ def train_one_epoch(epoch_id):
     for batch_id in range(num_training_batches):
         batch_input, _, batch_label_bin = get_batch(training, batch_id)
         _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
-        print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+        #print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
         training_top1.append(batch_top1)
         batch_loss.backward()
         optimizer.step()
     training_top1 = torch.concat(training_top1)
-    training_acc, training_cnt = get_acc_of_classes(training_top1, training[:,-1:])
-    print('training acc:', format_acc_of_classes(training_acc, training_cnt), end='\n\n')
+    class_acc, class_cnt, acc = get_acc_of_classes(training_top1, training[:,-1:])
+    print('train:', format_acc_of_classes(class_acc, class_cnt, acc))
 
     model.eval()
     validation_top1 = []
@@ -120,11 +120,11 @@ def train_one_epoch(epoch_id):
         for batch_id in range(num_validation_batches):
             batch_input, _, batch_label_bin = get_batch(validation, batch_id)
             _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
-            print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+            #print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
             validation_top1.append(batch_top1)
     validation_top1 = torch.concat(validation_top1)
-    validation_acc, validation_cnt = get_acc_of_classes(validation_top1, validation[:,-1:])
-    print('validation acc:', format_acc_of_classes(validation_acc, validation_cnt), end='\n\n')
+    class_acc, class_cnt, acc = get_acc_of_classes(validation_top1, validation[:,-1:])
+    print('valid:', format_acc_of_classes(class_acc, class_cnt, acc))
 
-for epoch_id in range(10):
+for epoch_id in range(50):
     train_one_epoch(epoch_id)
