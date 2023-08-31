@@ -1,6 +1,8 @@
 import torch
 import logging
 
+device = 'cuda:0'
+
 # base class for Tiny*
 class TinyModule(torch.nn.Module):
 
@@ -8,16 +10,17 @@ class TinyModule(torch.nn.Module):
 
     def __init__(self, name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.to(device)
         self.name = name or self.__class__.__name__  # diagnostic
 
     def begin_forward(self, *args, **kwargs):
         TinyModule.forward_depth += 1
-        logging.info(f'enter [{TinyModule.forward_depth}]: {self.name}')
+        logging.debug(f'enter [{TinyModule.forward_depth}]: {self.name}')
         #args = '\n'.join(map(str, args))
-        #logging.info(f'args:\n{args}\nkwargs: {kwargs}')
+        #logging.debug(f'args:\n{args}\nkwargs: {kwargs}')
 
     def end_forward(self):
-        logging.info(f'leave [{TinyModule.forward_depth}]: {self.name}')
+        logging.debug(f'leave [{TinyModule.forward_depth}]: {self.name}')
         TinyModule.forward_depth -= 1
 
 # flow structure wrapper 1/2: sequential
@@ -26,6 +29,12 @@ class TinySequential(TinyModule):
     def __init__(self, layers, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.layers = layers
+        # Ensure that self.parameters() sees all parameters.
+        params = []
+        for layer in layers:
+            if isinstance(layer, tuple): layer = layer[0]
+            params.append(layer)
+        self.params = torch.nn.ParameterList(params)
 
     def forward(self, *args, **kwargs):
         super().begin_forward(*args, **kwargs)
@@ -72,8 +81,8 @@ class TinyMLP(TinySequential):
                  no_post_activation=True, *args, **kwargs):
         layers = []
         for i, dim in enumerate(dims, 1):
-            layers.append(torch.nn.Linear(input_dim, dim, bias))
-            if activate is not None and ((not no_post_activation) or i != len(dims)): layers.append(activate())
+            layers.append(torch.nn.Linear(input_dim, dim, bias).to(device))
+            if activate is not None and ((not no_post_activation) or i != len(dims)): layers.append(activate().to(device))
             input_dim = dim
         super().__init__(layers, *args, **kwargs)
 
@@ -83,7 +92,7 @@ class TinyMHA(TinyModule):
     # (batch_size, input_dim) -> MHA -> (batch_size, input_dim)
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.attn = torch.nn.MultiheadAttention(*args, **kwargs, batch_first=True)
+        self.attn = torch.nn.MultiheadAttention(*args, **kwargs, batch_first=True).to(device)
 
     def forward(self, x, *args, **kwargs):
         super().begin_forward(x, *args, **kwargs)
@@ -103,11 +112,11 @@ class TinyBlock(TinySequential):
         if len(mlp_dims) and mlp_dims[-1] == -1: mlp_dims = (*mlp_dims[:-1], input_dim)
         if len(mlp_dims) and mlp_dims[-1] != input_dim: raise ValueError(f'expect {input_dims} nodes as MLP output')
         layers = []
-        layers.append((torch.nn.LayerNorm(input_dim), 1))
+        layers.append((torch.nn.LayerNorm(input_dim).to(device), 1))
         layers.append(TinyResidual(TinyMHA(input_dim, num_heads, attn_dropout, attn_bias)))
-        layers.append((torch.nn.LayerNorm(input_dim), 1))
+        layers.append((torch.nn.LayerNorm(input_dim).to(device), 1))
         layers.append((TinyResidual(TinyMLP(input_dim, mlp_dims, mlp_bias, mlp_activate)), 1))
-        if mlp_dropout != 0.0: layers.append((torch.nn.Dropout(mlp_dropout), 1))
+        if mlp_dropout != 0.0: layers.append((torch.nn.Dropout(mlp_dropout).to(device), 1))
         super().__init__(layers, *args, **kwargs)
 
 # transformer
@@ -123,7 +132,7 @@ class TinyTransformer(TinySequential):
         for _ in range(num_blocks):
             layers.append(TinyBlock(input_dim, *args, **kwargs))
         layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate), 1))
-        if activate: layers.append((activate(), 1))
+        if activate: layers.append((activate().to(device), 1))
         super().__init__(layers)
 
 # classifier
