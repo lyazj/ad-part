@@ -7,15 +7,17 @@ import time
 main_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, os.path.join(main_path, 'src/python3'))
 
-if len(sys.argv) < 2 or len(sys.argv) > 4:
-    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ] [ <model-dir> ]', file=sys.stderr)
+if len(sys.argv) < 2 or len(sys.argv) > 5:
+    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ] [ <model-dir> ] [ <device> ]', file=sys.stderr)
     sys.exit(1)
 PF_FILES = sys.argv[1].split(':')
 CF_FILES = sys.argv[2].split(':') if len(sys.argv) > 2 and sys.argv[2] != '-' else None
-MODEL_DIR = sys.argv[3] if len(sys.argv) > 3 else os.path.abspath(os.path.join(main_path, 'run', 'tiny', '%s-%d' % (
-    os.popen('uname -n').read().strip() or 'anonymous', int(time.time()),
-)))
+MODEL_DIR = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else \
+        os.path.abspath(os.path.join(main_path, 'run', 'tiny', '%s-%d' % (
+            os.popen('uname -n').read().strip() or 'anonymous', int(time.time()),
+        )))
 os.makedirs(MODEL_DIR)
+DEVICE = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != '-' else None
 
 # [TODO] Support data after ParT.
 if CF_FILES is not None:
@@ -29,11 +31,10 @@ import torch
 import logging
 import functools
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Configuration.
-tiny.device = 'cpu'
-#tiny.device = 'cuda:0'
+if DEVICE is not None: tiny.device = DEVICE
 create_tensor = functools.partial(torch.tensor, dtype=torch.float32, device=tiny.device)
 
 def split_training_validation(x, validation_ratio):
@@ -52,15 +53,18 @@ training = []
 validation = []
 for (i, PF_FILE) in enumerate(PF_FILES):
     data = adjet.load_pf(PF_FILE).data[:,:adjet.NFEAT_JET]
+    print('loading %s' % PF_FILE)
     t, v= split_training_validation(data, 0.2)
-    print('loading %s: training=%05d validation=%05d' % (PF_FILE, t.shape[0], v.shape[0]))
+    print('splitting %s: training=%05d validation=%05d' % (PF_FILE, t.shape[0], v.shape[0]))
     training.append(t); validation.append(v)
 training, validation = map(np.concatenate, (training, validation))
 print('total loaded: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
 training_input, training_label = training[:,:-1], training[:,-1:].astype('bool')
 training_input, training_label = map(create_tensor, (training_input, training_label))
 validation_input, validation_label = validation[:,:-1], validation[:,-1:].astype('bool')
+print('data loaded to main memory successfully')
 validation_input, validation_label = map(create_tensor, (validation_input, validation_label))
+print('data copied to GPU memory successfully')
 
 def train_one_epoch(epoch_id):
     optimizer.zero_grad()
