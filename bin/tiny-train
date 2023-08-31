@@ -7,8 +7,9 @@ import time
 main_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, os.path.join(main_path, 'src/python3'))
 
-if len(sys.argv) < 2 or len(sys.argv) > 5:
-    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ] [ <model-dir> ] [ <device> ]', file=sys.stderr)
+if len(sys.argv) < 2 or len(sys.argv) > 6:
+    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ] [ <model-dir> ] [ <device> ] [ <batch-size> ]',
+          file=sys.stderr)
     sys.exit(1)
 PF_FILES = sys.argv[1].split(':')
 CF_FILES = sys.argv[2].split(':') if len(sys.argv) > 2 and sys.argv[2] != '-' else None
@@ -18,6 +19,7 @@ MODEL_DIR = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else \
         )))
 os.makedirs(MODEL_DIR)
 DEVICE = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != '-' else None
+BATCH_SIZE = int(sys.argv[5]) if len(sys.argv) > 5 and sys.argv[5] != '-' else 128
 
 # [TODO] Support data after ParT.
 if CF_FILES is not None:
@@ -36,7 +38,6 @@ logging.basicConfig(level=logging.INFO)
 # Configuration.
 if DEVICE is not None: tiny.device = DEVICE
 create_tensor = functools.partial(torch.tensor, dtype=torch.float32, device=tiny.device)
-batch_size = 128
 
 def split_training_validation(x, validation_ratio):
     num = x.shape[0]
@@ -64,11 +65,11 @@ training, validation = split_training_validation(data, 0.2)
 logging.info('data ready in main memory: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
 training, validation = map(create_tensor, (training, validation))
 logging.info('data copied to GPU memory successfully')
-num_training_batches = (training.shape[0] + batch_size - 1) // batch_size
-num_validation_batches = (validation.shape[0] + batch_size - 1) // batch_size
+num_training_batches = (training.shape[0] + BATCH_SIZE - 1) // BATCH_SIZE
+num_validation_batches = (validation.shape[0] + BATCH_SIZE - 1) // BATCH_SIZE
 
 def get_batch(x, batch_id):
-    batch = x[batch_id * batch_size : (batch_id + 1) * batch_size]
+    batch = x[batch_id * BATCH_SIZE : (batch_id + 1) * BATCH_SIZE]
     batch_input, batch_label = batch[:,:-1], batch[:,-1:]
     batch_label_bin = batch_label.bool().to(batch_label.dtype)
     batch_label = batch_label.to(torch.int32)
