@@ -10,9 +10,11 @@ class TinyModule(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.name = name or self.__class__.__name__  # diagnostic
 
-    def begin_forward(self):
+    def begin_forward(self, *args, **kwargs):
         TinyModule.forward_depth += 1
         logging.info(f'enter [{TinyModule.forward_depth}]: {self.name}')
+        #args = '\n'.join(map(str, args))
+        #logging.info(f'args:\n{args}\nkwargs: {kwargs}')
 
     def end_forward(self):
         logging.info(f'leave [{TinyModule.forward_depth}]: {self.name}')
@@ -26,8 +28,7 @@ class TinySequential(TinyModule):
         self.layers = layers
 
     def forward(self, *args, **kwargs):
-        if not isinstance(args, tuple): args = (args,)
-        super().begin_forward()
+        super().begin_forward(*args, **kwargs)
         try:
             # The implementation allows the last half of arguments to bypass some modules.
             # Syntax 1/2: layer ::= module
@@ -36,7 +37,7 @@ class TinySequential(TinyModule):
                 if isinstance(layer, tuple): module, num_args_pass = layer
                 else: module, num_args_pass = layer, len(args)
                 args_pass, args_bypass = args[:num_args_pass], args[num_args_pass:]
-                args_pass = layer(*args_pass, **kwargs)
+                args_pass = module(*args_pass, **kwargs)
                 args_pass = args_pass if isinstance(args_pass, tuple) else (args_pass,) if args_pass is not None else ()
                 args = (*args_pass, *args_bypass)
         finally:
@@ -53,7 +54,7 @@ class TinyResidual(TinyModule):
         self.module = module
 
     def forward(self, x, *args, **kwargs):
-        super().begin_forward()
+        super().begin_forward(x, *args, **kwargs)
         try:
             args = self.module(x, *args, **kwargs)
             if isinstance(args, tuple): args = (args[0] + x, *args[1:])
@@ -85,7 +86,7 @@ class TinyMHA(TinyModule):
         self.attn = torch.nn.MultiheadAttention(*args, **kwargs, batch_first=True)
 
     def forward(self, x, *args, **kwargs):
-        super().begin_forward()
+        super().begin_forward(x, *args, **kwargs)
         try:
             x, _ = self.attn(x, x, x, *args, need_weights=False, **kwargs)
         finally:
@@ -102,11 +103,11 @@ class TinyBlock(TinySequential):
         if len(mlp_dims) and mlp_dims[-1] == -1: mlp_dims = (*mlp_dims[:-1], input_dim)
         if len(mlp_dims) and mlp_dims[-1] != input_dim: raise ValueError(f'expect {input_dims} nodes as MLP output')
         layers = []
-        layers.append(torch.nn.LayerNorm(input_dim))
+        layers.append((torch.nn.LayerNorm(input_dim), 1))
         layers.append(TinyResidual(TinyMHA(input_dim, num_heads, attn_dropout, attn_bias)))
-        layers.append(torch.nn.LayerNorm(input_dim))
-        layers.append(TinyResidual(TinyMLP(input_dim, mlp_dims, mlp_bias, mlp_activate)))
-        if mlp_dropout != 0.0: layers.append(torch.nn.Dropout(mlp_dropout))
+        layers.append((torch.nn.LayerNorm(input_dim), 1))
+        layers.append((TinyResidual(TinyMLP(input_dim, mlp_dims, mlp_bias, mlp_activate)), 1))
+        if mlp_dropout != 0.0: layers.append((torch.nn.Dropout(mlp_dropout), 1))
         super().__init__(layers, *args, **kwargs)
 
 # transformer
@@ -117,12 +118,12 @@ class TinyTransformer(TinySequential):
     def __init__(self, input_dim, embed_dims, decode_dims, num_blocks=2, activate=None,
                  embed_activate=torch.nn.ReLU, decode_activate=torch.nn.ReLU, *args, **kwargs):
         layers = []
-        layers.append(TinyMLP(input_dim, embed_dims, activate=embed_activate))
+        layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate), 1))
         if len(embed_dims): input_dim = embed_dims[-1]
         for _ in range(num_blocks):
             layers.append(TinyBlock(input_dim, *args, **kwargs))
-        layers.append(TinyMLP(input_dim, decode_dims, activate=decode_activate))
-        if activate: layers.append(activate())
+        layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate), 1))
+        if activate: layers.append((activate(), 1))
         super().__init__(layers)
 
 # classifier
