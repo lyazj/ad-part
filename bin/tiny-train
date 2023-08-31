@@ -19,3 +19,8 @@ logging.basicConfig(level=logging.INFO)
 bic = tiny.TinyBinaryClassifier(3)
 
 # [TODO] train bic and save weights
+tensor = torch.tensor([
+    [1.0, 2.0, 3.0],
+    [1.0, 2.0, 3.0],
+])
+print(bic(tensor))

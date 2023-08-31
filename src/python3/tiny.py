@@ -26,13 +26,22 @@ class TinySequential(TinyModule):
         self.layers = layers
 
     def forward(self, *args, **kwargs):
+        if not isinstance(args, tuple): args = (args,)
         super().begin_forward()
         try:
+            # The implementation allows the last half of arguments to bypass some modules.
+            # Syntax 1/2: layer ::= module
+            # Syntax 2/2: layer ::= (module, num_args_pass)
             for layer in self.layers:
-                if isinstance(args, tuple): args = layer(*args, **kwargs)
-                else: args = layer(args, **kwargs)
+                if isinstance(layer, tuple): module, num_args_pass = layer
+                else: module, num_args_pass = layer, len(args)
+                args_pass, args_bypass = args[:num_args_pass], args[num_args_pass:]
+                args_pass = layer(*args_pass, **kwargs)
+                args_pass = args_pass if isinstance(args_pass, tuple) else (args_pass,) if args_pass is not None else ()
+                args = (*args_pass, *args_bypass)
         finally:
             super().end_forward()
+        if len(args) == 1: args = args[0]
         return args
 
 # flow structure wrapper 2/2: residual
