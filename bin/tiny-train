@@ -2,44 +2,39 @@
 
 import os
 import sys
+import time
 
-# [DEBUG]
-#if len(sys.argv) != 2 and len(sys.argv) != 3:
-#    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ]', file=sys.stderr)
-#    sys.exit(1)
-#PF_FILES = sys.argv[1].split(':')
-#CF_FILES = sys.argv[2].split(':') if len(argv) > 2 else None
-PF_FILES = ['../run/example.gz']
-CF_FILES = None
+main_path = os.path.join(os.path.dirname(__file__), '..')
+sys.path.insert(0, os.path.join(main_path, 'src/python3'))
+
+if len(sys.argv) < 2 or len(sys.argv) > 4:
+    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ] [ <model-dir> ]', file=sys.stderr)
+    sys.exit(1)
+PF_FILES = sys.argv[1].split(':')
+CF_FILES = sys.argv[2].split(':') if len(sys.argv) > 2 and sys.argv[2] != '-' else None
+MODEL_DIR = sys.argv[3] if len(sys.argv) > 3 else os.path.abspath(os.path.join(main_path, 'run', 'tiny', '%s-%d' % (
+    os.popen('uname -n').read().strip() or 'anonymous', int(time.time()),
+)))
+os.makedirs(MODEL_DIR)
 
 # [TODO] Support data after ParT.
 if CF_FILES is not None:
     raise NotImplemented('expect not CF_FILES yet')
 
-main_path = os.path.join(os.path.dirname(__file__), '..')
-sys.path.insert(0, os.path.join(main_path, 'src/python3'))
-
-import numpy as np
-import time
-import math
 import tiny
 import adjet
+import math
+import numpy as np
 import torch
 import logging
 import functools
 
 logging.basicConfig(level=logging.INFO)
 
-# Configuration and utilities functions.
+# Configuration.
 tiny.device = 'cpu'
 #tiny.device = 'cuda:0'
-dtype = torch.float32
-create_tensor = functools.partial(torch.tensor, dtype=dtype, device=tiny.device)
-nodename = os.popen('uname -n').read().strip() or 'anonymous'
-timestamp = str(int(time.time()))
-model_directory = os.path.abspath(os.path.join(main_path, 'run', 'tiny', '%s-%s' % (nodename, timestamp)))
-print('model directory: %s' % model_directory)
-os.makedirs(model_directory)
+create_tensor = functools.partial(torch.tensor, dtype=torch.float32, device=tiny.device)
 
 def split_training_validation(x, validation_ratio):
     num = x.shape[0]
@@ -67,27 +62,21 @@ training_input, training_label = map(create_tensor, (training_input, training_la
 validation_input, validation_label = validation[:,:-1], validation[:,-1:].astype('bool')
 validation_input, validation_label = map(create_tensor, (validation_input, validation_label))
 
-def forward(data_input, data_label):
-    data_output = model(data_input)
-    loss = loss_func(data_output, data_label)
-    acc = ((data_output > 0.5) == data_label).to(dtype).mean()
-    return data_output, loss, acc
-
 def train_one_epoch(epoch_id):
     optimizer.zero_grad()
 
     model.train()
-    training_output, training_loss, training_acc = forward(training_input, training_label)
+    training_output, training_loss, training_acc = model.run(training_input, training_label, loss_func)
     training_loss.backward()
     optimizer.step()
 
     model.eval()
     with torch.no_grad():
-        validation_output, validation_loss, validation_acc = forward(validation_input, validation_label)
+        validation_output, validation_loss, validation_acc = model.run(validation_input, validation_label, loss_func)
 
     print('Epoch %03d: training_loss=%.3f training_acc=%.3f validation_loss=%.3f validation_acc=%.3f'
           % (epoch_id, training_loss, training_acc, validation_loss, validation_acc))
-    torch.save(model.state_dict(), os.path.join(model_directory, '%03d' % epoch_id))
+    torch.save(model.state_dict(), os.path.join(MODEL_DIR, '%03d' % epoch_id))
 
 for epoch_id in range(100):
     train_one_epoch(epoch_id)

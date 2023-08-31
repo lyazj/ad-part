@@ -144,8 +144,20 @@ class TinyClassifier(TinyTransformer):
         if len(decode_dims) and decode_dims[-1] != num_classes: raise ValueError(f'expect {num_classes} nodes at the end')
         super().__init__(input_dim, embed_dims, decode_dims, activate=activate, mlp_dims=mlp_dims, *args, **kwargs)
 
+    def run(self, data_input, data_label, loss_func=torch.nn.functional.cross_entropy):
+        data_output = self(data_input)
+        loss = loss_func(data_output, data_label)
+        acc = (data_output.argmax(-1, True) == data_label).to(data_output.dtype).mean()
+        return data_output, loss, acc
+
 # binary classifier
 class TinyBinaryClassifier(TinyClassifier):
 
     def __init__(self, input_dim, activate=torch.nn.Sigmoid, *args, **kwargs):
         super().__init__(input_dim, 1, activate=activate, *args, **kwargs)
+
+    def run(self, data_input, data_label, loss_func=torch.nn.functional.binary_cross_entropy):
+        data_output = self(data_input)
+        loss = loss_func(data_output, data_label)
+        acc = ((data_output > 0.5) == data_label).to(data_output.dtype).mean()
+        return data_output, loss, acc
