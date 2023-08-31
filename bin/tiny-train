@@ -104,5 +104,5 @@ def train_one_epoch(epoch_id):
           % (epoch_id, training_loss, training_acc, validation_loss, validation_acc), end='\n\n')
     torch.save(model.state_dict(), os.path.join(MODEL_DIR, '%03d' % epoch_id))
 
-for epoch_id in range(100):
+for epoch_id in range(10):
     train_one_epoch(epoch_id)
