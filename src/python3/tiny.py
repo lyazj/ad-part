@@ -75,7 +75,8 @@ class TinyResidual(TinyModule):
 # multi-layer preceptor
 class TinyMLP(TinySequential):
 
-    # (batch_size, input_dim) -> Linear(dims[0]) [ -> activate ] -> ... -> (batch_size, output_dim)
+    # (N, input_dim) [ -> Linear(dims[0]) [ -> activate ] -> ... ] -> (N, output_dim)
+    # (N, C, input_dim) [ -> ...] -> (N, C, output_dim)
     # output_dim = dims[-1] if len(dims) else input_dim
     def __init__(self, input_dim, dims, bias=True, activate=torch.nn.ReLU,
                  no_post_activation=True, *args, **kwargs):
@@ -89,7 +90,8 @@ class TinyMLP(TinySequential):
 # multi-head attention
 class TinyMHA(TinyModule):
 
-    # (batch_size, input_dim) -> MHA -> (batch_size, input_dim)
+    # (N, input_dim) -> MHA -> (N, input_dim)
+    # (N, C, input_dim) -> MHA -> (N, C, input_dim)
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.attn = torch.nn.MultiheadAttention(*args, **kwargs, batch_first=True).to(device)
@@ -105,7 +107,8 @@ class TinyMHA(TinyModule):
 # transformer block
 class TinyBlock(TinySequential):
 
-    # (batch_size, input_dim) -> LN -> resMHA -> LN -> resMLP [ -> DROP ] -> (batch_size, output_dim)
+    # (N, input_dim) -> LN -> resMHA -> LN -> resMLP [ -> DROP ] -> (N, output_dim)
+    # (N, C, input_dim) -> LN -> resMHA -> LN -> resMLP [ -> DROP ] -> (N, C, output_dim)
     # output_dim = dims[-1] if len(dims) else input_dim
     def __init__(self, input_dim, mlp_dims, num_heads=4, attn_dropout=0.1, attn_bias=True,
                  mlp_dropout=0.1, mlp_bias=True, mlp_activate=torch.nn.ReLU, *args, **kwargs):
@@ -119,19 +122,34 @@ class TinyBlock(TinySequential):
         if mlp_dropout != 0.0: layers.append((torch.nn.Dropout(mlp_dropout).to(device), 1))
         super().__init__(layers, *args, **kwargs)
 
+# pooling
+class TinyPool(TinyModule):
+
+    def __init__(self, func=torch.max, dim=-1, keepdim=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.func = functool.partial(func, dim=dim, keepdim=keepdim)
+
+    def forward(self, *args, **kwargs):
+        args = self.func(*args, **kwargs)
+        if issubclass(args.__class__, tuple): args = args[0]
+        return args
+
 # transformer
 class TinyTransformer(TinySequential):
 
-    # (batch_size, input_dim) -> BN -> MLP -> BLOCK [ -> BLOCK ] -> MLP [ -> ACTIVATE ] -> (batch_size, output_dim)
+    # (N, input_dim) -> MLP -> BLOCK [ -> BLOCK ] -> MLP [ -> ACTIVATE ] -> (N, output_dim)
+    # (N, C, input_dim) -> MLP -> BLOCK [ -> BLOCK ] -> POOL -> MLP [ -> ACTIVATE ] -> (N, output_dim)
     # output_dim = decode_dims[-1] if len(decode_dims) else embed_dims[-1] if len(embed_dims) else input_dim
-    def __init__(self, input_dim, embed_dims, decode_dims, num_blocks=2, activate=None,
-                 embed_activate=torch.nn.ReLU, decode_activate=torch.nn.ReLU, *args, **kwargs):
+    def __init__(self, dim, input_dim, embed_dims, decode_dims, num_blocks=2, activate=None,
+                 embed_activate=torch.nn.ReLU, decode_activate=torch.nn.ReLU, pool=torch.max, *args, **kwargs):
         layers = []
-        layers.append((torch.nn.BatchNorm1d(input_dim).to(device), 1))
         layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate), 1))
         if len(embed_dims): input_dim = embed_dims[-1]
         for _ in range(num_blocks):
             layers.append(TinyBlock(input_dim, *args, **kwargs))
+        if dim == 1: pass
+        elif dim == 2: layers.append((TinyPool(func=pool, dim=-2), 1))
+        else: raise ValueError(f'invalid dimention: {dim}')
         layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate), 1))
         if activate: layers.append((activate().to(device), 1))
         super().__init__(layers)
@@ -139,11 +157,11 @@ class TinyTransformer(TinySequential):
 # classifier
 class TinyClassifier(TinyTransformer):
 
-    def __init__(self, input_dim, num_classes, embed_dims=(64, 32), decode_dims=(32, -1),
+    def __init__(self, dim, input_dim, num_classes, embed_dims=(64, 32), decode_dims=(32, -1),
                  activate=torch.nn.Softmax, mlp_dims=(64, -1), *args, **kwargs):
         if len(decode_dims) and decode_dims[-1] == -1: decode_dims = (*decode_dims[:-1], num_classes)
         if len(decode_dims) and decode_dims[-1] != num_classes: raise ValueError(f'expect {num_classes} nodes at the end')
-        super().__init__(input_dim, embed_dims, decode_dims, activate=activate, mlp_dims=mlp_dims, *args, **kwargs)
+        super().__init__(dim, input_dim, embed_dims, decode_dims, activate=activate, mlp_dims=mlp_dims, *args, **kwargs)
 
     def run(self, data_input, data_label, loss_func=torch.nn.functional.cross_entropy):
         data_output = self(data_input)
@@ -155,8 +173,8 @@ class TinyClassifier(TinyTransformer):
 # binary classifier
 class TinyBinaryClassifier(TinyClassifier):
 
-    def __init__(self, input_dim, activate=torch.nn.Sigmoid, *args, **kwargs):
-        super().__init__(input_dim, 1, activate=activate, *args, **kwargs)
+    def __init__(self, dim, input_dim, activate=torch.nn.Sigmoid, *args, **kwargs):
+        super().__init__(dim, input_dim, 1, activate=activate, *args, **kwargs)
 
     def run(self, data_input, data_label, loss_func=torch.nn.functional.binary_cross_entropy):
         data_output = self(data_input)

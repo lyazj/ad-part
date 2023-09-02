@@ -46,7 +46,7 @@ def split_training_validation(x, validation_ratio):
     return x[:num_training], x[num_training:]
 
 # Model, loss function, and optimizer.
-model = tiny.TinyBinaryClassifier(adjet.NFEAT_JET - 1)  # without label
+model = tiny.TinyBinaryClassifier(1, adjet.NFEAT_JET - 1)  # without label
 loss_func = torch.nn.functional.binary_cross_entropy
 optimizer = torch.optim.Adam(model.parameters())
 
