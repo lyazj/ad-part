@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 Feature = np.float32
 NFEAT_JET = 27
 NFEAT_PAR = 22
+NFEAT_EVT = 4
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
 NRSLT_CLS = 10
@@ -59,6 +60,11 @@ JET_TAU32              = 23
 JET_TAU43              = 24
 JET_FTREC              = 25
 JET_LABEL              = 26
+
+EVT_MET                =  0
+EVT_METPHI             =  1
+EVT_NJET               =  2
+EVT_LABEL              =  3
 
 CLS_NAME = [
     r'$q/g$',
@@ -125,6 +131,13 @@ JET_FEAT_NAME = [
     r'$\tau_{32}$',
     r'$\tau_{43}$',
     r'$f_{t,\mathrm{rec}}$',
+    r'label',
+]
+
+EVT_FEAT_NAME = [
+    r'MET',
+    r'$\phi_{\mathrm{MET}}$',
+    r'$N_{\mathrm{jet}}$',
     r'label',
 ]
 
@@ -263,6 +276,21 @@ class ADJet:
         plt.xlabel(PAR_FEAT_NAME[index])
         plt.ylabel('a.u.')
 
+class ADEvent:
+
+    def __init__(self, data):
+        assert tuple(data.shape) == (NFEAT_EVT,)
+        self.data = data
+
+    @property
+    def met(self):     return self.data[0]
+    @property
+    def metphi(self):  return self.data[1]
+    @property
+    def njet(self):    return self.data[2]
+    @property
+    def label(self):   return self.data[3]
+
 class ADPFData:
 
     def __init__(self, data):
@@ -313,6 +341,11 @@ class ADPFLabel:
     def top1(self):
         return self.data
 
+class ADEVTData:
+
+    def __init__(self, data):
+        self.data = data.reshape(-1, NFEAT_EVT)
+
 class ADCollection:
 
     def __init__(self, pf, cf):
@@ -348,6 +381,9 @@ def load_pf(dumpfile: str):
 
 def load_cf(partfile: str):
     return ADCFData(np.fromgz(partfile, dtype=Feature))
+
+def load_evt(evtfile: str):
+    return ADEVTData(np.fromgz(evtfile, dtype=Feature))
 
 def collect(pf: ADPFData, cf: ADCFData = None):
     if cf is None: cf = ADPFLabel(pf)
