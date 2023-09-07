@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
     auto brgpar = get_branch(delphes, "Particle"_branch);
-    auto brmet = get_branch(delphes, "MissingET"_branch);
+    //auto brmet = get_branch(delphes, "MissingET"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ++i) {
@@ -109,7 +109,9 @@ int main(int argc, char *argv[])
         } catch(const ADInvalidJet &) { }
       }
       ADEvent evt;
-      evt.set_met(*brmet[0]);
+      //evt.set_met(*brmet[0]);
+      evt.met = 0.0;
+      evt.metphi = 0.0;
       evt.njet = njet;
       evt.label = label;
       evt.write(evtfile);
