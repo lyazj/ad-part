@@ -9,6 +9,7 @@ NFEAT_EVT = 4
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
 NRSLT_CLS = 10
+NJET_EVT = 10
 
 PAR_LOG_PT             =  0
 PAR_LOG_E              =  1
@@ -388,3 +389,39 @@ def load_evt(evtfile: str):
 def collect(pf: ADPFData, cf: ADCFData = None):
     if cf is None: cf = ADPFLabel(pf)
     return ADCollection(pf, cf)
+
+class ADRawDataSet:
+
+    def __init__(self, jetfile: str, evtfile: str):
+        jet = load_pf(jetfile).data
+        evt = load_evt(evtfile).data
+
+        data = np.zeros((evt.shape[0], NJET_EVT, NFEAT_JET - 1))
+        jet_i = 0
+        for evt_i in evt.shape[0]:
+            data[evt_i,0,JET_PT] = evt[evt_i,EVT_MET]
+            data[evt_i,0,JET_PHI] = evt[evt_i,EVT_METPHI]
+            njet = int(evt[evt_i,EVT_NJET])
+            njet_save = min(9, njet)
+            data[evt_i,1:1 + njet_save] = jet[jet_i:jet_i + njet_save,:NFEAT_JET - 1]
+            jet_i += njet
+        if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
+        self.data = data
+        self.label = evt[:,EVT_LABEL].reshape(-1, 1)
+
+class ADParTDataSet:
+
+    def __init__(self, partfile: str, evtfile: str):
+        part = load_cf(partfile).data
+        evt = load_evt(evtfile).data
+
+        data = np.zeros((evt.shape[0], NJET_EVT, NRSLT_CLS))
+        part_i = 0
+        for evt_i in evt.shape[0]:
+            npart = int(evt[evt_i,EVT_NJET])
+            npart_save = min(9, npart)
+            data[evt_i,1:1 + npart_save] = part[part_i:part_i + npart_save]
+            part_i += npart
+        if part_i != part.shape[0]: raise RuntimeError(f'expect {part_i} parts, got {part.shape[0]}')
+        self.data = data
+        self.label = evt[:,EVT_LABEL].reshape(-1, 1)

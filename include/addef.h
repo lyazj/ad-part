@@ -20,10 +20,6 @@
 #define NRSLTCLASS  10
 #endif  /* NRSLTCLASS */
 
-#ifndef NJETPEVENT
-#define NJETPEVENT  10
-#endif  /* NJETPEVENT */
-
 struct ADException {
   virtual ~ADException() = default;
 };
