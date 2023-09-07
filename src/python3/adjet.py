@@ -398,7 +398,7 @@ class ADRawDataSet:
 
         data = np.zeros((evt.shape[0], NJET_EVT, NFEAT_JET - 1))
         jet_i = 0
-        for evt_i in evt.shape[0]:
+        for evt_i in range(evt.shape[0]):
             data[evt_i,0,JET_PT] = evt[evt_i,EVT_MET]
             data[evt_i,0,JET_PHI] = evt[evt_i,EVT_METPHI]
             njet = int(evt[evt_i,EVT_NJET])

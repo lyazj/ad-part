@@ -46,9 +46,16 @@ def split_training_validation(x, validation_ratio):
     return x[:num_training], x[num_training:]
 
 # Model, loss function, and optimizer.
-model = tiny.TinyBinaryClassifier(1, adjet.NFEAT_JET - 1)  # without label
+model = tiny.TinyBinaryClassifier(2, adjet.NFEAT_JET - 1)  # without label
 loss_func = torch.nn.functional.binary_cross_entropy
-optimizer = torch.optim.Adam(model.parameters())
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.8)
+
+def feature_wise_normalize(x, eps=1e-8):
+    mean = np.mean(x, axis=tuple(range(x.ndim - 1)), keepdims=True)
+    std = np.std(x, axis=tuple(range(x.ndim - 1)), keepdims=True)
+    print('mean:', mean, 'std:', std, sep='\n')
+    return (x - mean) / np.hypot(std, eps)
 
 # Data for training and validation.
 data = []
@@ -56,7 +63,7 @@ label = []
 for (i, PF_FILE) in enumerate(PF_FILES):
     logging.info('loading %s' % PF_FILE)
     d = adjet.ADRawDataSet(PF_FILE, PF_FILE[:-3] + '_events.gz')
-    d, l = d.data, d.label
+    d, l = map(lambda x: x[:100000], (d.data, d.label))
     logging.info('%05d samples loaded from %s' % (d.shape[0], PF_FILE))
     data.append(d)
     label.append(l)
@@ -66,32 +73,18 @@ index = np.arange(data.shape[0])
 np.random.shuffle(index)
 data, label = map(lambda x: x[index], (data, label))
 logging.info('total loaded: num_samples=%05d' % (data.shape[0]))
+data = feature_wise_normalize(data)
 training_data, validation_data = split_training_validation(data, 0.2)
 training_label, validation_label = split_training_validation(label, 0.2)
-training_label_bin, validation_label_bin = map(lambda x: x.bool().to(x.dtype), (training_label, validation_label))
+training_label_bin, validation_label_bin = map(lambda x: x.astype('bool').astype(x.dtype), (training_label, validation_label))
 logging.info('data ready in main memory: training=%05d validation=%05d' % (training_data.shape[0], validation_data.shape[0]))
 training = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(*map(create_tensor, (
     training_data, training_label, training_label_bin
-))))
+))), BATCH_SIZE)
 validation = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(*map(create_tensor, (
     validation_data, validation_label, validation_label_bin
-))))
+))), BATCH_SIZE)
 logging.info('data copied to GPU memory successfully')
-
-def get_acc_of_classes(top1, label):
-    # True condition: top1 == label.bool().to(top1.dtype)
-    top1_acc = (top1 == label.bool().to(top1.dtype)).to(tiny.device, training.dtype)
-    class_acc = np.empty(adjet.NRSLT_CLS, dtype=data.dtype)
-    class_cnt = np.empty(adjet.NRSLT_CLS, dtype=data.dtype)
-    for class_id in range(class_acc.shape[0]):
-        weight = (label == create_tensor(class_id)).to(tiny.device, training.dtype)
-        weight_sum = weight.sum()
-        class_cnt[class_id] = weight_sum
-        if weight_sum == 0.0:  # no data labeled as this class
-            class_acc[class_id] = -1.0
-            continue
-        class_acc[class_id] = (top1_acc * weight).sum() / weight_sum
-    return class_acc, class_cnt, top1_acc.mean()
 
 def format_acc_of_classes(class_acc, class_cnt, acc):
     numbers = np.hstack([
@@ -101,31 +94,34 @@ def format_acc_of_classes(class_acc, class_cnt, acc):
     return '%.3f(%.0f) | ' % (acc, class_cnt.sum()) + ' '.join(['%.3f(%.0f)'] * len(class_acc)) % tuple(numbers)
 
 def train_one_epoch(epoch_id):
-    print('Epoch %03d\n----------------------------------------' % epoch_id)
-    optimizer.zero_grad()
+    lr = scheduler.get_last_lr()[0]
+    print('Epoch %03d (learning_rate=%.3g)\n----------------------------------------' % (epoch_id, lr))
 
     model.train()
-    training_top1 = []
-    for batch_input, _, batch_label_bin in training:
+    loss = 0.0
+    acc = 0.0
+    for batch_id, (batch_input, _, batch_label_bin) in enumerate(training):
         _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
-        #print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
-        training_top1.append(batch_top1)
+        print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
         batch_loss.backward()
         optimizer.step()
-    training_top1 = torch.concat(training_top1)
-    class_acc, class_cnt, acc = get_acc_of_classes(training_top1, training[:,-1:])
-    print('train:', format_acc_of_classes(class_acc, class_cnt, acc))
+        loss += batch_loss
+        acc += batch_acc.sum()
+    loss /= len(training)
+    acc /= training_data.shape[0]
+    print('Summary of training: loss=%.3f acc=%.3f' % (loss, acc))
+    scheduler.step()
 
     model.eval()
-    validation_top1 = []
     with torch.no_grad():
-        for batch_input, _, batch_label_bin in validation:
+        for batch_id, (batch_input, _, batch_label_bin) in enumerate(validation):
             _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
-            #print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
-            validation_top1.append(batch_top1)
-    validation_top1 = torch.concat(validation_top1)
-    class_acc, class_cnt, acc = get_acc_of_classes(validation_top1, validation[:,-1:])
-    print('valid:', format_acc_of_classes(class_acc, class_cnt, acc))
+            print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+            loss += batch_loss
+            acc += batch_acc.sum()
+    loss /= len(validation)
+    acc /= validation_data.shape[0]
+    print('Summary of validation: loss=%.3f acc=%.3f' % (loss, acc))
 
 for epoch_id in range(50):
     train_one_epoch(epoch_id)

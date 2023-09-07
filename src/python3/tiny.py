@@ -1,5 +1,6 @@
 import torch
 import logging
+import functools
 
 device = 'cuda:0'
 
@@ -127,7 +128,7 @@ class TinyPool(TinyModule):
 
     def __init__(self, func=torch.max, dim=-1, keepdim=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.func = functool.partial(func, dim=dim, keepdim=keepdim)
+        self.func = functools.partial(func, dim=dim, keepdim=keepdim)
 
     def forward(self, *args, **kwargs):
         args = self.func(*args, **kwargs)
