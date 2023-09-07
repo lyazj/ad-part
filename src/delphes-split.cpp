@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
     make_pair("Tower", "Tower"),
     make_pair("Muon", "Muon"),
     make_pair("ParticleFlowCandidate", "ParticleFlowCandidate"),
+    make_pair("MissingET", "MissingET"),
   }) {
     TBranch *branch = delphes->GetBranch(name);
     if(branch == NULL) continue;

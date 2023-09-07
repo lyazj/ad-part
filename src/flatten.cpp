@@ -23,26 +23,37 @@ using namespace std;
 #endif  /* GNMCH_DETR */
 
 register_branch("Particle"_pack, "GenParticle"_type);
+register_branch("MissingET"_pack, "MissingET"_type);
 
 int main(int argc, char *argv[])
 {
   // Force line-buffered output streams.
   setlbf();
 
-  if(argc < 3) {
-    fprintf(stderr, "usage: %s <rootfile> [ <rootfile> ... ] <dumpfile>\n",
+  if(argc < 5) {
+    fprintf(stderr, "usage: %s <label> <jetfile> <evtfile> <rootfile> [ <rootfile> ... ]\n",
         get_invoc_short_name());
     return 1;
   }
 
-  // Open dumpfile to write.
-  const char *dumpfile = argv[argc - 1];  // dumpfile to write
-  gzFile dump = gzopen(dumpfile, "wb");
-  if(dump == NULL) {
-    fprintf(stderr, "ERROR: error opening dumpfile\n");
+  // Get event label.
+  Feature label = stoi(argv[1]);
+
+  // Open jetfile to write.
+  gzFile jetfile = gzopen(argv[2], "wb");
+  if(jetfile == NULL) {
+    fprintf(stderr, "ERROR: error opening jetfile\n");
     return 1;
   }
-  shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
+  shared_ptr<gzFile_s> jetfile_guard(jetfile, [](gzFile f) { gzclose(f); } );
+
+  // Open evtfile to write.
+  gzFile evtfile = gzopen(argv[3], "wb");
+  if(evtfile == NULL) {
+    fprintf(stderr, "ERROR: error opening evtfile\n");
+    return 1;
+  }
+  shared_ptr<gzFile_s> evtfile_guard(evtfile, [](gzFile f) { gzclose(f); } );
 
   ADPDGQuerier pdg;  // pdgid -> type info
 
@@ -52,7 +63,7 @@ int main(int argc, char *argv[])
   ADGenMatcher matcher;
 
   // Traverse input rootfiles.
-  for(int a = 1; a < argc - 1; ++a) {
+  for(int a = 4; a < argc; ++a) {
     // Open rootfile and get Delphes tree.
     const char *rootfile = argv[a];  // rootfile to read
     auto file = make_shared<TFile>(rootfile, "read");
@@ -67,6 +78,7 @@ int main(int argc, char *argv[])
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
     auto brgpar = get_branch(delphes, "Particle"_branch);
+    auto brmet = get_branch(delphes, "MissingET"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ++i) {
@@ -93,9 +105,14 @@ int main(int argc, char *argv[])
         //printf("\n");
         try {
           ADJet jet(pdg, *brjet[j], r.name);
-          jet.write(dump);
+          jet.write(jetfile);
         } catch(const ADInvalidJet &) { }
       }
+      ADEvent evt;
+      evt.set_met(*brmet[0]);
+      evt.njet = njet;
+      evt.label = label;
+      evt.write(evtfile);
       if((i + 1) % 100 == 0) {
         ADJet::summary();
         printf("%s: %llu events processed\n", rootfile, (unsigned long long)(i + 1));

@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import time
+
+main_path = os.path.join(os.path.dirname(__file__), '..')
+sys.path.insert(0, os.path.join(main_path, 'src/python3'))
+
+if len(sys.argv) < 2 or len(sys.argv) > 6:
+    print(f'usage: {os.path.basename(sys.argv[0])} <pf-files> [ <cf-files> ] [ <model-dir> ] [ <device> ] [ <batch-size> ]',
+          file=sys.stderr)
+    sys.exit(1)
+PF_FILES = sys.argv[1].split(':')
+CF_FILES = sys.argv[2].split(':') if len(sys.argv) > 2 and sys.argv[2] != '-' else None
+MODEL_DIR = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else \
+        os.path.abspath(os.path.join(main_path, 'run', 'tiny', '%s-%d' % (
+            os.popen('uname -n').read().strip() or 'anonymous', int(time.time()),
+        )))
+os.makedirs(MODEL_DIR)
+DEVICE = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != '-' else None
+BATCH_SIZE = int(sys.argv[5]) if len(sys.argv) > 5 and sys.argv[5] != '-' else 128
+
+# [TODO] Support data after ParT.
+if CF_FILES is not None:
+    raise NotImplemented('expect not CF_FILES yet')
+
+import tiny
+import adjet
+import math
+import numpy as np
+import torch
+import logging
+import functools
+
+logging.basicConfig(level=logging.INFO)
+
+# Configuration.
+if DEVICE is not None: tiny.device = DEVICE
+create_tensor = functools.partial(torch.tensor, dtype=torch.float32, device=tiny.device)
+
+def split_training_validation(x, validation_ratio):
+    num = x.shape[0]
+    num_validation = int(math.ceil(num * validation_ratio))
+    num_training = num - num_validation
+    return x[:num_training], x[num_training:]
+
+# Model, loss function, and optimizer.
+model = tiny.TinyBinaryClassifier(1, adjet.NFEAT_JET - 1)  # without label
+loss_func = torch.nn.functional.binary_cross_entropy
+optimizer = torch.optim.Adam(model.parameters())
+
+# Data for training and validation.
+data = []
+for (i, PF_FILE) in enumerate(PF_FILES):
+    logging.info('loading %s' % PF_FILE)
+    d = adjet.load_pf(PF_FILE).data[:,:adjet.NFEAT_JET]
+    logging.info('%05d samples loaded from %s' % (d.shape[0], PF_FILE))
+    data.append(d)
+logging.info('combining and shuffling data')
+data = np.concatenate(data)
+np.random.shuffle(data)
+logging.info('total loaded: num_samples=%05d' % (data.shape[0]))
+training, validation = split_training_validation(data, 0.2)
+logging.info('data ready in main memory: training=%05d validation=%05d' % (training.shape[0], validation.shape[0]))
+training, validation = map(create_tensor, (training, validation))
+logging.info('data copied to GPU memory successfully')
+num_training_batches = (training.shape[0] + BATCH_SIZE - 1) // BATCH_SIZE
+num_validation_batches = (validation.shape[0] + BATCH_SIZE - 1) // BATCH_SIZE
+
+def get_batch(x, batch_id):
+    batch = x[batch_id * BATCH_SIZE : (batch_id + 1) * BATCH_SIZE]
+    batch_input, batch_label = batch[:,:-1], batch[:,-1:]
+    batch_label_bin = batch_label.bool().to(batch_label.dtype)
+    batch_label = batch_label.to(torch.int32)
+    return batch_input, batch_label, batch_label_bin
+
+def get_acc_of_classes(top1, label):
+    # True condition: top1 == label.bool().to(top1.dtype)
+    top1_acc = (top1 == label.bool().to(top1.dtype)).to(tiny.device, training.dtype)
+    class_acc = np.empty(adjet.NRSLT_CLS, dtype=data.dtype)
+    class_cnt = np.empty(adjet.NRSLT_CLS, dtype=data.dtype)
+    for class_id in range(class_acc.shape[0]):
+        weight = (label == create_tensor(class_id)).to(tiny.device, training.dtype)
+        weight_sum = weight.sum()
+        class_cnt[class_id] = weight_sum
+        if weight_sum == 0.0:  # no data labeled as this class
+            class_acc[class_id] = -1.0
+            continue
+        class_acc[class_id] = (top1_acc * weight).sum() / weight_sum
+    return class_acc, class_cnt, top1_acc.mean()
+
+def format_acc_of_classes(class_acc, class_cnt, acc):
+    numbers = np.hstack([
+        class_acc.reshape(-1, 1),
+        class_cnt.reshape(-1, 1),
+    ]).flatten()
+    return '%.3f(%.0f) | ' % (acc, class_cnt.sum()) + ' '.join(['%.3f(%.0f)'] * len(class_acc)) % tuple(numbers)
+
+def train_one_epoch(epoch_id):
+    print('Epoch %03d\n----------------------------------------' % epoch_id)
+    optimizer.zero_grad()
+
+    model.train()
+    training_top1 = []
+    for batch_id in range(num_training_batches):
+        batch_input, _, batch_label_bin = get_batch(training, batch_id)
+        _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
+        #print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+        training_top1.append(batch_top1)
+        batch_loss.backward()
+        optimizer.step()
+    training_top1 = torch.concat(training_top1)
+    class_acc, class_cnt, acc = get_acc_of_classes(training_top1, training[:,-1:])
+    print('train:', format_acc_of_classes(class_acc, class_cnt, acc))
+
+    model.eval()
+    validation_top1 = []
+    with torch.no_grad():
+        for batch_id in range(num_validation_batches):
+            batch_input, _, batch_label_bin = get_batch(validation, batch_id)
+            _, batch_loss, batch_top1, batch_acc = model.run(batch_input, batch_label_bin, loss_func)
+            #print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
+            validation_top1.append(batch_top1)
+    validation_top1 = torch.concat(validation_top1)
+    class_acc, class_cnt, acc = get_acc_of_classes(validation_top1, validation[:,-1:])
+    print('valid:', format_acc_of_classes(class_acc, class_cnt, acc))
+
+for epoch_id in range(50):
+    train_one_epoch(epoch_id)

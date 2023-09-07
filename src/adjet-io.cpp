@@ -96,3 +96,13 @@ void ADParT::write(gzFile file) const
 {
   write_features(*this, file);
 }
+
+bool ADEvent::read(gzFile file)
+{
+  return read_features(*this, file);
+}
+
+void ADEvent::write(gzFile file) const
+{
+  write_features(*this, file);
+}

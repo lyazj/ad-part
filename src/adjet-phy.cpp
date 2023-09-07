@@ -381,3 +381,9 @@ bool ADJet::check(const Jet &jet)
   return jet.PT >= 500 && abs(jet.Eta) <= 2;
 #endif  /* AD_DISABLE_JETCHECK */
 }
+
+void ADEvent::set_met(const MissingET &missingET)
+{
+  met = missingET.MET;
+  metphi = missingET.Phi;
+}

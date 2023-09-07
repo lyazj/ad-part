@@ -13,6 +13,7 @@ class Muon;
 class ADPDGQuerier;
 class TLorentzVector;
 class ParticleFlowCandidate;
+class MissingET;
 
 // classes to be defined
 class ADParticle;
@@ -148,6 +149,23 @@ public:
   char feature_begin[0];
   Feature part[NRSLTCLASS];
   char feature_end[0];
+
+  bool read(gzFile);  // binary input
+  void write(gzFile) const;  // binary output
+
+};
+
+class ADEvent {
+
+public:
+  char feature_begin[0];
+  Feature met;
+  Feature metphi;
+  Feature njet;
+  Feature label;
+  char feature_end[0];
+
+  void set_met(const MissingET &);
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
