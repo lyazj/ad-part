@@ -258,7 +258,7 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
     throw ADInvalidJet();
   }
   ++nclass[l];
-  if(!check(jet)) throw ADInvalidJet();
+  //if(!check(jet)) throw ADInvalidJet();
   ++nvalid;
 
   TLorentzVector p4 = jet.P4();

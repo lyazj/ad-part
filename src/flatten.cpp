@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   // NOTE: Do this before loading rootfile.
   setenv_delphes();
 
-  ADGenMatcher matcher;
+  ////ADGenMatcher matcher;
 
   // Traverse input rootfiles.
   for(int a = 4; a < argc; ++a) {
@@ -86,13 +86,13 @@ int main(int argc, char *argv[])
       delphes->GetEntry(i);
 
       // Parse and dump data.
-      matcher.set_gnpars(brgpar.get_data());
+      ////matcher.set_gnpars(brgpar.get_data());
       //matcher.print_gnpars();
       //matcher.print_dgms();
       //printf("\n");
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
-        ADGenMatchResult r = matcher.match(brjet[j], GNMCH_DETR);
+        ////ADGenMatchResult r = matcher.match(brjet[j], GNMCH_DETR);
         //if(!r.name) {
         //  printf("result: null\n");
         //} else {
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
         //}
         //printf("\n");
         try {
-          ADJet jet(pdg, *brjet[j], r.name);
+          ADJet jet(pdg, *brjet[j], "QCD");  // NOTE: "QCD" is only a placeholder.
           jet.write(jetfile);
         } catch(const ADInvalidJet &) { }
       }
