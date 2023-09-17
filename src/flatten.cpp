@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
       //matcher.print_dgms();
       //printf("\n");
       size_t njet = brjet.size();
+      if(njet == 0) continue;
       for(size_t j = 0; j < njet; ++j) {
         ////ADGenMatchResult r = matcher.match(brjet[j], GNMCH_DETR);
         //if(!r.name) {
