@@ -73,7 +73,7 @@ class TinyResidual(TinyModule):
             super().end_forward()
         return args
 
-# multi-layer preceptor
+# multi-layer perceptron
 class TinyMLP(TinySequential):
 
     # (N, input_dim) [ -> Linear(dims[0]) [ -> activate ] -> ... ] -> (N, output_dim)
