@@ -81,7 +81,11 @@ int main(int argc, char *argv[])
     //auto brmet = get_branch(delphes, "MissingET"_branch);
 
     // Traverse entries.
-    for(Long64_t i = 0; i < n; ++i) {
+    for(Long64_t i = 0; i < n; ({ if(++i % 100 == 0) {
+      ADJet::summary();
+      printf("%s: %llu events processed\n", rootfile, (unsigned long long)i);
+    } })) {
+
       // Fetch data.
       delphes->GetEntry(i);
 
@@ -116,10 +120,6 @@ int main(int argc, char *argv[])
       evt.njet = njet;
       evt.label = label;
       evt.write(evtfile);
-      if((i + 1) % 100 == 0) {
-        ADJet::summary();
-        printf("%s: %llu events processed\n", rootfile, (unsigned long long)(i + 1));
-      }
     }
   }
 
