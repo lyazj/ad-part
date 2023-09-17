@@ -347,6 +347,13 @@ class ADEVTData:
     def __init__(self, data):
         self.data = data.reshape(-1, NFEAT_EVT)
 
+    def hist(self, index, *args, **kwargs):
+        kwargs = kwargs.copy()
+        if self.data.shape[0] == 0: kwargs['density'] = False
+        plt.hist(self.data[:,index], *args, **kwargs)
+        plt.xlabel(EVT_FEAT_NAME[index])
+        plt.ylabel('a.u.')
+
 class ADCollection:
 
     def __init__(self, pf, cf):
@@ -417,7 +424,7 @@ class ADParTDataSet:
 
         data = np.zeros((evt.shape[0], NJET_EVT, NRSLT_CLS))
         part_i = 0
-        for evt_i in evt.shape[0]:
+        for evt_i in range(evt.shape[0]):
             npart = int(evt[evt_i,EVT_NJET])
             npart_save = min(9, npart)
             data[evt_i,1:1 + npart_save] = part[part_i:part_i + npart_save]

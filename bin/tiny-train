@@ -21,9 +21,8 @@ os.makedirs(MODEL_DIR)
 DEVICE = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != '-' else None
 BATCH_SIZE = int(sys.argv[5]) if len(sys.argv) > 5 and sys.argv[5] != '-' else 128
 
-# [TODO] Support data after ParT.
-if CF_FILES is not None:
-    raise NotImplemented('expect not CF_FILES yet')
+if CF_FILES is not None and len(PF_FILES) != len(CF_FILES):
+    raise ValueError('len(PF_FILES) != len(CF_FILES)')
 
 import tiny
 import adjet
@@ -46,7 +45,10 @@ def split_training_validation(x, validation_ratio):
     return x[:num_training], x[num_training:]
 
 # Model, loss function, and optimizer.
-model = tiny.TinyBinaryClassifier(2, adjet.NFEAT_JET - 1)  # without label
+if CF_FILES is None:
+    model = tiny.TinyBinaryClassifier(2, adjet.NFEAT_JET - 1)  # without label
+else:
+    model = tiny.TinyBinaryClassifier(2, adjet.NRSLT_CLS)
 loss_func = torch.nn.functional.binary_cross_entropy
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.8)
@@ -62,7 +64,10 @@ data = []
 label = []
 for (i, PF_FILE) in enumerate(PF_FILES):
     logging.info('loading %s' % PF_FILE)
-    d = adjet.ADRawDataSet(PF_FILE, PF_FILE[:-3] + '_events.gz')
+    if CF_FILES is None:
+        d = adjet.ADRawDataSet(PF_FILE, PF_FILE[:-3] + '_events.gz')
+    else:
+        d = adjet.ADParTDataSet(CF_FILES[i], PF_FILE[:-3] + '_events.gz')
     d, l = map(lambda x: x[:100000], (d.data, d.label))
     logging.info('%05d samples loaded from %s' % (d.shape[0], PF_FILE))
     data.append(d)
