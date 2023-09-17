@@ -54,8 +54,10 @@ void ADAllocator::dealloc(void *addr)
   if(!driver->allocated.erase(addr)) {
     throw runtime_error("not AD-allocated");
   }
+  char buf[64];  // This avoids use-after-free warning.
+  sprintf(buf, "INFO: %s: %p\n", __func__, addr);
   free(addr);
-  fprintf(stderr, "INFO: %s: %p\n", __func__, addr);
+  fprintf(stderr, "%s", buf);
 }
 
 void *ADAllocator::realloc(void *addr, size_t n, bool copy)
