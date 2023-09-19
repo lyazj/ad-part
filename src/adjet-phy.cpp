@@ -186,6 +186,23 @@ double get_ftrec(const Jet &jet)
   return r;
 }
 
+template<class DelphesClass>
+void set_adlep_common(ADLepton &adlep, const DelphesClass &lep)
+{
+  TLorentzVector p4 = lep.P4();
+  adlep.pt = p4.Pt();
+  adlep.eta = p4.Eta();
+  adlep.phi = p4.Phi();
+  adlep.e = p4.Energy();
+  adlep.charge = lep.Charge;
+  adlep.iso_db = lep.IsolationVar;
+  adlep.iso_rc = lep.IsolationVarRhoCorr;
+  adlep.d0 = lep.D0;
+  adlep.d0_err = lep.ErrorD0;
+  adlep.dz = lep.DZ;
+  adlep.dz_err = lep.ErrorDZ;
+}
+
 }  // namespace
 
 ADParticle::ADParticle(const GenParticle &gnpar,
@@ -382,8 +399,23 @@ bool ADJet::check(const Jet &jet)
 #endif  /* AD_DISABLE_JETCHECK */
 }
 
+void ADEvent::set_ht(const ScalarHT &scalarHT)
+{
+  ht = scalarHT.HT;
+}
+
 void ADEvent::set_met(const MissingET &missingET)
 {
   met = missingET.MET;
   metphi = missingET.Phi;
+}
+
+ADLepton::ADLepton(const Electron &electron)
+{
+  set_adlep_common(*this, electron);
+}
+
+ADLepton::ADLepton(const Muon &muon)
+{
+  set_adlep_common(*this, muon);
 }

@@ -9,10 +9,12 @@ class Jet;
 class GenParticle;
 class Track;
 class Tower;
+class Electron;
 class Muon;
 class ADPDGQuerier;
 class TLorentzVector;
 class ParticleFlowCandidate;
+class ScalarHT;
 class MissingET;
 
 // classes to be defined
@@ -155,16 +157,45 @@ public:
 
 };
 
+class ADLepton {
+
+public:
+  char feature_begin[0];
+  Feature pt;
+  Feature eta;
+  Feature phi;
+  Feature e;
+  Feature charge;
+  Feature iso_db;
+  Feature iso_rc;
+  Feature d0;
+  Feature d0_err;
+  Feature dz;
+  Feature dz_err;
+  char feature_end[0];
+
+  ADLepton();
+  ADLepton(const Electron &);
+  ADLepton(const Muon &);
+
+  bool read(gzFile);  // binary input
+  void write(gzFile) const;  // binary output
+
+};
+
 class ADEvent {
 
 public:
   char feature_begin[0];
+  Feature ht;
   Feature met;
   Feature metphi;
   Feature njet;
+  Feature nlep;
   Feature label;
   char feature_end[0];
 
+  void set_ht(const ScalarHT &);
   void set_met(const MissingET &);
 
   bool read(gzFile);  // binary input

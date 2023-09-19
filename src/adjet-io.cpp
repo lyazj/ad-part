@@ -106,3 +106,18 @@ void ADEvent::write(gzFile file) const
 {
   write_features(*this, file);
 }
+
+ADLepton::ADLepton()
+{
+  memset(feature_begin, 0, feature_end - feature_begin);  // padding
+}
+
+bool ADLepton::read(gzFile file)
+{
+  return read_features(*this, file);
+}
+
+void ADLepton::write(gzFile file) const
+{
+  write_features(*this, file);
+}

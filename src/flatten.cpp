@@ -23,7 +23,10 @@ using namespace std;
 #endif  /* GNMCH_DETR */
 
 register_branch("Particle"_pack, "GenParticle"_type);
+register_branch("Electron"_pack, "Electron"_type);
+register_branch("Muon"_pack, "Muon"_type);
 register_branch("MissingET"_pack, "MissingET"_type);
+register_branch("ScalarHT"_pack, "ScalarHT"_type);
 
 int main(int argc, char *argv[])
 {
@@ -31,7 +34,7 @@ int main(int argc, char *argv[])
   setlbf();
 
   if(argc < 5) {
-    fprintf(stderr, "usage: %s <label> <jetfile> <evtfile> <rootfile> [ <rootfile> ... ]\n",
+    fprintf(stderr, "usage: %s <label> <jetfile> <lepfile> <evtfile> <rootfile> [ <rootfile> ... ]\n",
         get_invoc_short_name());
     return 1;
   }
@@ -47,8 +50,16 @@ int main(int argc, char *argv[])
   }
   shared_ptr<gzFile_s> jetfile_guard(jetfile, [](gzFile f) { gzclose(f); } );
 
+  // Open lepfile to write.
+  gzFile lepfile = gzopen(argv[3], "wb");
+  if(lepfile == NULL) {
+    fprintf(stderr, "ERROR: error opening lepfile\n");
+    return 1;
+  }
+  shared_ptr<gzFile_s> lepfile_guard(lepfile, [](gzFile f) { gzclose(f); } );
+
   // Open evtfile to write.
-  gzFile evtfile = gzopen(argv[3], "wb");
+  gzFile evtfile = gzopen(argv[4], "wb");
   if(evtfile == NULL) {
     fprintf(stderr, "ERROR: error opening evtfile\n");
     return 1;
@@ -63,7 +74,7 @@ int main(int argc, char *argv[])
   ////ADGenMatcher matcher;
 
   // Traverse input rootfiles.
-  for(int a = 4; a < argc; ++a) {
+  for(int a = 5; a < argc; ++a) {
     // Open rootfile and get Delphes tree.
     const char *rootfile = argv[a];  // rootfile to read
     auto file = make_shared<TFile>(rootfile, "read");
@@ -77,8 +88,11 @@ int main(int argc, char *argv[])
 
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
-    auto brgpar = get_branch(delphes, "Particle"_branch);
-    //auto brmet = get_branch(delphes, "MissingET"_branch);
+    ////auto brgpar = get_branch(delphes, "Particle"_branch);
+    auto brelec = get_branch(delphes, "Electron"_branch);
+    auto brmuon = get_branch(delphes, "Muon"_branch);
+    auto brmet = get_branch(delphes, "MissingET"_branch);
+    auto brht = get_branch(delphes, "ScalarHT"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ({ if(++i % 100 == 0) {
@@ -113,11 +127,19 @@ int main(int argc, char *argv[])
           jet.write(jetfile);
         } catch(const ADInvalidJet &) { }
       }
+      size_t nelec = brelec.size();
+      for(size_t j = 0; j < nelec; ++j) {
+        ADLepton(*brelec[j]).write(lepfile);
+      }
+      size_t nmuon = brmuon.size();
+      for(size_t j = 0; j < nmuon; ++j) {
+        ADLepton(*brmuon[j]).write(lepfile);
+      }
       ADEvent evt;
-      //evt.set_met(*brmet[0]);
-      evt.met = 0.0;
-      evt.metphi = 0.0;
+      evt.set_ht(*brht[0]);
+      evt.set_met(*brmet[0]);
       evt.njet = njet;
+      evt.nlep = nelec + nmuon;
       evt.label = label;
       evt.write(evtfile);
     }
