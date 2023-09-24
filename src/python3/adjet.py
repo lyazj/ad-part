@@ -5,11 +5,13 @@ import matplotlib.pyplot as plt
 Feature = np.float32
 NFEAT_JET = 27
 NFEAT_PAR = 22
-NFEAT_EVT = 4
+NFEAT_EVT = 6
+NFEAT_LEP = 11
 NPAR_JET = 128
 NFEAT_TOT = NFEAT_JET + NFEAT_PAR * NPAR_JET
 NRSLT_CLS = 10
 NJET_EVT = 10
+NLEP_EVT = 10
 
 PAR_LOG_PT             =  0
 PAR_LOG_E              =  1
@@ -62,10 +64,24 @@ JET_TAU43              = 24
 JET_FTREC              = 25
 JET_LABEL              = 26
 
-EVT_MET                =  0
-EVT_METPHI             =  1
-EVT_NJET               =  2
-EVT_LABEL              =  3
+EVT_HT                 =  0
+EVT_MET                =  1
+EVT_METPHI             =  2
+EVT_NJET               =  3
+EVT_NLEP               =  4
+EVT_LABEL              =  5
+
+LEP_PT                 =  0
+LEP_ETA                =  1
+LEP_PHI                =  2
+LEP_E                  =  3
+LEP_CHARGE             =  4
+LEP_ISO_DB             =  5
+LEP_ISO_RC             =  6
+LEP_D0                 =  7
+LEP_D0_ERR             =  8
+LEP_DZ                 =  9
+LEP_DZ_ERR             = 10
 
 CLS_NAME = [
     r'$q/g$',
@@ -136,10 +152,26 @@ JET_FEAT_NAME = [
 ]
 
 EVT_FEAT_NAME = [
+    r'HT',
     r'MET',
     r'$\phi_{\mathrm{MET}}$',
     r'$N_{\mathrm{jet}}$',
+    r'$N_{\mathrm{lepton}}$',
     r'label',
+]
+
+LEP_FEAT_NAME = [
+    r'$p_\mathrm{T}$',
+    r'$\eta$',
+    r'$\phi$',
+    r'$E$',
+    r'charge',
+    r'iso_db',
+    r'iso_rc',
+    r'$d_0$',
+    r'$d_{0, err}$',
+    r'$d_z$',
+    r'$d_{z, err}$',
 ]
 
 class ADParticle:
@@ -215,25 +247,25 @@ class ADJet:
         return [ADParticle(p) for p in self.par]
 
     @property
-    def pt(self):     return self.data[0]
+    def pt(self):     return self.data[ 0]
     @property
-    def eta(self):    return self.data[1]
+    def eta(self):    return self.data[ 1]
     @property
-    def phi(self):    return self.data[2]
+    def phi(self):    return self.data[ 2]
     @property
-    def e(self):      return self.data[3]
+    def e(self):      return self.data[ 3]
     @property
-    def npar(self):   return self.data[4]
+    def npar(self):   return self.data[ 4]
     @property
-    def sdmass(self): return self.data[5]
+    def sdmass(self): return self.data[ 5]
     @property
-    def tau1(self):   return self.data[6]
+    def tau1(self):   return self.data[ 6]
     @property
-    def tau2(self):   return self.data[7]
+    def tau2(self):   return self.data[ 7]
     @property
-    def tau3(self):   return self.data[8]
+    def tau3(self):   return self.data[ 8]
     @property
-    def tau4(self):   return self.data[9]
+    def tau4(self):   return self.data[ 9]
     @property
     def n2_0(self):   return self.data[10]
     @property
@@ -284,13 +316,46 @@ class ADEvent:
         self.data = data
 
     @property
-    def met(self):     return self.data[0]
+    def ht(self):      return self.data[0]
     @property
-    def metphi(self):  return self.data[1]
+    def met(self):     return self.data[1]
     @property
-    def njet(self):    return self.data[2]
+    def metphi(self):  return self.data[2]
     @property
-    def label(self):   return self.data[3]
+    def njet(self):    return self.data[3]
+    @property
+    def nlep(self):    return self.data[4]
+    @property
+    def label(self):   return self.data[5]
+
+class ADLepton:
+
+    def __init__(self, data):
+        assert tuple(data.shape) == (NFEAT_LEP,)
+        self.data = data
+
+    @property
+    def pt(self):                return self.data[ 0]
+    @property
+    def eta(self):               return self.data[ 1]
+    @property
+    def phi(self):               return self.data[ 2]
+    @property
+    def e(self):                 return self.data[ 3]
+    @property
+    def charge(self):            return self.data[ 4]
+    @property
+    def iso_db(self):            return self.data[ 5]
+    @property
+    def iso_rc(self):            return self.data[ 6]
+    @property
+    def d0(self):                return self.data[ 7]
+    @property
+    def d0_err(self):            return self.data[ 8]
+    @property
+    def dz(self):                return self.data[ 9]
+    @property
+    def dz_err(self):            return self.data[10]
 
 class ADPFData:
 
@@ -354,6 +419,18 @@ class ADEVTData:
         plt.xlabel(EVT_FEAT_NAME[index])
         plt.ylabel('a.u.')
 
+class ADLEPData:
+
+    def __init__(self, data):
+        self.data = data.reshape(-1, NFEAT_LEP)
+
+    def hist(self, index, *args, **kwargs):
+        kwargs = kwargs.copy()
+        if self.data.shape[0] == 0: kwargs['density'] = False
+        plt.hist(self.data[:,index], *args, **kwargs)
+        plt.xlabel(LEP_FEAT_NAME[index])
+        plt.ylabel('a.u.')
+
 class ADCollection:
 
     def __init__(self, pf, cf):
@@ -393,42 +470,61 @@ def load_cf(partfile: str):
 def load_evt(evtfile: str):
     return ADEVTData(np.fromgz(evtfile, dtype=Feature))
 
+def load_lep(lepfile: str):
+    return ADLEPData(np.fromgz(lepfile, dtype=Feature))
+
 def collect(pf: ADPFData, cf: ADCFData = None):
     if cf is None: cf = ADPFLabel(pf)
     return ADCollection(pf, cf)
 
 class ADRawDataSet:
 
-    def __init__(self, jetfile: str, evtfile: str):
+    def __init__(self, jetfile: str, evtfile: str, lepfile: str):
         jet = load_pf(jetfile).data
         evt = load_evt(evtfile).data
+        lep = load_lep(lepfile).data
 
-        data = np.zeros((evt.shape[0], NJET_EVT, NFEAT_JET - 1))
-        jet_i = 0
+        # Make input tensors.
+        t_evt = evt[:,:EVT_LABEL]
+        t_jet = np.zeros((evt.shape[0], NJET_EVT, JET_LABEL))
+        t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
+        jet_i, lep_i = 0, 0
         for evt_i in range(evt.shape[0]):
-            data[evt_i,0,JET_PT] = evt[evt_i,EVT_MET]
-            data[evt_i,0,JET_PHI] = evt[evt_i,EVT_METPHI]
-            njet = int(evt[evt_i,EVT_NJET])
-            njet_save = min(9, njet)
-            data[evt_i,1:1 + njet_save] = jet[jet_i:jet_i + njet_save,:NFEAT_JET - 1]
-            jet_i += njet
+            njet, nlep = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP))
+            njet_to_save, nlep_to_save = map(min, (njet, nlep), (NJET_EVT, NLEP_EVT))
+            t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save,:JET_LABEL]
+            t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
+            jet_i, lep_i = jet_i + njet, lep_i + nlep
         if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
-        self.data = data
+        if lep_i != lep.shape[0]: raise RuntimeError(f'expect {lep_i} leptons, got {lep.shape[0]}')
+
+        self.evt = t_evt
+        self.jet = t_jet
+        self.lep = t_lep
         self.label = evt[:,EVT_LABEL].reshape(-1, 1)
 
 class ADParTDataSet:
 
-    def __init__(self, partfile: str, evtfile: str):
-        part = load_cf(partfile).data
+    def __init__(self, partfile: str, evtfile: str, lepfile: str):
+        jet = load_cf(partfile).data
         evt = load_evt(evtfile).data
+        lep = load_lep(lepfile).data
 
-        data = np.zeros((evt.shape[0], NJET_EVT, NRSLT_CLS))
-        part_i = 0
+        # Make input tensors.
+        t_evt = evt[:,:EVT_LABEL]
+        t_jet = np.zeros((evt.shape[0], NJET_EVT, NRSLT_CLS))
+        t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
+        jet_i, lep_i = 0, 0
         for evt_i in range(evt.shape[0]):
-            npart = int(evt[evt_i,EVT_NJET])
-            npart_save = min(9, npart)
-            data[evt_i,1:1 + npart_save] = part[part_i:part_i + npart_save]
-            part_i += npart
-        if part_i != part.shape[0]: raise RuntimeError(f'expect {part_i} parts, got {part.shape[0]}')
-        self.data = data
+            njet, nlep = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP))
+            njet_to_save, nlep_to_save = map(min, (njet, nlep), (NJET_EVT, NLEP_EVT))
+            t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save]
+            t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
+            jet_i, lep_i = jet_i + njet, lep_i + nlep
+        if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
+        if lep_i != lep.shape[0]: raise RuntimeError(f'expect {lep_i} leptons, got {lep.shape[0]}')
+
+        self.evt = t_evt
+        self.jet = t_jet
+        self.lep = t_lep
         self.label = evt[:,EVT_LABEL].reshape(-1, 1)
