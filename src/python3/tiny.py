@@ -150,7 +150,7 @@ class TinyTransformer(TinySequential):
             layers.append(TinyBlock(input_dim, *args, **kwargs))
         if dim == 1: pass
         elif dim == 2: layers.append((TinyPool(func=pool, dim=-2), 1))
-        else: raise ValueError(f'invalid dimention: {dim}')
+        else: raise ValueError(f'invalid dimension: {dim}')
         layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate), 1))
         if activate: layers.append((activate().to(device), 1))
         super().__init__(layers)
@@ -183,3 +183,35 @@ class TinyBinaryClassifier(TinyClassifier):
         data_output_top1 = data_output > 0.5
         data_output_acc = (data_output_top1 == data_label).to(data_output.dtype)
         return data_output, loss, data_output_top1, data_output_acc
+
+# event classifier
+class TinyEventClassifier(TinyModule):
+
+    def __init__(self, evt_dim, jet_dim, lep_dim, classifier=TinyBinaryClassifier, embed_dims=(),
+                 evt_embed=(64, 32), jet_embed=(64, 32), lep_embed=(64, 32), *args, **kwargs):
+        evt_embed_dim = evt_embed[-1] if evt_embed else evt_dim
+        jet_embed_dim = jet_embed[-1] if jet_embed else jet_dim
+        lep_embed_dim = lep_embed[-1] if lep_embed else lep_dim
+        if not evt_embed_dim == jet_embed_dim == lep_embed_dim:
+            raise ValueError('inconsistent dimensions after embedding')
+        super().__init__()
+        self.evt_embed = TinyMLP(evt_dim, evt_embed)
+        self.jet_embed = TinyMLP(jet_dim, jet_embed)
+        self.lep_embed = TinyMLP(lep_dim, lep_embed)
+        self.classifier = classifier(2, evt_embed_dim, embed_dims=embed_dims, *args, **kwargs)
+
+    def embed(self, evt, jet, lep, *args, **kwargs):
+        evt = self.evt_embed(evt, *args, **kwargs)
+        jet = self.jet_embed(jet, *args, **kwargs)
+        lep = self.lep_embed(lep, *args, **kwargs)
+        return torch.concat((evt, jet, lep), dim=-2)
+
+    def forward(self, evt, jet, lep, *args, **kwargs):
+        super().begin_forward(evt, jet, lep, *args, **kwargs)
+        try:
+            return self.classifier(self.embed(evt, jet, lep), *args, **kwargs)
+        finally:
+            super().end_forward()
+
+    def run(self, evt, jet, lep, label, *args, **kwargs):
+        return self.classifier.run(self.embed(evt, jet, lep), label, *args, **kwargs)

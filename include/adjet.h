@@ -79,7 +79,6 @@ private:
 
 };
 
-
 class ADJet {
 
 public:

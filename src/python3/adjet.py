@@ -485,7 +485,7 @@ class ADRawDataSet:
         lep = load_lep(lepfile).data
 
         # Make input tensors.
-        t_evt = evt[:,:EVT_LABEL]
+        t_evt = evt[:,:EVT_LABEL].reshape(-1, 1, EVT_LABEL)
         t_jet = np.zeros((evt.shape[0], NJET_EVT, JET_LABEL))
         t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
         jet_i, lep_i = 0, 0
@@ -511,7 +511,7 @@ class ADParTDataSet:
         lep = load_lep(lepfile).data
 
         # Make input tensors.
-        t_evt = evt[:,:EVT_LABEL]
+        t_evt = evt[:,:EVT_LABEL].reshape(-1, 1, EVT_LABEL)
         t_jet = np.zeros((evt.shape[0], NJET_EVT, NRSLT_CLS))
         t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
         jet_i, lep_i = 0, 0
