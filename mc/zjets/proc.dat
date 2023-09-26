@@ -1,0 +1,6 @@
+import model sm-no_b_mass
+generate    p p > z    , z > l+ l-
+add process p p > z j  , z > l+ l-
+add process p p > z j j, z > l+ l-
+output proc
+display diagrams
