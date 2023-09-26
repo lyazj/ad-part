@@ -1,0 +1,4 @@
+py.py
+*.log
+proc/
+diagrams/
