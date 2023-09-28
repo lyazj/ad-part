@@ -6,6 +6,6 @@ done
 set nevents = 100000
 set pdlabel = lhapdf
 set lhaid = 315000
-set htjmin = 100.0
+set htjmin = 600.0
 set use_syst = False
 done
