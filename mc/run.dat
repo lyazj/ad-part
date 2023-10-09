@@ -1,0 +1,11 @@
+launch proc -m
+shower=pythia8
+detector=delphes
+done
+../delphes_card.dat
+set nevents = 100000
+set pdlabel = lhapdf
+set lhaid = 315000
+set htjmin = 600.0
+set use_syst = False
+done
