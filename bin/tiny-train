@@ -67,7 +67,7 @@ for (i, PF_FILE) in enumerate(PF_FILES):
         d = adjet.ADRawDataSet(PF_FILE, PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz')
     else:
         d = adjet.ADParTDataSet(CF_FILES[i], PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz')
-    e, j, l, lab = map(lambda x: x[:100000], (d.evt, d.jet, d.lep, d.label))
+    e, j, l, lab = map(lambda x: x[:50000], (d.evt, d.jet, d.lep, d.label))
     logging.info('%05d samples loaded from %s' % (e.shape[0], PF_FILE))
     for c, d in (evt, e), (jet, j), (lep, l), (label, lab): c.append(d)
 logging.info('preprocessing data')
