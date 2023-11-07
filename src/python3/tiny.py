@@ -103,7 +103,7 @@ class TinyMHA(TinyModule):
             x, _ = self.attn(x, x, x, *args, need_weights=False, **kwargs)
         finally:
             super().end_forward()
-        return x
+        return (x, *args) if args else x
 
 # transformer block
 class TinyBlock(TinySequential):
@@ -146,11 +146,11 @@ class TinyTransformer(TinySequential):
         layers = []
         layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate), 1))
         if len(embed_dims): input_dim = embed_dims[-1]
-        for _ in range(num_blocks):
-            layers.append(TinyBlock(input_dim, *args, **kwargs))
-        if dim == 1: pass
-        elif dim == 2: layers.append((TinyPool(func=pool, dim=-2), 1))
+        if dim == 1 or dim == -1 or dim == 2: pass
+        elif dim == -2: layers.append((TinyPool(func=pool, dim=-2), 1))
         else: raise ValueError(f'invalid dimension: {dim}')
+        for _ in range(num_blocks): layers.append(TinyBlock(input_dim, *args, **kwargs))
+        if dim == 2: layers.append((TinyPool(func=pool, dim=-2), 1))
         layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate), 1))
         if activate: layers.append((activate().to(device), 1))
         super().__init__(layers)
@@ -215,3 +215,56 @@ class TinyEventClassifier(TinyModule):
 
     def run(self, evt, jet, lep, label, *args, **kwargs):
         return self.classifier.run(self.embed(evt, jet, lep), label, *args, **kwargs)
+
+# Gaussian sampler
+class TinySampler(TinyModule):
+
+    def __init__(self, latent_dim, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, x, **kwargs):
+        super().begin_forward(x, **kwargs)
+        try:
+            print(x.shape)
+            x = x.view(*x.shape[:-1], x.shape[-1] // 2, 2)
+            return x[...,0] + torch.exp(x[...,1]/2.) * torch.randn(x.shape[:-1]).to(device), x
+        finally:
+            super().end_forward()
+
+# VAE
+class TinyVAE(TinySequential):
+
+    # input_dim:
+    #   N or (N): no deflation or inflation
+    #   (M, N): M -> 1 -> M
+    def __init__(self, input_dim, latent_dim=16, transformer=TinyTransformer,
+                 sampler=TinySampler, embed_dims=(64, 32), decode_dims=(32, -1),
+                 activate=None, deflate=None, inflate=None, mlp_dims=(64, -1), *args, **kwargs):
+        dim, repeats = 1, 1
+        try: dim = len(input_dim)
+        except TypeError: pass
+        if dim not in [1, 2]: raise ValueError(f'invalid dim: {dim}')
+        if dim == 2: repeats, input_dim = input_dim
+        if len(decode_dims) and decode_dims[-1] == -1: decode_dims = (*decode_dims[:-1], latent_dim * 2)
+        if len(decode_dims) and decode_dims[-1] != latent_dim * 2: raise ValueError(f'expect {latent_dim * 2} nodes at the end')
+        if deflate is None: deflate = torch.max
+        if inflate is None:
+            def inflate(x, repeats, dim=-1, **kwargs):
+                x = x.unsqueeze(dim=dim)
+                return torch.repeat_interleave(x, repeats, dim=dim)
+            inflate = functools.partial(inflate, repeats=repeats)
+        layers = []
+        layers.append((transformer(dim, input_dim, embed_dims, decode_dims, activate=None,
+                                   pool=deflate, mlp_dims=mlp_dims, *args, **kwargs), 1))
+        layers.append(sampler(latent_dim))
+        locked_input_dim, locked_embed_dims, locked_decode_dims = input_dim, embed_dims, decode_dims
+        input_dim = (
+            locked_decode_dims[-1] if len(locked_decode_dims)
+            else locked_embed_dims[-1] if len(locked_embed_dims)
+            else locked_input_dim
+        ) // 2
+        embed_dims = (*locked_decode_dims[-2::-1], *locked_embed_dims[-1:-2:-1])
+        decode_dims = (*locked_embed_dims[-2::-1], locked_input_dim)
+        layers.append((transformer(-dim, input_dim, embed_dims, decode_dims, activate=activate,
+                                   pool=inflate, mlp_dims=mlp_dims, *args, **kwargs), 1))
+        super().__init__(layers)
