@@ -140,7 +140,7 @@ add_library(adhep ${AD_SOURCES})
 
 if(NOT AD_NOTEST)
 
-    add_executable(sanitize-test src/sanitizer-test.cpp)
+    add_executable(sanitizer-test src/sanitizer-test.cpp)
     
     if(NOT AD_NOONNX)
         add_executable(onnx-test src/onnx-test.cpp)
