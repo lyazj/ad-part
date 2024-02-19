@@ -17,7 +17,7 @@ fi
 JETFILE="${OUTDIR}"/"$(sed 's@\.root$@.gz@' <<< "${ROOTBASE}")"
 LEPFILE="${OUTDIR}"/"$(sed 's@\.root$@_leptons.gz@' <<< "${ROOTBASE}")"
 EVTFILE="${OUTDIR}"/"$(sed 's@\.root$@_events.gz@' <<< "${ROOTBASE}")"
-LOGFILE="${OUTDIR}"/"$(sed 's@\.root$@.log@' <<< "${ROOTBASE}")"
+LOGFILE="${OUTDIR}"/"$(sed 's@\.root$@_flatten.log@' <<< "${ROOTBASE}")"
 
 mkdir -p "${OUTDIR}"
 CMD="../../bin/flatten 0 '${JETFILE}' '${LEPFILE}' '${EVTFILE}' '${ROOTFILE}' &> '${LOGFILE}'"
