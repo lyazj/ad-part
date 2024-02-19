@@ -28,6 +28,7 @@ register_branch("Electron"_pack, "Electron"_type);
 register_branch("Muon"_pack, "Muon"_type);
 register_branch("MissingET"_pack, "MissingET"_type);
 register_branch("ScalarHT"_pack, "ScalarHT"_type);
+register_branch("Vertex"_pack, "Vertex"_type);
 
 int main(int argc, char *argv[])
 {
@@ -94,6 +95,7 @@ int main(int argc, char *argv[])
     auto brmuon = get_branch(delphes, "Muon"_branch);
     auto brmet = get_branch(delphes, "MissingET"_branch);
     auto brht = get_branch(delphes, "ScalarHT"_branch);
+    auto brvtx = get_branch(delphes, "Vertex"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ({ if(++i % 100 == 0) {
@@ -128,7 +130,7 @@ int main(int argc, char *argv[])
         //}
         //printf("\n");
         try {
-          ADJet jet(pdg, *brjet[j], "QCD");  // NOTE: "QCD" is only a placeholder.
+          ADJet jet(pdg, *brjet[j], "QCD", *brvtx[0]);  // NOTE: "QCD" is only a placeholder.
           jet.write(jetfile);
         } catch(const ADInvalidJet &) { }
       }

@@ -16,6 +16,7 @@ class TLorentzVector;
 class ParticleFlowCandidate;
 class ScalarHT;
 class MissingET;
+class Vertex;
 
 // classes to be defined
 class ADParticle;
@@ -121,7 +122,7 @@ public:
   ADParticle *par;
 
   ADJet();
-  ADJet(const ADPDGQuerier &, const Jet &, const char *name);
+  ADJet(const ADPDGQuerier &, const Jet &, const char *name, const Vertex &vtx);
   ~ADJet();
   static bool check(const Jet &);  // keep(true) or cut(false)
 

@@ -269,7 +269,7 @@ void ADParticle::preprocess()
   dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
 }
 
-ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet()
+ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name, const Vertex &vtx) : ADJet()
 {
   ++nadjet;
   if(name == NULL) { ++nunmch; throw ADInvalidJet(); }
@@ -302,32 +302,34 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name) : ADJet(
   // constituents
   Long64_t c = 0;  // particle counter
   for(Long64_t i = 0; i < n && c < NPARTIFLOW; ++i) {
+    ADParticle *particle = NULL;
     TObject *obj = jet.Constituents[i];
     if(obj->IsA() == GenParticle::Class()) {
       ++ngnpar;
       if(!check_par_common<GenParticle>(*obj)) { ++ndscrd; continue; }
-      new((void *)&par[c++]) ADParticle(*(GenParticle *)obj, p4, pdg);
+      particle = new((void *)&par[c++]) ADParticle(*(GenParticle *)obj, p4, pdg);
     } else if(obj->IsA() == Track::Class()) {
       ++ntrack;
       if(!check_par_common<Track>(*obj)) { ++ndscrd; continue; }
-      new((void *)&par[c++]) ADParticle(*(Track *)obj, p4, pdg);
+      particle = new((void *)&par[c++]) ADParticle(*(Track *)obj, p4, pdg);
     } else if(obj->IsA() == Tower::Class()) {
       ++ntower;
       if(!check_par_common<Tower>(*obj)) { ++ndscrd; continue; }
-      new((void *)&par[c++]) ADParticle(*(Tower *)obj, p4, pdg);
+      particle = new((void *)&par[c++]) ADParticle(*(Tower *)obj, p4, pdg);
     } else if(obj->IsA() == Muon::Class()) {
       ++ncmuon;
       if(!check_par_common<Muon>(*obj)) { ++ndscrd; continue; }
-      new((void *)&par[c++]) ADParticle(*(Muon *)obj, p4, pdg);
+      particle = new((void *)&par[c++]) ADParticle(*(Muon *)obj, p4, pdg);
     } else if(obj->IsA() == ParticleFlowCandidate::Class()) {
       ++nparfc;
       if(!check_par_common<ParticleFlowCandidate>(*obj)) { ++ndscrd; continue; }
-      new((void *)&par[c++]) ADParticle(*(ParticleFlowCandidate *)obj, p4, pdg);
+      particle = new((void *)&par[c++]) ADParticle(*(ParticleFlowCandidate *)obj, p4, pdg);
     } else {  // unrecognized type
       ++nunrec;
       fprintf(stderr, "WARNING: "
           "unrecognized constituent type: %s\n", obj->ClassName());
     }
+    if(particle) particle->dz && (particle->dz -= vtx.Z);
   }
 
   // sorting

@@ -17,6 +17,8 @@ using namespace std;
 #define JET_BRANCH  "FatJet"_branch
 #endif  /* JET_BRANCH */
 
+register_branch("Vertex"_pack, "Vertex"_type);
+
 int main(int argc, char *argv[])
 {
   // Force line-buffered output streams.
@@ -53,6 +55,7 @@ int main(int argc, char *argv[])
 
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
+    auto brvtx = get_branch(delphes, "Vertex"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ++i) {
@@ -63,7 +66,7 @@ int main(int argc, char *argv[])
       size_t njet = brjet.size();
       for(size_t j = 0; j < njet; ++j) {
         try {
-          ADJet jet(pdg, *brjet[j], "QCD");
+          ADJet jet(pdg, *brjet[j], "QCD", *brvtx[0]);
           jet.write(dump);
         } catch(const ADInvalidJet &) { }
       }
