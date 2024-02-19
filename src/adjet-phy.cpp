@@ -46,6 +46,11 @@ size_t ADJet::nclass[NRSLTCLASS];
 
 namespace {
 
+TLorentzVector scale_for_pt(const TLorentzVector &p4, double pt)
+{
+  return p4 * (pt / p4.Pt());
+}
+
 template<class DelphesClass>
 bool check_par_common(const TObject &par)
 {
@@ -57,10 +62,10 @@ template<class DelphesClass>
 void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
     const TLorentzVector &p4_jet, ADPDGInfo pdginfo)
 {
-  TLorentzVector p4 = par.P4();
+  TLorentzVector p4 = par.P4(), p4_scaled = scale_for_pt(p4, 500.0);
 
-  adpar.log_pt = log(p4.Pt());
-  adpar.log_e = log(p4.Energy());
+  adpar.log_pt = log(p4_scaled.Pt());
+  adpar.log_e = log(p4_scaled.Energy());
   adpar.log_pt_rel = adpar.log_pt - log(p4_jet.Pt());
   adpar.log_e_rel = adpar.log_e - log(p4_jet.Energy());
   adpar.delta_r = p4.DeltaR(p4_jet);
@@ -76,10 +81,10 @@ void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
   adpar.dz_err = 0.0;  // padding
   adpar.deta = (p4.Eta() > 0 ? 1 : -1) * (p4.Eta() - p4_jet.Eta());
   adpar.dphi = p4.DeltaPhi(p4_jet);
-  adpar.px = p4.Px();
-  adpar.py = p4.Py();
-  adpar.pz = p4.Pz();
-  adpar.e = p4.Energy();
+  adpar.px = p4_scaled.Px();
+  adpar.py = p4_scaled.Py();
+  adpar.pz = p4_scaled.Pz();
+  adpar.e = p4_scaled.Energy();
   adpar.mask = 1.0;
 }
 
