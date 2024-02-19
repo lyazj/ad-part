@@ -15,13 +15,14 @@
 using namespace std;
 
 #ifndef JET_BRANCH
-#define JET_BRANCH  "FatJet"_branch
+#define JET_BRANCH  "JetPUPPIAK8"_branch
 #endif  /* JET_BRANCH */
 
 #ifndef GNMCH_DETR
 #define GNMCH_DETR  0.8
 #endif  /* GNMCH_DETR */
 
+register_branch("JetPUPPIAK8"_pack, "Jet"_type);
 register_branch("Particle"_pack, "GenParticle"_type);
 register_branch("Electron"_pack, "Electron"_type);
 register_branch("Muon"_pack, "Muon"_type);
