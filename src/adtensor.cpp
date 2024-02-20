@@ -92,7 +92,7 @@ ADPFTensor::ADPFTensor(int64_t nfeat)
 }
 
 ADCFTensor::ADCFTensor()
-  : ADTensor((array<int64_t, 2>{BATCH_SIZE, NRSLTCLASS}.data()), 2)
+  : ADTensor((array<int64_t, 2>{BATCH_SIZE, NRSLTCLASS + NHIDDEN}.data()), 2)
 {
   // do nothing
 }
@@ -136,6 +136,6 @@ void ADCFTensor::get_value(int64_t n, ADParTOutput &output) const
 void ADCFTensor::get_value(int64_t n, ADParTHidden &hidden) const
 {
   for(int64_t c = 0; c < NHIDDEN; ++c) {
-    hidden.hidden[c] = at(n, c);
+    hidden.hidden[c] = at(n, c + NRSLTCLASS);
   }
 }

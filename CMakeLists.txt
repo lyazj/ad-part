@@ -149,8 +149,8 @@ if(NOT AD_NOTEST)
         add_executable(onnx-test src/onnx-test.cpp)
         target_link_libraries(onnx-test PUBLIC onnxruntime)
     
-        add_executable(onnx-test-gpu src/onnx-test-gpu.cpp)
-        target_link_libraries(onnx-test-gpu PUBLIC onnxruntime)
+        #add_executable(onnx-test-gpu src/onnx-test-gpu.cpp)
+        #target_link_libraries(onnx-test-gpu PUBLIC onnxruntime)
     endif()
     
     add_executable(root-test src/root-test.cpp)
@@ -189,8 +189,8 @@ if(NOT AD_NOEXEC)
         add_executable(part src/part.cpp)
         target_link_libraries(part PUBLIC adhep onnxruntime z)
 
-        add_executable(part-gpu src/part-gpu.cpp)
-        target_link_libraries(part-gpu PUBLIC adhep onnxruntime z)
+        #add_executable(part-gpu src/part-gpu.cpp)
+        #target_link_libraries(part-gpu PUBLIC adhep onnxruntime z)
     endif()
 
 endif()

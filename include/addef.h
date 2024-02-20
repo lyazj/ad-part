@@ -9,7 +9,7 @@
 #endif  /* PDG_PATH */
 
 #ifndef BATCH_SIZE
-#define BATCH_SIZE  128
+#define BATCH_SIZE  1
 #endif  /* BATCH_SIZE */
 
 #ifndef NPARTIFLOW
