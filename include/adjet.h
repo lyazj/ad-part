@@ -17,6 +17,7 @@ class ParticleFlowCandidate;
 class ScalarHT;
 class MissingET;
 class Vertex;
+class Photon;
 
 // classes to be defined
 class ADParticle;
@@ -197,6 +198,33 @@ public:
 
 };
 
+class ADPhoton {
+
+public:
+  char feature_begin[0];
+  Feature pt;
+  Feature eta;
+  Feature phi;
+  Feature e;
+  Feature t;
+  Feature ehoe;
+  Feature iso_db;
+  Feature iso_rc;
+  Feature sumpt_c;
+  Feature sumpt_n;
+  Feature sumpt_c_pu;
+  Feature sumpt;
+  Feature status;
+  char feature_end[0];
+
+  ADPhoton();
+  ADPhoton(const Photon &);
+
+  bool read(gzFile);  // binary input
+  void write(gzFile) const;  // binary output
+
+};
+
 class ADEvent {
 
 public:
@@ -206,6 +234,7 @@ public:
   Feature metphi;
   Feature njet;
   Feature nlep;
+  Feature npho;
   Feature label;
   char feature_end[0];
 

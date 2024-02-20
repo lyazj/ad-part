@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
   output.emplace_back(new ADCFTensor);
 
   // 运行模型，读取输入，写入输出
-  RunOptions options;
-  ADRunner runner(input, output, memory_info, session, options, dump, out, hid);
+  RunOptions run_options;
+  ADRunner runner(input, output, memory_info, session, run_options, dump, out, hid);
   int64_t b = 0;
   int64_t n;
   do {

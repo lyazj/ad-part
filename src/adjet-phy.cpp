@@ -426,3 +426,20 @@ ADLepton::ADLepton(const Muon &muon)
 {
   set_adlep_common(*this, muon);
 }
+
+ADPhoton::ADPhoton(const Photon &photon)
+{
+  pt = photon.PT;
+  eta = photon.Eta;
+  phi = photon.Phi;
+  e = photon.E;
+  t = photon.T;
+  ehoe = photon.EhadOverEem;
+  iso_db = photon.IsolationVar;
+  iso_rc = photon.IsolationVarRhoCorr;
+  sumpt_c = photon.SumPtCharged;
+  sumpt_n = photon.SumPtNeutral;
+  sumpt_c_pu = photon.SumPtChargedPU;
+  sumpt = photon.SumPt;
+  status = photon.Status;
+}

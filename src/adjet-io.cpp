@@ -141,3 +141,18 @@ void ADLepton::write(gzFile file) const
 {
   write_features(*this, file);
 }
+
+ADPhoton::ADPhoton()
+{
+  memset(feature_begin, 0, feature_end - feature_begin);  // padding
+}
+
+bool ADPhoton::read(gzFile file)
+{
+  return read_features(*this, file);
+}
+
+void ADPhoton::write(gzFile file) const
+{
+  write_features(*this, file);
+}

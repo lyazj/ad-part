@@ -29,6 +29,7 @@ register_branch("Muon"_pack, "Muon"_type);
 register_branch("MissingET"_pack, "MissingET"_type);
 register_branch("ScalarHT"_pack, "ScalarHT"_type);
 register_branch("Vertex"_pack, "Vertex"_type);
+register_branch("Photon"_pack, "Photon"_type);
 
 int main(int argc, char *argv[])
 {
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
   setlbf();
 
   if(argc < 5) {
-    fprintf(stderr, "usage: %s <label> <jetfile> <lepfile> <evtfile> <rootfile> [ <rootfile> ... ]\n",
+    fprintf(stderr, "usage: %s <label> <jetfile> <lepfile> <phofile> <evtfile> <rootfile> [ <rootfile> ... ]\n",
         get_invoc_short_name());
     return 1;
   }
@@ -60,8 +61,16 @@ int main(int argc, char *argv[])
   }
   shared_ptr<gzFile_s> lepfile_guard(lepfile, [](gzFile f) { gzclose(f); } );
 
+  // Open phofile to write.
+  gzFile phofile = gzopen(argv[4], "wb");
+  if(phofile == NULL) {
+    fprintf(stderr, "ERROR: error opening phofile\n");
+    return 1;
+  }
+  shared_ptr<gzFile_s> phofile_guard(phofile, [](gzFile f) { gzclose(f); } );
+
   // Open evtfile to write.
-  gzFile evtfile = gzopen(argv[4], "wb");
+  gzFile evtfile = gzopen(argv[5], "wb");
   if(evtfile == NULL) {
     fprintf(stderr, "ERROR: error opening evtfile\n");
     return 1;
@@ -76,7 +85,7 @@ int main(int argc, char *argv[])
   ////ADGenMatcher matcher;
 
   // Traverse input rootfiles.
-  for(int a = 5; a < argc; ++a) {
+  for(int a = 6; a < argc; ++a) {
     // Open rootfile and get Delphes tree.
     const char *rootfile = argv[a];  // rootfile to read
     auto file = make_shared<TFile>(rootfile, "read");
@@ -96,6 +105,7 @@ int main(int argc, char *argv[])
     auto brmet = get_branch(delphes, "MissingET"_branch);
     auto brht = get_branch(delphes, "ScalarHT"_branch);
     auto brvtx = get_branch(delphes, "Vertex"_branch);
+    auto brpho = get_branch(delphes, "Photon"_branch);
 
     // Traverse entries.
     for(Long64_t i = 0; i < n; ({ if(++i % 100 == 0) {
@@ -142,11 +152,16 @@ int main(int argc, char *argv[])
       for(size_t j = 0; j < nmuon; ++j) {
         ADLepton(*brmuon[j]).write(lepfile);
       }
+      size_t npho = brpho.size();
+      for(size_t j = 0; j < npho; ++j) {
+        ADPhoton(*brpho[j]).write(phofile);
+      }
       ADEvent evt;
       evt.set_ht(*brht[0]);
       evt.set_met(*brmet[0]);
       evt.njet = njet;
       evt.nlep = nelec + nmuon;
+      evt.npho = npho;
       evt.label = label;
       evt.write(evtfile);
     }

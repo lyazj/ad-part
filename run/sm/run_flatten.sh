@@ -16,10 +16,11 @@ fi
 
 JETFILE="${OUTDIR}"/"$(sed 's@\.root$@.gz@' <<< "${ROOTBASE}")"
 LEPFILE="${OUTDIR}"/"$(sed 's@\.root$@_leptons.gz@' <<< "${ROOTBASE}")"
+PHOFILE="${OUTDIR}"/"$(sed 's@\.root$@_photons.gz@' <<< "${ROOTBASE}")"
 EVTFILE="${OUTDIR}"/"$(sed 's@\.root$@_events.gz@' <<< "${ROOTBASE}")"
 LOGFILE="${OUTDIR}"/"$(sed 's@\.root$@_flatten.log@' <<< "${ROOTBASE}")"
 
 mkdir -p "${OUTDIR}"
-CMD="../../bin/flatten 0 '${JETFILE}' '${LEPFILE}' '${EVTFILE}' '${ROOTFILE}' &> '${LOGFILE}'"
+CMD="../../bin/flatten 0 '${JETFILE}' '${LEPFILE}' '${PHOFILE}' '${EVTFILE}' '${ROOTFILE}' &> '${LOGFILE}'"
 echo "${CMD}"
 eval "${CMD}"
