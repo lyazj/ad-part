@@ -17,13 +17,14 @@ int main(int argc, char *argv[])
   setlbf();
 
   // 运行参数
-  if(argc != 3) {
-    fprintf(stderr, "usage: %s <dumpfile> <partfile>\n",
+  if(argc != 4) {
+    fprintf(stderr, "usage: %s <dumpfile> <outfile> <hidfile>\n",
         get_invoc_short_name());
     return 1;
   }
   const char *dumpfile = argv[1];  // dumpfile to read
-  const char *partfile = argv[2];  // partfile to write
+  const char *outfile = argv[2];   // outfile to write
+  const char *hidfile = argv[3];   // hidfile to write
 
   // 输入输出文件
   gzFile dump = gzopen(dumpfile, "rb");
@@ -32,12 +33,20 @@ int main(int argc, char *argv[])
     return 1;
   }
   shared_ptr<gzFile_s> dump_guard(dump, [](gzFile f) { gzclose(f); } );
-  gzFile part = gzopen(partfile, "wb");
-  if(part == NULL) {
-    fprintf(stderr, "ERROR: error opening partfile\n");
+
+  gzFile out = gzopen(outfile, "wb");
+  if(out == NULL) {
+    fprintf(stderr, "ERROR: error opening outfile\n");
     return 1;
   }
-  shared_ptr<gzFile_s> part_guard(part, [](gzFile f) { gzclose(f); } );
+  shared_ptr<gzFile_s> out_guard(out, [](gzFile f) { gzclose(f); } );
+
+  gzFile hid = gzopen(hidfile, "wb");
+  if(hid == NULL) {
+    fprintf(stderr, "ERROR: error opening hidfile\n");
+    return 1;
+  }
+  shared_ptr<gzFile_s> hid_guard(hid, [](gzFile f) { gzclose(f); } );
 
   // 运行环境
   Env env;
@@ -54,11 +63,11 @@ int main(int argc, char *argv[])
 
   // 输出张量
   vector<shared_ptr<ADCFTensor>> output;
-  output.emplace_back(new ADSoftmax);
+  output.emplace_back(new ADCFTensor);
 
   // 运行模型，读取输入，写入输出
   RunOptions run_options;
-  ADRunner runner(input, output, memory_info, session, run_options, dump, part);
+  ADRunner runner(input, output, memory_info, session, run_options, dump, out, hid);
   int64_t b = 0;
   int64_t n;
   do {

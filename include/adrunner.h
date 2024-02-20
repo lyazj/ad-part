@@ -49,12 +49,13 @@ private:
   const Ort::RunOptions &runopt;
   gzFile input_file;
   gzFile output_file;
+  gzFile hidden_file;
 
 public:
   ADRunner(const std::vector<std::shared_ptr<ADPFTensor>> &input_tensors,
       const std::vector<std::shared_ptr<ADCFTensor>> &output_tensors,
       const Ort::MemoryInfo &, Ort::Session &, const Ort::RunOptions &,
-      gzFile input_file, gzFile output_file);
+      gzFile input_file, gzFile output_file, gzFile hidden_file);
 
   int64_t run_batch();
 

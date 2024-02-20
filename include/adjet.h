@@ -147,11 +147,23 @@ public:
 
 };
 
-class ADParT {
+class ADParTOutput {
 
 public:
   char feature_begin[0];
-  Feature part[NRSLTCLASS];
+  Feature output[NRSLTCLASS];
+  char feature_end[0];
+
+  bool read(gzFile);  // binary input
+  void write(gzFile) const;  // binary output
+
+};
+
+class ADParTHidden {
+
+public:
+  char feature_begin[0];
+  Feature hidden[NHIDDEN];
   char feature_end[0];
 
   bool read(gzFile);  // binary input

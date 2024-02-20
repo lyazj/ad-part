@@ -38,12 +38,12 @@ void ADRunPack::get_run(int64_t n,
 
 ADRunner::ADRunner(const vector<shared_ptr<ADPFTensor>> &input_tensors,
     const vector<shared_ptr<ADCFTensor>> &output_tensors,
-    const Ort::MemoryInfo &meminfo, Ort::Session &session_in,
-    const Ort::RunOptions &runopt_in, gzFile input_file_in, gzFile output_file_in)
+    const Ort::MemoryInfo &meminfo, Ort::Session &session_in, const Ort::RunOptions &runopt_in,
+    gzFile input_file_in, gzFile output_file_in, gzFile hidden_file_in)
   : input_pack({input_tensors.begin(), input_tensors.end()}, meminfo),
     output_pack({output_tensors.begin(), output_tensors.end()}, meminfo),
     session(session_in), runopt(runopt_in),
-    input_file(input_file_in), output_file(output_file_in)
+    input_file(input_file_in), output_file(output_file_in), hidden_file(hidden_file_in)
 {
   // do nothing
 }
@@ -85,11 +85,14 @@ int64_t ADRunner::batch_input()
 
 void ADRunner::batch_output(int64_t n)
 {
-  ADParT part;
+  ADParTOutput output;
+  ADParTHidden hidden;
   for(int64_t i = 0; i < n; ++i) {
     for(const auto &tensor : output_pack.get_tensors()) {
-      ((ADCFTensor *)tensor.get())->get_value(i, part);
+      ((ADCFTensor *)tensor.get())->get_value(i, output);
+      ((ADCFTensor *)tensor.get())->get_value(i, hidden);
     }
-    part.write(output_file);
+    output.write(output_file);
+    hidden.write(hidden_file);
   }
 }

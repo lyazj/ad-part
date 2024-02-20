@@ -13,7 +13,8 @@ struct MemoryInfo;
 
 // external classes
 class ADJet;
-class ADParT;
+class ADParTOutput;
+class ADParTHidden;
 
 class ADTensor {
 
@@ -60,7 +61,7 @@ class ADCFTensor : public ADTensor {
 
 public:
   ADCFTensor();
-  virtual const char *get_name() override = 0;
+  virtual const char *get_name() override { return "softmax"; }
 
   const Feature &at(int64_t n, int64_t c) const {
     return data[(n * shape[1]) + c];
@@ -69,7 +70,8 @@ public:
     return (Feature &)((const ADCFTensor *)this)->at(n, c);
   }
 
-  virtual void get_value(int64_t n, ADParT &) const = 0;
+  virtual void get_value(int64_t n, ADParTOutput &) const;
+  virtual void get_value(int64_t n, ADParTHidden &) const;
 
 };
 
@@ -138,17 +140,5 @@ public:
   Feature &mask(int64_t n, int64_t p) { return at(n, 0, p); }
 
   virtual void set_value(int64_t n, const ADJet &) override;
-
-};
-
-class ADSoftmax : public ADCFTensor {
-
-public:
-  ADSoftmax() : ADCFTensor() { }
-  virtual const char *get_name() override { return "softmax"; }
-
-  Feature &softmax(int64_t n, int64_t c) { return at(n, c); }
-
-  virtual void get_value(int64_t n, ADParT &) const override;
 
 };

@@ -97,12 +97,22 @@ void ADJet::write_without_particles(gzFile file) const
   write_features(*this, file);
 }
 
-bool ADParT::read(gzFile file)
+bool ADParTOutput::read(gzFile file)
 {
   return read_features(*this, file);
 }
 
-void ADParT::write(gzFile file) const
+void ADParTOutput::write(gzFile file) const
+{
+  write_features(*this, file);
+}
+
+bool ADParTHidden::read(gzFile file)
+{
+  return read_features(*this, file);
+}
+
+void ADParTHidden::write(gzFile file) const
 {
   write_features(*this, file);
 }

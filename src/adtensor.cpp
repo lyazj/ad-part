@@ -126,9 +126,16 @@ void ADPFMask::set_value(int64_t n, const ADJet &jet)
     (*this, n, jet);
 }
 
-void ADSoftmax::get_value(int64_t n, ADParT &part) const
+void ADCFTensor::get_value(int64_t n, ADParTOutput &output) const
 {
   for(int64_t c = 0; c < NRSLTCLASS; ++c) {
-    part.part[c] = at(n, c);
+    output.output[c] = at(n, c);
+  }
+}
+
+void ADCFTensor::get_value(int64_t n, ADParTHidden &hidden) const
+{
+  for(int64_t c = 0; c < NHIDDEN; ++c) {
+    hidden.hidden[c] = at(n, c);
   }
 }

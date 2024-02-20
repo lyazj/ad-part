@@ -17,8 +17,12 @@
 #endif  /* NPARTIFLOW */
 
 #ifndef NRSLTCLASS
-#define NRSLTCLASS  10
+#define NRSLTCLASS  188
 #endif  /* NRSLTCLASS */
+
+#ifndef NHIDDEN
+#define NHIDDEN  128
+#endif  /* NHIDDEN */
 
 struct ADException {
   virtual ~ADException() = default;

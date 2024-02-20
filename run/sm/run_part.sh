@@ -10,9 +10,10 @@ if ! grep -q '.\gz$' <<< "${JETFILE}"; then
     exit 1
 fi
 
-PARTFILE="$(sed 's@\.gz$@_part.gz@' <<< "${JETFILE}")"
+OUTFILE="$(sed 's@\.gz$@_part_out.gz@' <<< "${JETFILE}")"
+HIDFILE="$(sed 's@\.gz$@_part_hid.gz@' <<< "${JETFILE}")"
 LOGFILE="$(sed 's@\.gz$@_part.log@' <<< "${JETFILE}")"
 
-CMD="../../bin/part '${JETFILE}' '${PARTFILE}' &> '${LOGFILE}'"
+CMD="../../bin/part '${JETFILE}' '${OUTFILE}' '${HIDFILE}' &> '${LOGFILE}'"
 echo "${CMD}"
 eval "${CMD}"
