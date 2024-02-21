@@ -127,6 +127,8 @@ public:
 
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
+  bool read_without_particles(gzFile);  // binary input
+  void write_without_particles(gzFile) const;  // binary output
 
   static size_t nadjet;
   static size_t nvalid;

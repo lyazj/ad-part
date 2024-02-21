@@ -181,7 +181,7 @@ if(NOT AD_NOEXEC)
 
     add_executable(ntuple src/ntuple.cpp)
     target_link_libraries(ntuple PUBLIC adhep ROOT::Tree z)
-    
+
     if(NOT AD_NOONNX)
         add_executable(part src/part.cpp)
         target_link_libraries(part PUBLIC adhep onnxruntime z)

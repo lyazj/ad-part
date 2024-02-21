@@ -79,12 +79,22 @@ bool ADJet::read(gzFile file)
   return true;
 }
 
+bool ADJet::read_without_particles(gzFile file)
+{
+  return read_features(*this, file);
+}
+
 void ADJet::write(gzFile file) const
 {
   write_features(*this, file);
   for(size_t i = 0; i < NPARTIFLOW; ++i) {
     par[i].write(file);
   }
+}
+
+void ADJet::write_without_particles(gzFile file) const
+{
+  write_features(*this, file);
 }
 
 bool ADParT::read(gzFile file)
