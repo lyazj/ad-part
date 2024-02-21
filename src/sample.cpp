@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <array>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,6 +24,7 @@ public:
   void set_sample_name(const string &name);
   void add_sample_file(const string &path);
   void sample();
+  void save_sample_names(const string &path);
 
 private:
   static unordered_map<string, size_t> expected_sample_size_table;
@@ -171,6 +173,7 @@ void Sampler::output_sample(size_t i)
   if(ifiles[i][0] == NULL) new_file(i);
   for(;;) {
     ADEvent evt;
+    evt.label = i;
     if(!evt.read(ifiles[i][0])) {
       new_file(i); continue;
     }
@@ -250,6 +253,15 @@ void Sampler::new_frag()
   ievent = 0;
 }
 
+void Sampler::save_sample_names(const string &path)
+{
+  FILE *file = fopen(path.c_str(), "w");
+  for(size_t i = 0; i < sample_names.size(); ++i) {
+    fprintf(file, "%zu\t%s\n", i, sample_names[i].c_str());
+  }
+  fclose(file);
+}
+
 int main(int argc, char *argv[])
 {
   setlbf();
@@ -265,7 +277,9 @@ int main(int argc, char *argv[])
   Sampler sampler(dstdir, nfrag);
 
   ADListDir src(srcdir, ADListDir::DT_DIR);
-  for(const string &srcsamp : src.get_full_names()) {
+  vector<string> src_names = src.get_full_names();
+  sort(src_names.begin(), src_names.end());
+  for(const string &srcsamp : src_names) {
     const string &srcbase = basename(srcsamp);
     if(srcbase == "." || srcbase == "..") continue;
     fprintf(stderr, "INFO: adding %s\n", srcsamp.c_str());
@@ -280,6 +294,7 @@ int main(int argc, char *argv[])
     }
   }
 
+  sampler.save_sample_names((get_invoc_short_name() + ".txt"s).c_str());
   sampler.sample();
   return 0;
 }
