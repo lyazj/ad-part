@@ -160,6 +160,12 @@ if(NOT AD_NOTEST)
     target_link_libraries(ecf-test ROOT::Physics)
     target_compile_definitions(ecf-test PUBLIC ECF_DEBUG)
 
+    add_executable(samp-test src/samp-test.cpp src/adsamp.cpp)
+    target_compile_definitions(samp-test PUBLIC SAMP_DEBUG)
+
+    add_executable(samp-test-2 src/samp-test-2.cpp)
+    target_link_libraries(samp-test-2 PUBLIC adhep)
+
 endif()
 
 if(NOT AD_NOEXEC)

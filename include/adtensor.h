@@ -27,7 +27,7 @@ public:
   ADTensor(const int64_t *shape_in, int64_t shape_size_in);
   ADTensor(ADTensor &&) noexcept;
   virtual ~ADTensor();
-  
+
   Ort::Value tensor(const Ort::MemoryInfo &);
   Ort::Value tensor(const Ort::MemoryInfo &, int64_t shape0);
   Feature *get_data() { return data; }
