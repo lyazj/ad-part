@@ -117,8 +117,8 @@ int main(int argc, char *argv[])
       delphes->GetEntry(i);
 
       // Do cut.
-      if(brht[0]->HT < 600) continue;
-      if(brmet[0]->MET <= 100) continue;
+      //if(brht[0]->HT < 600) continue;
+      //if(brmet[0]->MET <= 100) continue;
 
       // Parse and dump data.
       ////matcher.set_gnpars(brgpar.get_data());
