@@ -184,6 +184,9 @@ if(NOT AD_NOEXEC)
 
     add_executable(sample src/sample.cpp)
     target_link_libraries(sample PUBLIC adhep z)
+
+    add_executable(sample4 src/sample4.cpp)
+    target_link_libraries(sample4 PUBLIC adhep z)
     
     if(NOT AD_NOONNX)
         add_executable(part src/part.cpp)
