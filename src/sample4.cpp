@@ -11,6 +11,10 @@
 #include <unordered_map>
 #include <array>
 #include <algorithm>
+#include <stdexcept>
+#include <sys/stat.h>
+#include <string.h>
+#include <errno.h>
 
 using namespace std;
 
@@ -100,7 +104,7 @@ unordered_map<string, double> Sampler::sample_weight_table = {
 Sampler::Sampler(const string &dstdir_in, size_t nfrag_in)
   : dstdir(dstdir_in), nfrag(nfrag_in), frag_size(0), ifrag(0), ievent(0), ratio(0.0), nevent(0), ofile{NULL}
 {
-  // empty
+  if(mkdir(dstdir.c_str(), 0755) && errno != EEXIST) throw runtime_error(strerror(errno));
 }
 
 Sampler::~Sampler()
@@ -301,21 +305,33 @@ void Sampler::save_sample_names(const string &path)
 }
 
 unordered_map<string, size_t> label_table = {
-    {"QCD", 1},
-    {"SingleHiggs", 0},
-    {"TTbar", 3},
-    {"WJetsToLNu", 2},
-    {"WJetsToQQ", 2},
-    {"ZJetsToLL", 2},
-    {"ZJetsToNuNu", 2},
-    {"ZJetsToQQ", 2},
+  // Signal
+  // --------------------
+  {"SingleHiggsToBB", 0},
+  {"DiHiggsTo4B"    , 0},
+
+  // QCD
+  // --------------------
+  {"QCD"            , 1},
+
+  // VJets
+  // --------------------
+  {"WJetsToLNu"     , 2},
+  {"WJetsToQQ"      , 2},
+  {"ZJetsToLL"      , 2},
+  {"ZJetsToNuNu"    , 2},
+  {"ZJetsToQQ"      , 2},
+
+  // TTbar
+  // --------------------
+  {"TTbar"          , 3},
 };
 
 const char *label_names[] = {
-    [0] = "Signal",
-    [1] = "QCD",
-    [2] = "VJets",
-    [3] = "TTbar",
+  "Signal",
+  "QCD",
+  "VJets",
+  "TTbar",
 };
 
 int main(int argc, char *argv[])
@@ -362,9 +378,10 @@ int main(int argc, char *argv[])
   remove((get_invoc_short_name() + ".txt"s).c_str());
   for(size_t i = 0; i < 4; ++i) {
     samplers[i].save_sample_names((get_invoc_short_name() + ".txt"s).c_str());
+    printf("INFO: sampling events for %s: %zu\n", label_names[i], samplers[i].get_nevent());
     nevent = min(nevent, samplers[i].get_nevent());
   }
-  fprintf(stderr, "INFO: minimal sampling event: %zu\n", nevent);
+  fprintf(stderr, "INFO: minimal sampling events: %zu\n", nevent);
   for(size_t i = 0; i < 4; ++i) {
     samplers[i].set_nevent(nevent);
     samplers[i].sample();
