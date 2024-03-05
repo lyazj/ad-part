@@ -58,47 +58,51 @@ private:
 };
 
 unordered_map<string, size_t> Sampler::expected_sample_size_table = {
-  {"QCD"        , 51400000},
-  {"WJetsToQQ"  , 571000  },
-  {"WJetsToLNu" , 128000  },
-  {"ZJetsToQQ"  , 225000  },
-  {"ZJetsToLL"  , 25800   },
-  {"ZJetsToNuNu", 22600   },
-  {"TTbar"      , 246000  },
-  {"SingleTop"  , 19300   },
-  {"WW"         , 14000   },
-  {"TW"         , 24900   },
-  {"ZW"         , 10400   },
-  {"ZZ"         , 1250    },
-  {"TZ"         , 486     },
-  {"SingleHiggs", 1630    },
-  {"WH"         , 289     },
-  {"ZH"         , 151     },
-  {"TTbarH"     , 862     },
-  {"TTbarW"     , 655     },
-  {"TTbarZ"     , 1390    },
+  {"QCD"            , 51400000},
+  {"WJetsToQQ"      , 571000  },
+  {"WJetsToLNu"     , 128000  },
+  {"ZJetsToQQ"      , 225000  },
+  {"ZJetsToLL"      , 25800   },
+  {"ZJetsToNuNu"    , 22600   },
+  {"TTbar"          , 246000  },
+  {"SingleTop"      , 19300   },
+  {"WW"             , 14000   },
+  {"TW"             , 24900   },
+  {"ZW"             , 10400   },
+  {"ZZ"             , 1250    },
+  {"TZ"             , 486     },
+  {"SingleHiggs"    , 1630    },
+  {"WH"             , 289     },
+  {"ZH"             , 151     },
+  {"TTbarH"         , 862     },
+  {"TTbarW"         , 655     },
+  {"TTbarZ"         , 1390    },
+  {"SingleHiggsToBB", 1       },  // [XXX]
+  {"DiHiggsTo4B"    , 1       },  // [XXX]
 };
 
 unordered_map<string, double> Sampler::sample_weight_table = {
-  {"QCD"        , 51400000},
-  {"WJetsToQQ"  , 571000  },
-  {"WJetsToLNu" , 128000  },
-  {"ZJetsToQQ"  , 225000  },
-  {"ZJetsToLL"  , 25800   },
-  {"ZJetsToNuNu", 22600   },
-  {"TTbar"      , 246000  },
-  {"SingleTop"  , 19300   },
-  {"WW"         , 14000   },
-  {"TW"         , 24900   },
-  {"ZW"         , 10400   },
-  {"ZZ"         , 1250    },
-  {"TZ"         , 486     },
-  {"SingleHiggs", 1630    },
-  {"WH"         , 289     },
-  {"ZH"         , 151     },
-  {"TTbarH"     , 862     },
-  {"TTbarW"     , 655     },
-  {"TTbarZ"     , 1390    },
+  {"QCD"            , 51400000},
+  {"WJetsToQQ"      , 571000  },
+  {"WJetsToLNu"     , 128000  },
+  {"ZJetsToQQ"      , 225000  },
+  {"ZJetsToLL"      , 25800   },
+  {"ZJetsToNuNu"    , 22600   },
+  {"TTbar"          , 246000  },
+  {"SingleTop"      , 19300   },
+  {"WW"             , 14000   },
+  {"TW"             , 24900   },
+  {"ZW"             , 10400   },
+  {"ZZ"             , 1250    },
+  {"TZ"             , 486     },
+  {"SingleHiggs"    , 1630    },
+  {"WH"             , 289     },
+  {"ZH"             , 151     },
+  {"TTbarH"         , 862     },
+  {"TTbarW"         , 655     },
+  {"TTbarZ"         , 1390    },
+  {"SingleHiggsToBB", 1       },  // [XXX]
+  {"DiHiggsTo4B"    , 1       },  // [XXX]
 };
 
 Sampler::Sampler(const string &dstdir_in, size_t nfrag_in)
@@ -215,10 +219,10 @@ void Sampler::output_sample(size_t i)
   if(ifiles[i][0] == NULL) new_file(i);
   for(;;) {
     ADEvent evt;
-    evt.label = sample_labels[i];
     if(!evt.read(ifiles[i][0])) {
       new_file(i); continue;
     }
+    evt.label = sample_labels[i];
     evt.write(ofile[0]);
 
     size_t njet = evt.njet;

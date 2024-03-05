@@ -173,10 +173,10 @@ void Sampler::output_sample(size_t i)
   if(ifiles[i][0] == NULL) new_file(i);
   for(;;) {
     ADEvent evt;
-    evt.label = i;
     if(!evt.read(ifiles[i][0])) {
       new_file(i); continue;
     }
+    evt.label = i;
     evt.write(ofile[0]);
 
     size_t njet = evt.njet;
