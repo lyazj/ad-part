@@ -181,9 +181,15 @@ void Sampler::output_sample(size_t i)
 
     size_t njet = evt.njet;
     ADJet jet;
+    ADParTOutput out;
+    ADParTHidden hid;
     for(size_t j = 0; j < njet; ++j) {
       if(!jet.read(ifiles[i][1])) errx(1, "error reading jet");
       jet.write_without_particles(ofile[1]);
+      if(!out.read(ifiles[i][4])) errx(4, "error reading out");
+      out.write(ofile[4]);
+      if(!hid.read(ifiles[i][5])) errx(5, "error reading hid");
+      hid.write(ofile[5]);
     }
 
     size_t nlep = evt.nlep;
@@ -199,14 +205,6 @@ void Sampler::output_sample(size_t i)
       if(!pho.read(ifiles[i][3])) errx(3, "error reading pho");
       pho.write(ofile[3]);
     }
-
-    ADParTOutput out;
-    if(!out.read(ifiles[i][4])) errx(4, "error reading out");
-    out.write(ofile[4]);
-
-    ADParTHidden hid;
-    if(!hid.read(ifiles[i][5])) errx(5, "error reading hid");
-    hid.write(ofile[5]);
 
     break;
   }
