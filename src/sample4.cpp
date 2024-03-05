@@ -301,7 +301,7 @@ void Sampler::save_sample_names(const string &path)
 {
   FILE *file = fopen(path.c_str(), "a");
   for(size_t i = 0; i < sample_names.size(); ++i) {
-    fprintf(file, "%zu\t%s\n", i, sample_names[i].c_str());
+    fprintf(file, "%zu\t%s\n", sample_labels[i], sample_names[i].c_str());
   }
   fclose(file);
 }

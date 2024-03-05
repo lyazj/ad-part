@@ -13,7 +13,7 @@ for DIR in ../sm/data4/*; do
         fi
     done
 done
-CF_FILES="-"
+CF_FILES="$(echo ${PF_FILES} | sed 's@\.gz@_part_hid.gz@g')"
 
 (date
 rm -rf tiny
