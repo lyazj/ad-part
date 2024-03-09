@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
     ADListDir srclst(srcsamp);
     srclst.sort_by_numbers();
     for(const string &srcfile : srclst.get_full_names()) {
-      if(srcfile.length() < 4 || srcfile.substr(srcfile.length() - 10) != "_events.gz") continue;
+      if(srcfile.length() < 10 || srcfile.substr(srcfile.length() - 10) != "_events.gz") continue;
       fprintf(stderr, "INFO: adding %s\n", srcfile.c_str());
       sampler.add_sample_file(srcfile);
     }

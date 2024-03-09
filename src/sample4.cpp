@@ -307,33 +307,35 @@ void Sampler::save_sample_names(const string &path)
 }
 
 unordered_map<string, size_t> label_table = {
-  // Signal
-  // --------------------
-  {"SingleHiggsToBB", 0},
-  {"DiHiggsTo4B"    , 0},
-
   // QCD
   // --------------------
-  {"QCD"            , 1},
+  {"QCD"            , 0},
 
   // VJets
   // --------------------
-  {"WJetsToLNu"     , 2},
-  {"WJetsToQQ"      , 2},
-  {"ZJetsToLL"      , 2},
-  {"ZJetsToNuNu"    , 2},
-  {"ZJetsToQQ"      , 2},
+  {"WJetsToLNu"     , 1},
+  {"WJetsToQQ"      , 1},
+  {"ZJetsToLL"      , 1},
+  {"ZJetsToNuNu"    , 1},
+  {"ZJetsToQQ"      , 1},
 
   // TTbar
   // --------------------
-  {"TTbar"          , 3},
+  {"TTbar"          , 2},
+
+  // Signal
+  // --------------------
+  {"SingleHiggsToBB", 3},
+  {"DiHiggsTo4B"    , 4},
+
 };
 
 const char *label_names[] = {
-  "Signal",
   "QCD",
   "VJets",
   "TTbar",
+  "H2B",
+  "HH4B",
 };
 
 int main(int argc, char *argv[])
@@ -348,12 +350,12 @@ int main(int argc, char *argv[])
   const char *dstdir = argv[2];
   size_t nfrag = stoull(argv[3]);
 
-  Sampler samplers[] = {
-    {dstdir + "/"s + label_names[0], nfrag},
-    {dstdir + "/"s + label_names[1], nfrag},
-    {dstdir + "/"s + label_names[2], nfrag},
-    {dstdir + "/"s + label_names[3], nfrag},
-  };
+  constexpr size_t nsampler = sizeof label_names / sizeof label_names[0];
+  vector<Sampler> samplers;
+  samplers.reserve(nsampler);
+  for(size_t i = 0; i < nsampler; ++i) {
+    samplers.emplace_back(dstdir + "/"s + label_names[i], nfrag);
+  }
 
   ADListDir src(srcdir, ADListDir::DT_DIR);
   vector<string> src_names = src.get_full_names();
@@ -370,7 +372,7 @@ int main(int argc, char *argv[])
     ADListDir srclst(srcsamp);
     srclst.sort_by_numbers();
     for(const string &srcfile : srclst.get_full_names()) {
-      if(srcfile.length() < 4 || srcfile.substr(srcfile.length() - 10) != "_events.gz") continue;
+      if(srcfile.length() < 10 || srcfile.substr(srcfile.length() - 10) != "_events.gz") continue;
       fprintf(stderr, "INFO: adding %s\n", srcfile.c_str());
       samplers[label].add_sample_file(srcfile);
     }
@@ -378,13 +380,13 @@ int main(int argc, char *argv[])
 
   size_t nevent = -1;
   remove((get_invoc_short_name() + ".txt"s).c_str());
-  for(size_t i = 0; i < 4; ++i) {
+  for(size_t i = 0; i < nsampler; ++i) {
     samplers[i].save_sample_names((get_invoc_short_name() + ".txt"s).c_str());
     printf("INFO: sampling events for %s: %zu\n", label_names[i], samplers[i].get_nevent());
     nevent = min(nevent, samplers[i].get_nevent());
   }
   fprintf(stderr, "INFO: minimal sampling events: %zu\n", nevent);
-  for(size_t i = 0; i < 4; ++i) {
+  for(size_t i = 0; i < nsampler; ++i) {
     samplers[i].set_nevent(nevent);
     samplers[i].sample();
   }
