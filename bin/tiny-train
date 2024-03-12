@@ -48,7 +48,7 @@ def split_training_validation(x, validation_ratio):
 if CF_FILES is None:
     model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.JET_LABEL, adjet.NFEAT_LEP, adjet.NFEAT_PHO)
 else:
-    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.NRSLT_CLS, adjet.NFEAT_LEP, adjet.NFEAT_PHO)
+    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.NHIDDEN, adjet.NFEAT_LEP, adjet.NFEAT_PHO)
 loss_func = torch.nn.functional.binary_cross_entropy
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.8)

@@ -610,7 +610,6 @@ class ADParTDataSet:
         for evt_i in range(evt.shape[0]):
             njet, nlep, npho = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP, EVT_NPHO))
             njet_to_save, nlep_to_save, npho_to_save = map(min, (njet, nlep, npho), (NJET_EVT, NLEP_EVT, NPHO_EVT))
-            print(evt_i, njet_to_save, jet_i, jet.shape)
             t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save]
             t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
             t_pho[evt_i,:npho_to_save] = pho[pho_i:pho_i + npho_to_save]
