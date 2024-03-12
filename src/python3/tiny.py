@@ -97,13 +97,13 @@ class TinyMHA(TinyModule):
         super().__init__()
         self.attn = torch.nn.MultiheadAttention(*args, **kwargs, batch_first=True).to(device)
 
-    def forward(self, x, *args, **kwargs):
+    def forward(self, x, key_padding_mask=None, *args, **kwargs):
         super().begin_forward(x, *args, **kwargs)
         try:
-            x, _ = self.attn(x, x, x, *args, need_weights=False, **kwargs)
+            x, _ = self.attn(x, x, x, *args, key_padding_mask=key_padding_mask, need_weights=False, **kwargs)
         finally:
             super().end_forward()
-        return (x, *args) if args else x
+        return (x, key_padding_mask, *args)
 
 # transformer block
 class TinyBlock(TinySequential):
@@ -164,11 +164,12 @@ class TinyClassifier(TinyTransformer):
         if len(decode_dims) and decode_dims[-1] != num_classes: raise ValueError(f'expect {num_classes} nodes at the end')
         super().__init__(dim, input_dim, embed_dims, decode_dims, activate=activate, mlp_dims=mlp_dims, *args, **kwargs)
 
-    def run(self, data_input, data_label, loss_func=torch.nn.functional.cross_entropy):
+    def run(self, data_input, data_mask, data_label, loss_func=torch.nn.functional.cross_entropy):
         #print('input:', data_input.shape, data_input, sep='\n')
-        #print('label:', data_label.shape, data_label, sep='\n')
-        data_output = self(data_input)
+        #print('mask:', data_mask.shape, data_mask, sep='\n')
+        data_output, data_mask = self(data_input, data_mask)
         #print('output:', data_output.shape, data_output, sep='\n')
+        #print('label:', data_label.shape, data_label, sep='\n')
         loss = loss_func(data_output, data_label)
         data_output_top1 = data_output.argmax(-1, True)
         data_label_top1 = data_label.argmax(-1, True)
@@ -206,22 +207,22 @@ class TinyEventClassifier(TinyModule):
         self.pho_embed = TinyMLP(pho_dim, pho_embed)
         self.classifier = classifier(2, evt_embed_dim, embed_dims=embed_dims, *args, **kwargs)
 
-    def embed(self, evt, jet, lep, pho, *args, **kwargs):
+    def embed(self, evt, jet, lep, pho, msk, *args, **kwargs):
         evt = self.evt_embed(evt, *args, **kwargs)
         jet = self.jet_embed(jet, *args, **kwargs)
         lep = self.lep_embed(lep, *args, **kwargs)
         pho = self.pho_embed(pho, *args, **kwargs)
-        return torch.concat((evt, jet, lep, pho), dim=-2)
+        return torch.concat((evt, jet, lep, pho), dim=-2), msk
 
-    def forward(self, evt, jet, lep, pho, *args, **kwargs):
-        super().begin_forward(evt, jet, lep, pho, *args, **kwargs)
+    def forward(self, evt, jet, lep, pho, msk, *args, **kwargs):
+        super().begin_forward(evt, jet, lep, pho, msk, *args, **kwargs)
         try:
-            return self.classifier(self.embed(evt, jet, lep, pho), *args, **kwargs)
+            return self.classifier.run(*self.embed(evt, jet, lep, pho, msk), label, *args, **kwargs)
         finally:
             super().end_forward()
 
-    def run(self, evt, jet, lep, pho, label, *args, **kwargs):
-        return self.classifier.run(self.embed(evt, jet, lep, pho), label, *args, **kwargs)
+    def run(self, evt, jet, lep, pho, msk, label, *args, **kwargs):
+        return self.classifier.run(*self.embed(evt, jet, lep, pho, msk), label, *args, **kwargs)
 
 # Gaussian sampler
 class TinySampler(TinyModule):

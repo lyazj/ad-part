@@ -575,6 +575,7 @@ class ADRawDataSet:
         t_jet = np.zeros((evt.shape[0], NJET_EVT, JET_LABEL))
         t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
         t_pho = np.zeros((evt.shape[0], NPHO_EVT, NFEAT_PHO))
+        t_msk = np.zeros((evt.shape[0], 1 + NJET_EVT + NLEP_EVT + NPHO_EVT))
         jet_i, lep_i, pho_i = 0, 0, 0
         for evt_i in range(evt.shape[0]):
             njet, nlep, npho = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP, EVT_NPHO))
@@ -582,6 +583,9 @@ class ADRawDataSet:
             t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save,:JET_LABEL]
             t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
             t_pho[evt_i,:npho_to_save] = pho[pho_i:pho_i + npho_to_save]
+            t_msk[evt_i,1 + njet_to_save:1 + NJET_EVT] = 1
+            t_msk[evt_i,1 + NJET_EVT + nlep_to_save:1 + NJET_EVT + NLEP_EVT] = 1
+            t_msk[evt_i,1 + NJET_EVT + NLEP_EVT + npho_to_save:1 + NJET_EVT + NLEP_EVT + NPHO_EVT] = 1
             jet_i, lep_i, pho_i = jet_i + njet, lep_i + nlep, pho_i + npho
         if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
         if lep_i != lep.shape[0]: raise RuntimeError(f'expect {lep_i} leptons, got {lep.shape[0]}')
@@ -591,6 +595,7 @@ class ADRawDataSet:
         self.jet = t_jet
         self.lep = t_lep
         self.pho = t_pho
+        self.msk = t_msk
         self.label = evt[:,EVT_LABEL].reshape(-1, 1)
 
 class ADParTDataSet:
@@ -606,6 +611,7 @@ class ADParTDataSet:
         t_jet = np.zeros((evt.shape[0], NJET_EVT, NHIDDEN))
         t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
         t_pho = np.zeros((evt.shape[0], NPHO_EVT, NFEAT_PHO))
+        t_msk = np.zeros((evt.shape[0], 1 + NJET_EVT + NLEP_EVT + NPHO_EVT))
         jet_i, lep_i, pho_i = 0, 0, 0
         for evt_i in range(evt.shape[0]):
             njet, nlep, npho = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP, EVT_NPHO))
@@ -613,6 +619,9 @@ class ADParTDataSet:
             t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save]
             t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
             t_pho[evt_i,:npho_to_save] = pho[pho_i:pho_i + npho_to_save]
+            t_msk[evt_i,1 + njet_to_save:1 + NJET_EVT] = 1
+            t_msk[evt_i,1 + NJET_EVT + nlep_to_save:1 + NJET_EVT + NLEP_EVT] = 1
+            t_msk[evt_i,1 + NJET_EVT + NLEP_EVT + npho_to_save:1 + NJET_EVT + NLEP_EVT + NPHO_EVT] = 1
             jet_i, lep_i, pho_i = jet_i + njet, lep_i + nlep, pho_i + npho
         if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
         if lep_i != lep.shape[0]: raise RuntimeError(f'expect {lep_i} leptons, got {lep.shape[0]}')
@@ -622,4 +631,5 @@ class ADParTDataSet:
         self.jet = t_jet
         self.lep = t_lep
         self.pho = t_pho
+        self.msk = t_msk
         self.label = evt[:,EVT_LABEL].reshape(-1, 1)
