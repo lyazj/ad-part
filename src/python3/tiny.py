@@ -16,12 +16,12 @@ class TinyModule(torch.nn.Module):
 
     def begin_forward(self, *args, **kwargs):
         TinyModule.forward_depth += 1
-        logging.debug(f'enter [{TinyModule.forward_depth}]: {self.name}')
+        #logging.info(f'enter [{TinyModule.forward_depth}] {self.name}: {self}')
         #args = '\n'.join(map(str, args))
-        #logging.debug(f'args:\n{args}\nkwargs: {kwargs}')
+        #logging.info(f'args:\n{args}\nkwargs: {kwargs}')
 
     def end_forward(self):
-        logging.debug(f'leave [{TinyModule.forward_depth}]: {self.name}')
+        #logging.info(f'leave [{TinyModule.forward_depth}] {self.name}')
         TinyModule.forward_depth -= 1
 
 # flow structure wrapper 1/2: sequential
@@ -119,21 +119,22 @@ class TinyBlock(TinySequential):
         layers.append((torch.nn.LayerNorm(input_dim).to(device), 1))
         layers.append(TinyResidual(TinyMHA(input_dim, num_heads, attn_dropout, attn_bias)))
         layers.append((torch.nn.LayerNorm(input_dim).to(device), 1))
-        layers.append((TinyResidual(TinyMLP(input_dim, mlp_dims, mlp_bias, mlp_activate)), 1))
+        layers.append((TinyResidual(TinyMLP(input_dim, mlp_dims, mlp_bias, mlp_activate, name=self.__class__.__name__ + '_mlp')), 1))
         if mlp_dropout != 0.0: layers.append((torch.nn.Dropout(mlp_dropout).to(device), 1))
         super().__init__(layers, *args, **kwargs)
 
 # pooling
 class TinyPool(TinyModule):
 
-    def __init__(self, func=torch.max, dim=-1, keepdim=False, *args, **kwargs):
+    def __init__(self, func=torch.mean, dim=-1, keepdim=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.func = functools.partial(func, dim=dim, keepdim=keepdim)
 
-    def forward(self, *args, **kwargs):
-        args = self.func(*args, **kwargs)
-        if issubclass(args.__class__, tuple): args = args[0]
-        return args
+    def forward(self, x, mask, *args, **kwargs):
+        x = x * torch.logical_not(mask).to(x.dtype).unsqueeze(-1)
+        x = self.func(x, *args, **kwargs)
+        if isinstance(x, tuple): x = x[0]
+        return x, mask
 
 # transformer
 class TinyTransformer(TinySequential):
@@ -144,14 +145,14 @@ class TinyTransformer(TinySequential):
     def __init__(self, dim, input_dim, embed_dims, decode_dims, num_blocks=2, activate=None,
                  embed_activate=torch.nn.ReLU, decode_activate=torch.nn.ReLU, pool=torch.max, *args, **kwargs):
         layers = []
-        layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate), 1))
+        layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate, name=self.__class__.__name__ + '_embed'), 1))
         if len(embed_dims): input_dim = embed_dims[-1]
         if dim == 1 or dim == -1 or dim == 2: pass
-        elif dim == -2: layers.append((TinyPool(func=pool, dim=-2), 1))
+        elif dim == -2: layers.append((TinyPool(func=pool, dim=-2), 2))
         else: raise ValueError(f'invalid dimension: {dim}')
         for _ in range(num_blocks): layers.append(TinyBlock(input_dim, *args, **kwargs))
-        if dim == 2: layers.append((TinyPool(func=pool, dim=-2), 1))
-        layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate), 1))
+        if dim == 2: layers.append((TinyPool(func=pool, dim=-2), 2))
+        layers.append((TinyMLP(input_dim, decode_dims, activate=decode_activate, name=self.__class__.__name__ + '_decode'), 1))
         if activate: layers.append((activate().to(device), 1))
         super().__init__(layers)
 
@@ -200,10 +201,10 @@ class TinyEventClassifier(TinyModule):
         if not evt_embed_dim == jet_embed_dim == lep_embed_dim == pho_embed_dim:
             raise ValueError('inconsistent dimensions after embedding')
         super().__init__()
-        self.evt_embed = TinyMLP(evt_dim, evt_embed)
-        self.jet_embed = TinyMLP(jet_dim, jet_embed)
-        self.lep_embed = TinyMLP(lep_dim, lep_embed)
-        self.pho_embed = TinyMLP(pho_dim, pho_embed)
+        self.evt_embed = TinyMLP(evt_dim, evt_embed, name=self.__class__.__name__ + '_evt_embed')
+        self.jet_embed = TinyMLP(jet_dim, jet_embed, name=self.__class__.__name__ + '_jet_embed')
+        self.lep_embed = TinyMLP(lep_dim, lep_embed, name=self.__class__.__name__ + '_lep_embed')
+        self.pho_embed = TinyMLP(pho_dim, pho_embed, name=self.__class__.__name__ + '_pho_embed')
         self.classifier = classifier(2, evt_embed_dim, embed_dims=embed_dims, *args, **kwargs)
 
     def embed(self, evt, jet, lep, pho, msk, *args, **kwargs):

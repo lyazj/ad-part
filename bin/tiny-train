@@ -45,9 +45,9 @@ def split_training_validation(x, validation_ratio):
 
 # Model, loss function, and optimizer.
 if CF_FILES is None:
-    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.JET_LABEL, adjet.NFEAT_LEP, adjet.NFEAT_PHO, classifier=tiny.TinyClassifier, num_classes=NUM_CLASS)
+    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.JET_LABEL, adjet.NFEAT_LEP, adjet.NFEAT_PHO, classifier=tiny.TinyClassifier, num_classes=NUM_CLASS, num_blocks=2)
 else:
-    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.NHIDDEN, adjet.NFEAT_LEP, adjet.NFEAT_PHO, classifier=tiny.TinyClassifier, num_classes=NUM_CLASS)
+    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.NHIDDEN, adjet.NFEAT_LEP, adjet.NFEAT_PHO, classifier=tiny.TinyClassifier, num_classes=NUM_CLASS, num_blocks=2)
 loss_func = torch.nn.functional.cross_entropy
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.8)
@@ -143,7 +143,7 @@ def train_one_epoch(epoch_id):
     confusion = confusion.astype('float32') / confusion.sum(axis=-1, keepdims=True)
     print('Confusion matrix:', confusion, sep='\n')
 
-for epoch_id in range(10):
+for epoch_id in range(50):
     train_one_epoch(epoch_id)
 
 ## Make confusion matrix.

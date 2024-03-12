@@ -2,7 +2,7 @@
 
 set -e
 
-NFILE=10
+NFILE=1
 PF_FILES=
 for DIR in ../sm/data4/*; do
     for((IFILE=0; IFILE<NFILE; ++IFILE)); do
