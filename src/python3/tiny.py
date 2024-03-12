@@ -159,7 +159,7 @@ class TinyTransformer(TinySequential):
 class TinyClassifier(TinyTransformer):
 
     def __init__(self, dim, input_dim, num_classes, embed_dims=(64, 32), decode_dims=(32, -1),
-                 activate=torch.nn.Softmax, mlp_dims=(64, -1), *args, **kwargs):
+                 activate=None, mlp_dims=(64, -1), *args, **kwargs):
         if len(decode_dims) and decode_dims[-1] == -1: decode_dims = (*decode_dims[:-1], num_classes)
         if len(decode_dims) and decode_dims[-1] != num_classes: raise ValueError(f'expect {num_classes} nodes at the end')
         super().__init__(dim, input_dim, embed_dims, decode_dims, activate=activate, mlp_dims=mlp_dims, *args, **kwargs)
@@ -170,10 +170,9 @@ class TinyClassifier(TinyTransformer):
         data_output, data_mask = self(data_input, data_mask)
         #print('output:', data_output.shape, data_output, sep='\n')
         #print('label:', data_label.shape, data_label, sep='\n')
-        loss = loss_func(data_output, data_label)
+        loss = loss_func(data_output, data_label.squeeze(dim=-1))
         data_output_top1 = data_output.argmax(-1, True)
-        data_label_top1 = data_label.argmax(-1, True)
-        data_output_acc = (data_output_top1 == data_label_top1).to(data_output.dtype)
+        data_output_acc = (data_output_top1 == data_label).to(data_output.dtype)
         return data_output, loss, data_output_top1, data_output_acc
 
 # binary classifier
@@ -182,10 +181,10 @@ class TinyBinaryClassifier(TinyClassifier):
     def __init__(self, dim, input_dim, activate=torch.nn.Sigmoid, *args, **kwargs):
         super().__init__(dim, input_dim, 1, activate=activate, *args, **kwargs)
 
-    def run(self, data_input, data_label, loss_func=torch.nn.functional.binary_cross_entropy):
-        data_output = self(data_input)
+    def run(self, data_input, data_mask, data_label, loss_func=torch.nn.functional.binary_cross_entropy):
+        data_output, data_mask = self(data_input, data_mask)
         loss = loss_func(data_output, data_label)
-        data_output_top1 = data_output > 0.5
+        data_output_top1 = (data_output > 0.5).to(data_output.dtype)
         data_output_acc = (data_output_top1 == data_label).to(data_output.dtype)
         return data_output, loss, data_output_top1, data_output_acc
 
