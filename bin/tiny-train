@@ -65,7 +65,8 @@ for (i, PF_FILE) in enumerate(PF_FILES):
         d = adjet.ADRawDataSet(PF_FILE, PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz', PF_FILE[:-3] + '_photons.gz')
     else:
         d = adjet.ADParTDataSet(CF_FILES[i], PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz', PF_FILE[:-3] + '_photons.gz')
-    e, j, l, p, lab = map(lambda x: x[:50000], (d.evt, d.jet, d.lep, d.pho, d.label))
+    #e, j, l, p, lab = map(lambda x: x[:50000], (d.evt, d.jet, d.lep, d.pho, d.label))
+    e, j, l, p, lab = map(lambda x: x, (d.evt, d.jet, d.lep, d.pho, d.label))
     logging.info('%05d samples loaded from %s' % (e.shape[0], PF_FILE))
     for c, d in (evt, e), (jet, j), (lep, l), (pho, p), (label, lab): c.append(d)
 logging.info('preprocessing data')
@@ -118,6 +119,8 @@ def train_one_epoch(epoch_id):
     print('Summary of training: loss=%.3f acc=%.3f' % (loss, acc))
     scheduler.step()
 
+    confusion = np.zeros(shape=(5, 5), dtype='int64')
+
     model.eval()
     with torch.no_grad():
         for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, batch_label) in enumerate(validation):
@@ -125,21 +128,29 @@ def train_one_epoch(epoch_id):
             print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
             loss += batch_loss
             acc += batch_acc.sum()
+            batch_label_top1 = batch_label.argmax(-1, True)
+            for target, prediction in zip(batch_label_top1.flatten(), batch_top1.flatten()):
+                confusion[target, prediction] += 1
     loss /= len(validation)
     acc /= validation_evt.shape[0]
     print('Summary of validation: loss=%.3f acc=%.3f' % (loss, acc))
 
-for epoch_id in range(50):
+    print('Confusion matrix:', confusion, sep='\n')
+    confusion = confusion.astype('float32') / confusion.sum(axis=-1, keepdims=True)
+    print('Confusion matrix:', confusion, sep='\n')
+
+for epoch_id in range(10):
     train_one_epoch(epoch_id)
 
-# Make confusion matrix.
-confusion = np.zeros(shape=(5, 5), dtype='int64')
-model.eval()
-with torch.no_grad():
-    for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, batch_label) in enumerate(validation):
-        _, _, batch_top1, _ = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_label, loss_func)
-        batch_label_top1 = batch_label.argmax(-1, True)
-        for target, prediction in zip(batch_label_top1.flatten(), batch_top1.flatten()):
-            confusion[target, prediction] += 1
-confusion = confusion.astype('float32') / confusion.sum(axis=-1, keepdims=True)
-print('Confusion matrix:', confusion, sep='\n')
+## Make confusion matrix.
+#confusion = np.zeros(shape=(5, 5), dtype='int64')
+#model.eval()
+#with torch.no_grad():
+#    for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, batch_label) in enumerate(validation):
+#        _, _, batch_top1, _ = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_label, loss_func)
+#        batch_label_top1 = batch_label.argmax(-1, True)
+#        for target, prediction in zip(batch_label_top1.flatten(), batch_top1.flatten()):
+#            confusion[target, prediction] += 1
+#print('Confusion matrix:', confusion, sep='\n')
+#confusion = confusion.astype('float32') / confusion.sum(axis=-1, keepdims=True)
+#print('Confusion matrix:', confusion, sep='\n')
