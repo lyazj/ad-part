@@ -125,6 +125,8 @@ def train_one_epoch(epoch_id):
     confusion = np.zeros(shape=(5, 5), dtype='int64')
 
     model.eval()
+    loss = 0.0
+    acc = 0.0
     with torch.no_grad():
         for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, batch_msk, batch_label) in enumerate(validation):
             _, batch_loss, batch_top1, batch_acc = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_msk, batch_label, loss_func)
