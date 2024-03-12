@@ -165,10 +165,14 @@ class TinyClassifier(TinyTransformer):
         super().__init__(dim, input_dim, embed_dims, decode_dims, activate=activate, mlp_dims=mlp_dims, *args, **kwargs)
 
     def run(self, data_input, data_label, loss_func=torch.nn.functional.cross_entropy):
+        #print('input:', data_input.shape, data_input, sep='\n')
+        #print('label:', data_label.shape, data_label, sep='\n')
         data_output = self(data_input)
+        #print('output:', data_output.shape, data_output, sep='\n')
         loss = loss_func(data_output, data_label)
         data_output_top1 = data_output.argmax(-1, True)
-        data_output_acc = (data_output_top1 == data_label).to(data_output.dtype)
+        data_label_top1 = data_label.argmax(-1, True)
+        data_output_acc = (data_output_top1 == data_label_top1).to(data_output.dtype)
         return data_output, loss, data_output_top1, data_output_acc
 
 # binary classifier
@@ -228,7 +232,6 @@ class TinySampler(TinyModule):
     def forward(self, x, **kwargs):
         super().begin_forward(x, **kwargs)
         try:
-            print(x.shape)
             x = x.view(*x.shape[:-1], x.shape[-1] // 2, 2)
             return x[...,0] + torch.exp(x[...,1]/2.) * torch.randn(x.shape[:-1]).to(device), x
         finally:

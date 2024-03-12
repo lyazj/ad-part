@@ -30,13 +30,11 @@ import math
 import numpy as np
 import torch
 import logging
-import functools
 
 logging.basicConfig(level=logging.INFO)
 
 # Configuration.
 if DEVICE is not None: tiny.device = DEVICE
-create_tensor = functools.partial(torch.tensor, dtype=torch.float32, device=tiny.device)
 
 def split_training_validation(x, validation_ratio):
     num = x.shape[0]
@@ -46,10 +44,10 @@ def split_training_validation(x, validation_ratio):
 
 # Model, loss function, and optimizer.
 if CF_FILES is None:
-    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.JET_LABEL, adjet.NFEAT_LEP, adjet.NFEAT_PHO)
+    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.JET_LABEL, adjet.NFEAT_LEP, adjet.NFEAT_PHO, classifier=tiny.TinyClassifier, num_classes=5)
 else:
-    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.NHIDDEN, adjet.NFEAT_LEP, adjet.NFEAT_PHO)
-loss_func = torch.nn.functional.binary_cross_entropy
+    model = tiny.TinyEventClassifier(adjet.EVT_LABEL, adjet.NHIDDEN, adjet.NFEAT_LEP, adjet.NFEAT_PHO, classifier=tiny.TinyClassifier, num_classes=5)
+loss_func = torch.nn.functional.cross_entropy
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.8)
 
@@ -66,7 +64,6 @@ for (i, PF_FILE) in enumerate(PF_FILES):
     if CF_FILES is None:
         d = adjet.ADRawDataSet(PF_FILE, PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz', PF_FILE[:-3] + '_photons.gz')
     else:
-        print(CF_FILES[i], PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz', PF_FILE[:-3] + '_photons.gz')
         d = adjet.ADParTDataSet(CF_FILES[i], PF_FILE[:-3] + '_events.gz', PF_FILE[:-3] + '_leptons.gz', PF_FILE[:-3] + '_photons.gz')
     e, j, l, p, lab = map(lambda x: x[:50000], (d.evt, d.jet, d.lep, d.pho, d.label))
     logging.info('%05d samples loaded from %s' % (e.shape[0], PF_FILE))
@@ -77,19 +74,21 @@ index = np.arange(evt.shape[0])
 np.random.shuffle(index)
 evt, jet, lep, pho, label = map(lambda x: x[index], (evt, jet, lep, pho, label))
 evt, jet, lep, pho = map(feature_wise_normalize, (evt, jet, lep, pho))
+label = torch.nn.functional.one_hot(torch.tensor(label.squeeze(), dtype=torch.int64)).numpy()
 logging.info('total loaded: num_samples=%05d' % (evt.shape[0]))
 training_evt, validation_evt = split_training_validation(evt, 0.2)
 training_jet, validation_jet = split_training_validation(jet, 0.2)
 training_lep, validation_lep = split_training_validation(lep, 0.2)
 training_pho, validation_pho = split_training_validation(pho, 0.2)
 training_label, validation_label = split_training_validation(label, 0.2)
-training_label_bin, validation_label_bin = map(lambda x: x.astype('bool').astype(x.dtype), (training_label, validation_label))
 logging.info('data ready in main memory: training=%05d validation=%05d' % (training_label.shape[0], validation_label.shape[0]))
+
+def create_tensor(data): return torch.tensor(data, dtype=torch.float32, device=tiny.device)
 training = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(*map(create_tensor, (
-    training_evt, training_jet, training_lep, training_pho, training_label, training_label_bin
+    training_evt, training_jet, training_lep, training_pho, training_label
 ))), BATCH_SIZE)
 validation = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(*map(create_tensor, (
-    validation_evt, validation_jet, validation_lep, validation_pho, validation_label, validation_label_bin
+    validation_evt, validation_jet, validation_lep, validation_pho, validation_label
 ))), BATCH_SIZE)
 logging.info('data copied to GPU memory successfully')
 
@@ -107,8 +106,8 @@ def train_one_epoch(epoch_id):
     model.train()
     loss = 0.0
     acc = 0.0
-    for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, _, batch_label_bin) in enumerate(training):
-        _, batch_loss, batch_top1, batch_acc = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_label_bin, loss_func)
+    for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, batch_label) in enumerate(training):
+        _, batch_loss, batch_top1, batch_acc = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_label, loss_func)
         print('training batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
         batch_loss.backward()
         optimizer.step()
@@ -121,8 +120,8 @@ def train_one_epoch(epoch_id):
 
     model.eval()
     with torch.no_grad():
-        for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, _, batch_label_bin) in enumerate(validation):
-            _, batch_loss, batch_top1, batch_acc = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_label_bin, loss_func)
+        for batch_id, (batch_evt, batch_jet, batch_lep, batch_pho, batch_label) in enumerate(validation):
+            _, batch_loss, batch_top1, batch_acc = model.run(batch_evt, batch_jet, batch_lep, batch_pho, batch_label, loss_func)
             print('validation batch %03d: loss=%.3f acc=%.3f' % (batch_id, batch_loss, batch_acc.mean()))
             loss += batch_loss
             acc += batch_acc.sum()
