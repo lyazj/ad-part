@@ -192,38 +192,35 @@ class TinyBinaryClassifier(TinyClassifier):
 # event classifier
 class TinyEventClassifier(TinyModule):
 
-    def __init__(self, evt_dim, jet_dim, lep_dim, pho_dim, classifier=TinyBinaryClassifier, embed_dims=(),
-                 evt_embed=(64, 32), jet_embed=(64, 32), lep_embed=(64, 32), pho_embed=(64, 32),
+    def __init__(self, evt_dim, jet_dim, lep_dim, classifier=TinyBinaryClassifier, embed_dims=(),
+                 evt_embed=(64, 32), jet_embed=(64, 32), lep_embed=(64, 32),
                  embed_activate=torch.nn.GELU, *args, **kwargs):
         evt_embed_dim = evt_embed[-1] if evt_embed else evt_dim
         jet_embed_dim = jet_embed[-1] if jet_embed else jet_dim
         lep_embed_dim = lep_embed[-1] if lep_embed else lep_dim
-        pho_embed_dim = pho_embed[-1] if pho_embed else pho_dim
-        if not evt_embed_dim == jet_embed_dim == lep_embed_dim == pho_embed_dim:
+        if not evt_embed_dim == jet_embed_dim == lep_embed_dim:
             raise ValueError('inconsistent dimensions after embedding')
         super().__init__()
         self.evt_embed = TinyMLP(evt_dim, evt_embed, activate=embed_activate, name=self.__class__.__name__ + '_evt_embed')
         self.jet_embed = TinyMLP(jet_dim, jet_embed, activate=embed_activate, name=self.__class__.__name__ + '_jet_embed')
         self.lep_embed = TinyMLP(lep_dim, lep_embed, activate=embed_activate, name=self.__class__.__name__ + '_lep_embed')
-        self.pho_embed = TinyMLP(pho_dim, pho_embed, activate=embed_activate, name=self.__class__.__name__ + '_pho_embed')
         self.classifier = classifier(2, evt_embed_dim, embed_dims=embed_dims, *args, **kwargs)
 
-    def embed(self, evt, jet, lep, pho, msk, *args, **kwargs):
+    def embed(self, evt, jet, lep, msk, *args, **kwargs):
         evt = self.evt_embed(evt, *args, **kwargs)
         jet = self.jet_embed(jet, *args, **kwargs)
         lep = self.lep_embed(lep, *args, **kwargs)
-        pho = self.pho_embed(pho, *args, **kwargs)
-        return torch.concat((evt, jet, lep, pho), dim=-2), msk
+        return torch.concat((evt, jet, lep), dim=-2), msk
 
-    def forward(self, evt, jet, lep, pho, msk, *args, **kwargs):
-        super().begin_forward(evt, jet, lep, pho, msk, *args, **kwargs)
+    def forward(self, evt, jet, lep, msk, *args, **kwargs):
+        super().begin_forward(evt, jet, lep, msk, *args, **kwargs)
         try:
-            return self.classifier.run(*self.embed(evt, jet, lep, pho, msk), label, *args, **kwargs)
+            return self.classifier.run(*self.embed(evt, jet, lep, msk), label, *args, **kwargs)
         finally:
             super().end_forward()
 
-    def run(self, evt, jet, lep, pho, msk, label, *args, **kwargs):
-        return self.classifier.run(*self.embed(evt, jet, lep, pho, msk), label, *args, **kwargs)
+    def run(self, evt, jet, lep, msk, label, *args, **kwargs):
+        return self.classifier.run(*self.embed(evt, jet, lep, msk), label, *args, **kwargs)
 
 # Gaussian sampler
 class TinySampler(TinyModule):

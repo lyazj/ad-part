@@ -3,7 +3,7 @@
 set -e
 
 PF_FILES="$(ls ../*/*_flatten.gz | xargs echo | sed 's@ @:@g')"
-CF_FILES=-
+CF_FILES="$(echo ${PF_FILES} | sed 's@_flatten@_partgpu@g')"
 
 (date
 rm -rf tiny

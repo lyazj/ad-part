@@ -9,32 +9,36 @@ sys.path.insert(0, os.path.join(main_path, 'src/python3'))
 import adjet
 import matplotlib.pyplot as plt
 import numpy as np
+import re
 
 labels = [
-    'QCD',
-    'VJets',
-    'TTbar',
-    'H2B',
-    'HH4B',
+    'Background',
+    'Signal',
 ]
 
-label_index = { l: i for (i, l) in enumerate(labels) }
+label_index = {
+    'delphes_gamjets': 0,
+    'delphes_njets': 0,
+    'delphes_wjets': 0,
+    'delphes_zjets': 0,
+    'delphes_stop2b1000_neutralino300': 1,
+}
 
-data = [[[] for _ in range(5)] for _ in range(4)]
-data4 = os.path.join(main_path, 'run', 'sm', 'data4')
-for name in sorted(os.listdir(data4)):
-    label_i = label_index[name]
-    for filename in [ os.path.join(data4, name, f) for f in sorted(os.listdir(os.path.join(data4, name)))[::6] ]:
+data = [[[] for _ in range(2)] for _ in range(3)]
+run = os.path.join(main_path, 'run')
+for name in sorted(os.listdir(run)):
+    label_i = label_index.get(name)
+    if label_i is None: continue
+    for filename in [ os.path.join(run, name, f) for f in sorted(os.listdir(os.path.join(run, name))) ]:
+        if not re.search(r'_flatten\.gz$', filename): continue
         print(filename)
-        dataset = adjet.ADRawDataSet(filename, filename[:-3] + '_events.gz', filename[:-3] + '_leptons.gz', filename[:-3] + '_photons.gz')
+        dataset = adjet.ADRawDataSet(filename, filename[:-3] + '_events.gz', filename[:-3] + '_leptons.gz', reduced=False)
         data[0][label_i].append(dataset.evt[:,0,:])
         for evt_i in range(dataset.evt.shape[0]):
             njet = int(dataset.evt[evt_i,0,adjet.EVT_NJET])
             nlep = int(dataset.evt[evt_i,0,adjet.EVT_NLEP])
-            npho = int(dataset.evt[evt_i,0,adjet.EVT_NPHO])
             data[1][label_i].append(dataset.jet[evt_i,:njet])
             data[2][label_i].append(dataset.lep[evt_i,:nlep])
-            data[3][label_i].append(dataset.pho[evt_i,:npho])
 for i in range(len(data)):
     for label_i in range(len(data[i])):
         data[i][label_i] = np.concatenate(data[i][label_i])
@@ -44,9 +48,9 @@ for feat_i in range(adjet.NFEAT_EVT - 1):  # Exclude label.
     feat = adjet.EVT_FEAT_NAME[feat_i]
     print(feat)
     plt.clf()
-    plt.hist([data[0][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50)
+    plt.hist([data[0][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50, density=True)
     plt.xlabel(feat)
-    plt.ylabel('Number')
+    plt.ylabel('Density')
     plt.legend()
     plt.tight_layout()
     plt.savefig('evt_%d.pdf' % feat_i)
@@ -56,9 +60,9 @@ for feat_i in range(adjet.NFEAT_JET - 1):  # Exclude label.
     feat = adjet.JET_FEAT_NAME[feat_i]
     print(feat)
     plt.clf()
-    plt.hist([data[1][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50)
+    plt.hist([data[1][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50, density=True)
     plt.xlabel(feat)
-    plt.ylabel('Number')
+    plt.ylabel('Density')
     plt.legend()
     plt.tight_layout()
     plt.savefig('jet_%d.pdf' % feat_i)
@@ -68,21 +72,9 @@ for feat_i in range(adjet.NFEAT_LEP):
     feat = adjet.LEP_FEAT_NAME[feat_i]
     print(feat)
     plt.clf()
-    plt.hist([data[2][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50)
+    plt.hist([data[2][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50, density=True)
     plt.xlabel(feat)
-    plt.ylabel('Number')
+    plt.ylabel('Density')
     plt.legend()
     plt.tight_layout()
     plt.savefig('lep_%d.pdf' % feat_i)
-
-print('Photon:')
-for feat_i in range(adjet.NFEAT_PHO):
-    feat = adjet.PHO_FEAT_NAME[feat_i]
-    print(feat)
-    plt.clf()
-    plt.hist([data[3][label_i][:,feat_i] for label_i in range(len(labels))], label=labels, histtype='step', bins=50)
-    plt.xlabel(feat)
-    plt.ylabel('Number')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig('pho_%d.pdf' % feat_i)

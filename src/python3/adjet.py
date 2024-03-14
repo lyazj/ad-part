@@ -5,15 +5,12 @@ import matplotlib.pyplot as plt
 Feature = np.float32
 NFEAT_JET = 27
 NFEAT_PAR = 22
-NFEAT_EVT = 7
+NFEAT_EVT = 6
 NFEAT_LEP = 11
-NFEAT_PHO = 13
 NPAR_JET = 128
-NRSLT_CLS = 188
-NHIDDEN = 128
+NRSLT_CLS = 10
 NJET_EVT = 10
 NLEP_EVT = 10
-NPHO_EVT = 10
 
 PAR_LOG_PT             =  0
 PAR_LOG_E              =  1
@@ -71,8 +68,7 @@ EVT_MET                =  1
 EVT_METPHI             =  2
 EVT_NJET               =  3
 EVT_NLEP               =  4
-EVT_NPHO               =  5
-EVT_LABEL              =  6
+EVT_LABEL              =  5
 
 LEP_PT                 =  0
 LEP_ETA                =  1
@@ -85,20 +81,6 @@ LEP_D0                 =  7
 LEP_D0_ERR             =  8
 LEP_DZ                 =  9
 LEP_DZ_ERR             = 10
-
-PHO_PT                 =  0
-PHO_ETA                =  1
-PHO_PHI                =  2
-PHO_E                  =  3
-PHO_T                  =  4
-PHO_EHOE               =  5
-PHO_ISO_DB             =  6
-PHO_ISO_RC             =  7
-PHO_SUMPT_C            =  8
-PHO_SUMPT_N            =  9
-PHO_SUMPT_C_PU         = 10
-PHO_SUMPT              = 11
-PHO_STATUS             = 12
 
 CLS_NAME = [ r'<unknown>', ] * NRSLT_CLS
 
@@ -179,22 +161,6 @@ LEP_FEAT_NAME = [
     r'$d_{0, err}$',
     r'$d_z$',
     r'$d_{z, err}$',
-]
-
-PHO_FEAT_NAME = [
-    r'$p_\mathrm{T}$',
-    r'$\eta$',
-    r'$\phi$',
-    r'$E$',
-    r't',
-    r'EHoE',
-    r'iso_db',
-    r'iso_rc',
-    r'$p_\mathrm{T,sum,c}$',
-    r'$p_\mathrm{T,sum,n}$',
-    r'$p_\mathrm{T,sum,c,pu}$',
-    r'$p_\mathrm{T,sum}$',
-    r'status',
 ]
 
 class ADParticle:
@@ -351,9 +317,7 @@ class ADEvent:
     @property
     def nlep(self):    return self.data[4]
     @property
-    def npho(self):    return self.data[5]
-    @property
-    def label(self):   return self.data[6]
+    def label(self):   return self.data[5]
 
 class ADLepton:
 
@@ -384,45 +348,12 @@ class ADLepton:
     @property
     def dz_err(self):            return self.data[10]
 
-class ADPhoton:
-
-    def __init__(self, data):
-        assert tuple(data.shape) == (NFEAT_PHO,)
-        self.data = data
-
-    @property
-    def pt(self):                return self.data[ 0]
-    @property
-    def eta(self):               return self.data[ 1]
-    @property
-    def phi(self):               return self.data[ 2]
-    @property
-    def e(self):                 return self.data[ 3]
-    @property
-    def t(self):                 return self.data[ 4]
-    @property
-    def ehoe(self):              return self.data[ 5]
-    @property
-    def iso_db(self):            return self.data[ 6]
-    @property
-    def iso_rc(self):            return self.data[ 7]
-    @property
-    def sumpt_c(self):           return self.data[ 8]
-    @property
-    def sumpt_n(self):           return self.data[ 9]
-    @property
-    def sumpt_c_pu(self):        return self.data[10]
-    @property
-    def sumpt(self):             return self.data[11]
-    @property
-    def status(self):            return self.data[12]
-
 class ADPFData:
 
     def __init__(self, data, reduced=True):
         self.reduced = reduced
         if self.reduced: self.data = data.reshape(-1, NFEAT_JET)
-        else: self.data = data.reshape(-1, NFEAT_JET + NFEAT_PAR * JET_NPAR)
+        else: self.data = data.reshape(-1, NFEAT_JET + NFEAT_PAR * NPAR_JET)
 
     def jets(self):
         return [ADJet(j, reduced=self.reduced) for j in self.data]
@@ -461,11 +392,6 @@ class ADCFData:
     def top1(self):
         return np.argmax(self.data, axis=-1)
 
-class ADHIDData:
-
-    def __init__(self, data):
-        self.data = data.reshape(-1, NHIDDEN)
-
 class ADPFLabel:
 
     def __init__(self, pf):
@@ -498,18 +424,6 @@ class ADLEPData:
         plt.xlabel(LEP_FEAT_NAME[index])
         plt.ylabel('a.u.')
 
-class ADPHOData:
-
-    def __init__(self, data):
-        self.data = data.reshape(-1, NFEAT_PHO)
-
-    def hist(self, index, *args, **kwargs):
-        kwargs = kwargs.copy()
-        if self.data.shape[0] == 0: kwargs['density'] = False
-        plt.hist(self.data[:,index], *args, **kwargs)
-        plt.xlabel(PHO_FEAT_NAME[index])
-        plt.ylabel('a.u.')
-
 class ADCollection:
 
     def __init__(self, pf, cf):
@@ -540,14 +454,11 @@ class ADCollection:
         for i, item in enumerate(self.data):
             item.hist_par(index, *args, strip_padding=strip_padding, **kwargs, label=CLS_NAME[i])
 
-def load_pf(dumpfile: str):
-    return ADPFData(np.fromgz(dumpfile, dtype=Feature))
+def load_pf(dumpfile: str, reduced=True):
+    return ADPFData(np.fromgz(dumpfile, dtype=Feature), reduced=reduced)
 
 def load_cf(partfile: str):
     return ADCFData(np.fromgz(partfile, dtype=Feature))
-
-def load_hid(hidfile: str):
-    return ADHIDData(np.fromgz(hidfile, dtype=Feature))
 
 def load_evt(evtfile: str):
     return ADEVTData(np.fromgz(evtfile, dtype=Feature))
@@ -555,81 +466,66 @@ def load_evt(evtfile: str):
 def load_lep(lepfile: str):
     return ADLEPData(np.fromgz(lepfile, dtype=Feature))
 
-def load_pho(phofile: str):
-    return ADPHOData(np.fromgz(phofile, dtype=Feature))
-
 def collect(pf: ADPFData, cf: ADCFData = None):
     if cf is None: cf = ADPFLabel(pf)
     return ADCollection(pf, cf)
 
 class ADRawDataSet:
 
-    def __init__(self, jetfile: str, evtfile: str, lepfile: str, phofile: str):
-        jet = load_pf(jetfile).data
+    def __init__(self, jetfile: str, evtfile: str, lepfile: str, reduced=True):
+        jet = load_pf(jetfile, reduced=reduced).data
         evt = load_evt(evtfile).data
         lep = load_lep(lepfile).data
-        pho = load_pho(phofile).data
 
         # Make input tensors.
         t_evt = evt[:,:EVT_LABEL].reshape(-1, 1, EVT_LABEL)
         t_jet = np.zeros((evt.shape[0], NJET_EVT, JET_LABEL))
         t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
-        t_pho = np.zeros((evt.shape[0], NPHO_EVT, NFEAT_PHO))
-        t_msk = np.zeros((evt.shape[0], 1 + NJET_EVT + NLEP_EVT + NPHO_EVT))
-        jet_i, lep_i, pho_i = 0, 0, 0
+        t_msk = np.zeros((evt.shape[0], 1 + NJET_EVT + NLEP_EVT))
+        jet_i, lep_i = 0, 0
         for evt_i in range(evt.shape[0]):
-            njet, nlep, npho = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP, EVT_NPHO))
-            njet_to_save, nlep_to_save, npho_to_save = map(min, (njet, nlep, npho), (NJET_EVT, NLEP_EVT, NPHO_EVT))
+            njet, nlep = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP))
+            njet_to_save, nlep_to_save = map(min, (njet, nlep), (NJET_EVT, NLEP_EVT))
             t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save,:JET_LABEL]
             t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
-            t_pho[evt_i,:npho_to_save] = pho[pho_i:pho_i + npho_to_save]
             t_msk[evt_i,1 + njet_to_save:1 + NJET_EVT] = 1
             t_msk[evt_i,1 + NJET_EVT + nlep_to_save:1 + NJET_EVT + NLEP_EVT] = 1
-            t_msk[evt_i,1 + NJET_EVT + NLEP_EVT + npho_to_save:1 + NJET_EVT + NLEP_EVT + NPHO_EVT] = 1
-            jet_i, lep_i, pho_i = jet_i + njet, lep_i + nlep, pho_i + npho
+            jet_i, lep_i = jet_i + njet, lep_i + nlep
         if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
         if lep_i != lep.shape[0]: raise RuntimeError(f'expect {lep_i} leptons, got {lep.shape[0]}')
-        if pho_i != pho.shape[0]: raise RuntimeError(f'expect {pho_i} photons, got {pho.shape[0]}')
 
         self.evt = t_evt
         self.jet = t_jet
         self.lep = t_lep
-        self.pho = t_pho
         self.msk = t_msk
         self.label = evt[:,EVT_LABEL].reshape(-1, 1)
 
 class ADParTDataSet:
 
-    def __init__(self, hidfile: str, evtfile: str, lepfile: str, phofile: str):
-        jet = load_hid(hidfile).data
+    def __init__(self, jetfile: str, evtfile: str, lepfile: str):
+        jet = load_cf(jetfile).data
         evt = load_evt(evtfile).data
         lep = load_lep(lepfile).data
-        pho = load_pho(phofile).data
 
         # Make input tensors.
         t_evt = evt[:,:EVT_LABEL].reshape(-1, 1, EVT_LABEL)
-        t_jet = np.zeros((evt.shape[0], NJET_EVT, NHIDDEN))
+        t_jet = np.zeros((evt.shape[0], NJET_EVT, NRSLT_CLS))
         t_lep = np.zeros((evt.shape[0], NLEP_EVT, NFEAT_LEP))
-        t_pho = np.zeros((evt.shape[0], NPHO_EVT, NFEAT_PHO))
-        t_msk = np.zeros((evt.shape[0], 1 + NJET_EVT + NLEP_EVT + NPHO_EVT))
-        jet_i, lep_i, pho_i = 0, 0, 0
+        t_msk = np.zeros((evt.shape[0], 1 + NJET_EVT + NLEP_EVT))
+        jet_i, lep_i = 0, 0
         for evt_i in range(evt.shape[0]):
-            njet, nlep, npho = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP, EVT_NPHO))
-            njet_to_save, nlep_to_save, npho_to_save = map(min, (njet, nlep, npho), (NJET_EVT, NLEP_EVT, NPHO_EVT))
+            njet, nlep = map(lambda x: int(evt[evt_i,x]), (EVT_NJET, EVT_NLEP))
+            njet_to_save, nlep_to_save = map(min, (njet, nlep), (NJET_EVT, NLEP_EVT))
             t_jet[evt_i,:njet_to_save] = jet[jet_i:jet_i + njet_to_save]
             t_lep[evt_i,:nlep_to_save] = lep[lep_i:lep_i + nlep_to_save]
-            t_pho[evt_i,:npho_to_save] = pho[pho_i:pho_i + npho_to_save]
             t_msk[evt_i,1 + njet_to_save:1 + NJET_EVT] = 1
             t_msk[evt_i,1 + NJET_EVT + nlep_to_save:1 + NJET_EVT + NLEP_EVT] = 1
-            t_msk[evt_i,1 + NJET_EVT + NLEP_EVT + npho_to_save:1 + NJET_EVT + NLEP_EVT + NPHO_EVT] = 1
-            jet_i, lep_i, pho_i = jet_i + njet, lep_i + nlep, pho_i + npho
+            jet_i, lep_i = jet_i + njet, lep_i + nlep
         if jet_i != jet.shape[0]: raise RuntimeError(f'expect {jet_i} jets, got {jet.shape[0]}')
         if lep_i != lep.shape[0]: raise RuntimeError(f'expect {lep_i} leptons, got {lep.shape[0]}')
-        if pho_i != pho.shape[0]: raise RuntimeError(f'expect {pho_i} photons, got {pho.shape[0]}')
 
         self.evt = t_evt
         self.jet = t_jet
         self.lep = t_lep
-        self.pho = t_pho
         self.msk = t_msk
         self.label = evt[:,EVT_LABEL].reshape(-1, 1)
