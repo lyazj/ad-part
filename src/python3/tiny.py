@@ -112,7 +112,7 @@ class TinyBlock(TinySequential):
     # (N, C, input_dim) -> LN -> resMHA -> LN -> resMLP [ -> DROP ] -> (N, C, output_dim)
     # output_dim = dims[-1] if len(dims) else input_dim
     def __init__(self, input_dim, mlp_dims, num_heads=4, attn_dropout=0.1, attn_bias=True,
-                 mlp_dropout=0.1, mlp_bias=True, mlp_activate=torch.nn.ReLU, *args, **kwargs):
+                 mlp_dropout=0.1, mlp_bias=True, mlp_activate=torch.nn.GELU, *args, **kwargs):
         if len(mlp_dims) and mlp_dims[-1] == -1: mlp_dims = (*mlp_dims[:-1], input_dim)
         if len(mlp_dims) and mlp_dims[-1] != input_dim: raise ValueError(f'expect {input_dims} nodes as MLP output')
         layers = []
@@ -143,7 +143,7 @@ class TinyTransformer(TinySequential):
     # (N, C, input_dim) -> MLP -> BLOCK [ -> BLOCK ] -> POOL -> MLP [ -> ACTIVATE ] -> (N, output_dim)
     # output_dim = decode_dims[-1] if len(decode_dims) else embed_dims[-1] if len(embed_dims) else input_dim
     def __init__(self, dim, input_dim, embed_dims, decode_dims, num_blocks=2, activate=None,
-                 embed_activate=torch.nn.ReLU, decode_activate=torch.nn.ReLU, pool=torch.max, *args, **kwargs):
+                 embed_activate=torch.nn.GELU, decode_activate=torch.nn.GELU, pool=torch.max, *args, **kwargs):
         layers = []
         layers.append((TinyMLP(input_dim, embed_dims, activate=embed_activate, name=self.__class__.__name__ + '_embed'), 1))
         if len(embed_dims): input_dim = embed_dims[-1]
@@ -193,7 +193,8 @@ class TinyBinaryClassifier(TinyClassifier):
 class TinyEventClassifier(TinyModule):
 
     def __init__(self, evt_dim, jet_dim, lep_dim, pho_dim, classifier=TinyBinaryClassifier, embed_dims=(),
-                 evt_embed=(64, 32), jet_embed=(64, 32), lep_embed=(64, 32), pho_embed=(64, 32), *args, **kwargs):
+                 evt_embed=(64, 32), jet_embed=(64, 32), lep_embed=(64, 32), pho_embed=(64, 32),
+                 embed_activate=torch.nn.GELU, *args, **kwargs):
         evt_embed_dim = evt_embed[-1] if evt_embed else evt_dim
         jet_embed_dim = jet_embed[-1] if jet_embed else jet_dim
         lep_embed_dim = lep_embed[-1] if lep_embed else lep_dim
@@ -201,10 +202,10 @@ class TinyEventClassifier(TinyModule):
         if not evt_embed_dim == jet_embed_dim == lep_embed_dim == pho_embed_dim:
             raise ValueError('inconsistent dimensions after embedding')
         super().__init__()
-        self.evt_embed = TinyMLP(evt_dim, evt_embed, name=self.__class__.__name__ + '_evt_embed')
-        self.jet_embed = TinyMLP(jet_dim, jet_embed, name=self.__class__.__name__ + '_jet_embed')
-        self.lep_embed = TinyMLP(lep_dim, lep_embed, name=self.__class__.__name__ + '_lep_embed')
-        self.pho_embed = TinyMLP(pho_dim, pho_embed, name=self.__class__.__name__ + '_pho_embed')
+        self.evt_embed = TinyMLP(evt_dim, evt_embed, activate=embed_activate, name=self.__class__.__name__ + '_evt_embed')
+        self.jet_embed = TinyMLP(jet_dim, jet_embed, activate=embed_activate, name=self.__class__.__name__ + '_jet_embed')
+        self.lep_embed = TinyMLP(lep_dim, lep_embed, activate=embed_activate, name=self.__class__.__name__ + '_lep_embed')
+        self.pho_embed = TinyMLP(pho_dim, pho_embed, activate=embed_activate, name=self.__class__.__name__ + '_pho_embed')
         self.classifier = classifier(2, evt_embed_dim, embed_dims=embed_dims, *args, **kwargs)
 
     def embed(self, evt, jet, lep, pho, msk, *args, **kwargs):
