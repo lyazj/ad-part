@@ -1,0 +1,114 @@
+selection:
+   ### use `&`, `|`, `~` for logical operations on numpy arrays
+   ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
+
+new_variables:
+   ### [format] name: formula
+   ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
+   label_QCD:   (evt_label == 0)
+   label_VJets: (evt_label == 1)
+   label_TTbar: (evt_label == 2)
+   label_H2B:   (evt_label == 3)
+   label_2H4B:  (evt_label == 4)
+
+preprocess:
+  ### method: [manual, auto] - whether to use manually specified parameters for variable standardization
+  method: manual
+  ### data_fraction: fraction of events to use when calculating the mean/scale for the standardization
+  data_fraction: 1.0
+
+inputs:
+   evt:
+      length: 1
+      pad_mode: wrap
+      vars:
+      ### [format 1]: var_name (no transformation)
+      ### [format 2]: [var_name,
+      ###              subtract_by(optional, default=None, no transf. if preprocess.method=manual, auto transf. if preprocess.method=auto),
+      ###              multiply_by(optional, default=1),
+      ###              clip_min(optional, default=-5),
+      ###              clip_max(optional, default=5),
+      ###              pad_value(optional, default=0)]
+         - [evt_ht, null]
+         - [evt_met, null]
+         - [evt_metphi, null]
+         - [evt_njet, null]
+         - [evt_nlep, null]
+         - [evt_npho, null]
+   jet:
+      length: 10
+      pad_mode: wrap
+      vars:
+         - [jet_pt, null]
+         - [jet_eta, null]
+         - [jet_phi, null]
+         - [jet_e, null]
+         - [jet_npar, null]
+         - [jet_sdmass, null]
+         - [jet_tau1, null]
+         - [jet_tau2, null]
+         - [jet_tau3, null]
+         - [jet_tau4, null]
+         - [jet_n2_0, null]
+         - [jet_n3_0, null]
+         - [jet_n3_1, null]
+         - [jet_n3_2, null]
+         - [jet_n3_3, null]
+         - [jet_n3_4, null]
+         - [jet_n3_5, null]
+         - [jet_n3_6, null]
+         - [jet_n3_7, null]
+         - [jet_n3_8, null]
+         - [jet_n3_9, null]
+         - [jet_n3_10, null]
+         - [jet_tau21, null]
+         - [jet_tau32, null]
+         - [jet_tau43, null]
+         - [jet_ftrec, null]
+   lep:
+      length: 10
+      pad_mode: wrap
+      vars:
+         - [lep_pt, null]
+         - [lep_eta, null]
+         - [lep_phi, null]
+         - [lep_e, null]
+         - [lep_charge, null]
+         - [lep_iso_db, null]
+         - [lep_iso_rc, null]
+         - [lep_d0, null]
+         - [lep_d0_err, null]
+         - [lep_dz, null]
+         - [lep_dz_err, null]
+   pho:
+      length: 10
+      pad_mode: wrap
+      vars:
+         - [pho_pt, null]
+         - [pho_eta, null]
+         - [pho_phi, null]
+         - [pho_e, null]
+         - [pho_t, null]
+         - [pho_ehoe, null]
+         - [pho_iso_db, null]
+         - [pho_iso_rc, null]
+         - [pho_sumpt_c, null]
+         - [pho_sumpt_n, null]
+         - [pho_sumpt_c_pu, null]
+         - [pho_sumpt, null]
+         - [pho_status, null]
+
+labels:
+   ### type can be `simple`, `custom`
+   ### [option 1] use `simple` for binary/multi-class classification, then `value` is a list of 0-1 labels
+   type: simple
+   value: [label_QCD, label_VJets, label_TTbar, label_H2B, label_2H4B]
+   ### [option 2] otherwise use `custom` to define the label, then `value` is a map
+   #type: custom
+   #value:
+   #   truth_label: evt_label
+
+observers:
+   evt_label
+
+weights:

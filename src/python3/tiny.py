@@ -218,7 +218,7 @@ class TinyEventClassifier(TinyModule):
     def forward(self, evt, jet, lep, pho, msk, *args, **kwargs):
         super().begin_forward(evt, jet, lep, pho, msk, *args, **kwargs)
         try:
-            return self.classifier.run(*self.embed(evt, jet, lep, pho, msk), label, *args, **kwargs)
+            return self.classifier(*self.embed(evt, jet, lep, pho, msk), *args, **kwargs)
         finally:
             super().end_forward()
 
