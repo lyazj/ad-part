@@ -1,8 +1,11 @@
 #!/bin/bash
 
-weaver --data-train '../sm/data4/*/*.root' \
-    --data-config input.yaml \
-    --network-config model.py \
-    --model-prefix tiny \
-    --gpus 0,1,2,3 --batch-size 8192 --start-lr 1e-3 --num-epochs 50 --optimizer ranger \
-    --log train.log
+python3 $HOME/work/weaver-core-dev/weaver/train.py \
+    --use-amp -o embed_dims '[64,256,64]' -o pair_embed_dims '[32,32,32]' -o num_heads 4 --optimizer-option weight_decay 0.01 \
+    --batch-size 512 --start-lr 1e-3 --num-epochs 50 --optimizer ranger --fetch-step 0.01 \
+    --gpus 2 --fetch-step 1 --in-memory \
+    --samples-per-epoch $((512 * 1500)) --samples-per-epoch-val $((512 * 375)) \
+    --data-train ../sm/data4/*/*.root --data-config input.yaml \
+    --network-config example_ParticleTransformer2023EvtClassifier.py \
+    --model-prefix net \
+    --log-file train.log --tensorboard _raw
