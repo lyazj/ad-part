@@ -78,7 +78,7 @@ LEP_PT                 =  0
 LEP_ETA                =  1
 LEP_PHI                =  2
 LEP_E                  =  3
-LEP_CHARGE             =  4
+LEP_PID                =  4
 LEP_ISO_DB             =  5
 LEP_ISO_RC             =  6
 LEP_D0                 =  7
@@ -172,7 +172,7 @@ LEP_FEAT_NAME = [
     r'$\eta$',
     r'$\phi$',
     r'$E$',
-    r'charge',
+    r'PID',
     r'iso_db',
     r'iso_rc',
     r'$d_0$',
@@ -370,7 +370,7 @@ class ADLepton:
     @property
     def e(self):                 return self.data[ 3]
     @property
-    def charge(self):            return self.data[ 4]
+    def pid(self):               return self.data[ 4]
     @property
     def iso_db(self):            return self.data[ 5]
     @property

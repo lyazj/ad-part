@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     {"lep_eta",         { }},
     {"lep_phi",         { }},
     {"lep_e",           { }},
-    {"lep_charge",      { }},
+    {"lep_pid",         { }},
     {"lep_iso_db",      { }},
     {"lep_iso_rc",      { }},
     {"lep_d0",          { }},

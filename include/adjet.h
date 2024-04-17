@@ -180,7 +180,7 @@ public:
   Feature eta;
   Feature phi;
   Feature e;
-  Feature charge;
+  Feature pid;
   Feature iso_db;
   Feature iso_rc;
   Feature d0;
