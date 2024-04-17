@@ -3,6 +3,7 @@
 *.log
 *.png
 *.pdf
+*.pt
 pdginfo
 part-preprocess.json
 tiny/

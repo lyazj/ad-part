@@ -209,6 +209,6 @@ labels:
    #   truth_label: evt_label
 
 observers:
-   evt_label
+   - evt_label
 
 weights:
