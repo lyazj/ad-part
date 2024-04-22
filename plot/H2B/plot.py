@@ -24,9 +24,10 @@ NEVENT_MAX = None
 #NEVENT_MAX = 1000000
 
 event_expressions = list(map(lambda x: (x[0], re.sub(r'\s+', ' ', x[1])), [
+    ('jet_pt', '''jet_pt'''),
+    ('jet_sdmass', '''jet_sdmass'''),
     ('jet_tau21', '''jet_tau21'''),
     ('jet_n32', '''jet_n2_0'''),
-    ('jet_sdmass', '''jet_sdmass'''),
 ]))
 labels = {
     'QCD':   r'QCD',
@@ -76,6 +77,19 @@ for category in sorted(os.listdir(DATA4)):
     events[category] = current_events
 
 categories = sorted(events.keys())
+
+def compute_leading_jet_variables(events, varnames):
+    for varname in varnames:
+        if varname[:4] != 'jet_': continue
+        jet_var = events[varname]
+        lead_jet_var = jet_var[:,0]
+        events['lead_' + varname] = lead_jet_var
+
+# Compute leading jet variables.
+print('Computing leading jet variables...')
+for c, e in events.items():
+    print('Category:', c)
+    compute_leading_jet_variables(e, [expr[0] for expr in event_expressions])
 
 def figure(*args, **kwargs):
     fig = plt.figure(*args, **kwargs)
@@ -130,60 +144,70 @@ def signif(hists, cates):
     plt.legend()
 
 plt.figure(figsize=(12, 9), dpi=150)
+pt_bins = np.linspace(0, 1200, 51)
+pt_hists = [np.histogram(events[category]['lead_jet_pt'], pt_bins, density=True) for category in categories]
+hep.histplot(pt_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'$p_\mathrm{T}$ [GeV]'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('pt-density.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
 tau21_bins = np.linspace(0, 1, 51)
-tau21_hists = [np.histogram(ak.min(events[category]['jet_tau21'], axis=-1), tau21_bins, density=True) for category in categories]
+tau21_hists = [np.histogram(events[category]['lead_jet_tau21'], tau21_bins, density=True) for category in categories]
 hep.histplot(tau21_hists, histtype='step', label=[labels[cate] for cate in categories])
 plt.xlabel(r'$\tau_{21}$'); plt.ylabel('Density')
 plt.legend(); plt.grid(); plt.tight_layout(); savefig('tau21-density.pdf')
 plt.close()
 
 plt.figure(figsize=(12, 9), dpi=150)
-tau21_bins = np.linspace(0, 1, 51)
-tau21_hists = [np.histogram(ak.min(events[category]['jet_tau21'], axis=-1), tau21_bins, weights=events[category]['weight']) for category in categories]
-histplot(tau21_hists, categories)
-plt.xlabel(r'$\tau_{21}$'); plt.ylabel('Events'); plt.yscale('log')
-plt.legend(); plt.grid(); plt.tight_layout(); savefig('tau21.pdf')
-plt.close()
-
-plt.figure(figsize=(12, 9), dpi=150)
 n32_bins = np.linspace(0, 0.02, 51)
-n32_hists = [np.histogram(ak.min(events[category]['jet_n32'], axis=-1), n32_bins, density=True) for category in categories]
+n32_hists = [np.histogram(events[category]['lead_jet_n32'], n32_bins, density=True) for category in categories]
 hep.histplot(n32_hists, histtype='step', label=[labels[cate] for cate in categories])
 plt.xlabel(r'$N_{32}$'); plt.ylabel('Density')
 plt.legend(); plt.grid(); plt.tight_layout(); savefig('n32-density.pdf')
 plt.close()
 
 plt.figure(figsize=(12, 9), dpi=150)
-n32_bins = np.linspace(0, 0.02, 51)
-n32_hists = [np.histogram(ak.min(events[category]['jet_n32'], axis=-1), n32_bins, weights=events[category]['weight']) for category in categories]
-histplot(tau21_hists, categories)
-plt.xlabel(r'$N_{32}$'); plt.ylabel('Events'); plt.yscale('log')
-plt.legend(); plt.grid(); plt.tight_layout(); savefig('n32.pdf')
-plt.close()
-
-plt.figure(figsize=(12, 9), dpi=150)
 sdmass_bins = np.linspace(50, 200, 51)
-sdmass_hists = [np.histogram(ak.min(events[category]['jet_sdmass'], axis=-1), sdmass_bins, density=True) for category in categories]
+sdmass_hists = [np.histogram(events[category]['lead_jet_sdmass'], sdmass_bins, density=True) for category in categories]
 hep.histplot(sdmass_hists, histtype='step', label=[labels[cate] for cate in categories])
 plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Density')
 plt.legend(); plt.grid(); plt.tight_layout(); savefig('sdmass-density.pdf')
 plt.close()
 
+# Apply mass window.
+cut_events = { }
+for category in events:
+    e = events[category]
+    e = e[e['lead_jet_sdmass'] >= 100]
+    e = e[e['lead_jet_sdmass'] <= 140]
+    cut_events[category] = e
 plt.figure(figsize=(12, 9), dpi=150)
-sdmass_bins = np.linspace(50, 200, 51)
-sdmass_hists = [np.histogram(ak.min(events[category]['jet_sdmass'], axis=-1), sdmass_bins, weights=events[category]['weight']) for category in categories]
-histplot(sdmass_hists, categories)
-plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Events'); plt.yscale('log')
-plt.legend(); plt.grid(); plt.tight_layout(); savefig('sdmass.pdf')
+tau21_bins = np.linspace(0, 1, 51)
+tau21_hists = [np.histogram(cut_events[category]['lead_jet_tau21'], tau21_bins, density=True) for category in categories]
+hep.histplot(tau21_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'$\tau_{21}$'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('tau21-100-140-density.pdf')
 plt.close()
 
-#fig = figure(figsize=(12, 11.25), dpi=150)
-#tau21_bins = np.linspace(0, 1, 51)
-#tau21_hists = [np.histogram(ak.max(events[category]['jet_tau21'], axis=-1), tau21_bins, weights=events[category]['weight']) for category in categories]
-#histplot(tau21_hists, categories)
-#plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
-#plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
-#signif(tau21_hists, categories)
-#plt.xlabel(r'$\tau_{21}$'); plt.ylabel('Significance'); plt.grid()
-#plt.tight_layout(); savefig('tau_21.pdf')
-#plt.close()
+fig = figure(figsize=(12, 11.25), dpi=150)
+tau21_bins = np.linspace(0, 1, 51)
+tau21_hists = [np.histogram(cut_events[category]['lead_jet_tau21'], tau21_bins, weights=cut_events[category]['weight']) for category in categories]
+histplot(tau21_hists, categories)
+plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
+plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
+signif(tau21_hists, categories)
+plt.xlabel(r'$\tau_{21}$'); plt.ylabel('Significance'); plt.grid()
+plt.tight_layout(); savefig('tau21-100-140.pdf')
+plt.close()
+
+fig = figure(figsize=(12, 11.25), dpi=150)
+sdmass_bins = np.linspace(50, 200, 51)
+sdmass_hists = [np.histogram(events[category]['lead_jet_sdmass'], sdmass_bins, weights=events[category]['weight']) for category in categories]
+histplot(sdmass_hists, categories)
+plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
+plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
+signif(sdmass_hists, categories)
+plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Significance'); plt.grid()
+plt.tight_layout(); savefig('sdmass.pdf')
+plt.close()

@@ -62,6 +62,12 @@ new_variables:
    jet_n3_8_log:  np.log(np.maximum(jet_n3_8 , 1e-8))
    jet_n3_9_log:  np.log(np.maximum(jet_n3_9 , 1e-8))
    jet_n3_10_log: np.log(np.maximum(jet_n3_10, 1e-8))
+   # observers
+   lead_jet_pt:     'jet_pt     [...,0]'
+   lead_jet_eta:    'jet_eta    [...,0]'
+   lead_jet_phi:    'jet_phi    [...,0]'
+   lead_jet_e:      'jet_e      [...,0]'
+   lead_jet_sdmass: 'jet_sdmass [...,0]'
 
 preprocess:
   ### method: [manual, auto] - whether to use manually specified parameters for variable standardization
@@ -210,5 +216,10 @@ labels:
 
 observers:
    - evt_label
+   - lead_jet_pt
+   - lead_jet_eta
+   - lead_jet_phi
+   - lead_jet_e
+   - lead_jet_sdmass
 
 weights:
