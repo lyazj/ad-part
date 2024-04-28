@@ -5,12 +5,11 @@ selection:
 new_variables:
    ### [format] name: formula
    ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
-   evt_label_flat: ak.flatten(evt_label)
-   label_QCD:   (evt_label_flat == 0)
-   label_VJets: (evt_label_flat == 1)
-   label_TTbar: (evt_label_flat == 2)
-   label_H2B:   (evt_label_flat == 3)
-   label_2H4B:  (evt_label_flat == 4)
+   label_QCD:   (ak.flatten(evt_label) == 0)
+   label_VJets: (ak.flatten(evt_label) == 1)
+   label_TTbar: (ak.flatten(evt_label) == 2)
+   label_H2B:   (ak.flatten(evt_label) == 3)
+   label_2H4B:  (ak.flatten(evt_label) == 4)
    # input vars
    evt_ht_log: np.log(evt_ht)
    evt_met_log: np.log(evt_met)
@@ -223,3 +222,11 @@ observers:
    - lead_jet_sdmass
 
 weights:
+   use_precomputed_weights: false
+   reweight_method: flat
+   reweight_vars:
+      lead_jet_pt: [-10000000000, +10000000000]
+      lead_jet_sdmass: [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]
+   reweight_classes: [label_QCD, label_VJets, label_TTbar, label_H2B]
+   class_weights: [1.0, 1.0, 1.0, 1.0]
+   reweight_hists:
