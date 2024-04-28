@@ -79,6 +79,7 @@ unordered_map<string, size_t> Sampler::expected_sample_size_table = {
   {"TTbarZ"         , 1390    },
   {"SingleHiggsToBB", 1       },  // [XXX]
   {"DiHiggsTo4B"    , 1       },  // [XXX]
+  {"WkkTo3WTo6Q"    , 1       },  // [XXX]
 };
 
 unordered_map<string, double> Sampler::sample_weight_table = {
@@ -103,6 +104,7 @@ unordered_map<string, double> Sampler::sample_weight_table = {
   {"TTbarZ"         , 1390    },
   {"SingleHiggsToBB", 1       },  // [XXX]
   {"DiHiggsTo4B"    , 1       },  // [XXX]
+  {"WkkTo3WTo6Q"    , 1       },  // [XXX]
 };
 
 Sampler::Sampler(const string &dstdir_in, size_t nfrag_in)
