@@ -154,7 +154,7 @@ inputs:
          - [lep_pt_log, 4, 1]
          - [lep_eta, null]
          - [lep_phi, null]
-         - [lep_charge, null]
+         - [lep_pid, null]
          - [lep_iso_db, 0, 5]
          - [lep_iso_rc, 0, 10]
          - [lep_d0, 0, 5]
