@@ -94,7 +94,8 @@ int main(int argc, char *argv[])
       continue;
     }
     auto delphes = (TTree *)file->Get("Delphes");
-    Long64_t n = delphes->GetEntries();
+    //Long64_t n = delphes->GetEntries();
+    Long64_t n = 10;  // [DEBUG]
     printf("%s: %llu events total\n", rootfile, (unsigned long long)n);
 
     // Set up branches.

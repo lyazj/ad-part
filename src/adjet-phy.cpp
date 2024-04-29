@@ -64,8 +64,10 @@ void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
 {
   TLorentzVector p4 = par.P4(), p4_scaled = scale_for_pt(p4, 500.0);
 
-  adpar.log_pt = log(p4_scaled.Pt());
-  adpar.log_e = log(p4_scaled.Energy());
+  //adpar.log_pt = log(p4_scaled.Pt());
+  //adpar.log_e = log(p4_scaled.Energy());
+  adpar.log_pt = log(p4.Pt());
+  adpar.log_e = log(p4.Energy());
   adpar.log_pt_rel = adpar.log_pt - log(p4_jet.Pt());
   adpar.log_e_rel = adpar.log_e - log(p4_jet.Energy());
   adpar.delta_r = p4.DeltaR(p4_jet);
@@ -81,10 +83,14 @@ void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
   adpar.dz_err = 0.0;  // padding
   adpar.deta = (p4.Eta() > 0 ? 1 : -1) * (p4.Eta() - p4_jet.Eta());
   adpar.dphi = p4.DeltaPhi(p4_jet);
-  adpar.px = p4_scaled.Px();
-  adpar.py = p4_scaled.Py();
-  adpar.pz = p4_scaled.Pz();
-  adpar.e = p4_scaled.Energy();
+  //adpar.px = p4_scaled.Px();
+  //adpar.py = p4_scaled.Py();
+  //adpar.pz = p4_scaled.Pz();
+  //adpar.e = p4_scaled.Energy();
+  adpar.px = p4.Px();
+  adpar.py = p4.Py();
+  adpar.pz = p4.Pz();
+  adpar.e = p4.Energy();
   adpar.mask = 1.0;
 }
 
@@ -258,15 +264,15 @@ ADParticle::ADParticle(const ParticleFlowCandidate &pfc,
 
 void ADParticle::preprocess()
 {
-  log_pt = (log_pt - 1.7) * 0.7;
-  log_e = (log_e - 2.0) * 0.7;
-  log_pt_rel = (log_pt_rel + 4.7) * 0.7;
-  log_e_rel = (log_e_rel + 4.7) * 0.7;
-  delta_r = (delta_r - 0.2) * 4.0;
-  d0 = tanh(d0);
-  d0_err = min<Feature>(max<Feature>(d0_err, 0.0), 1.0);
-  dz = tanh(dz);
-  dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
+  //log_pt = (log_pt - 1.7) * 0.7;
+  //log_e = (log_e - 2.0) * 0.7;
+  //log_pt_rel = (log_pt_rel + 4.7) * 0.7;
+  //log_e_rel = (log_e_rel + 4.7) * 0.7;
+  //delta_r = (delta_r - 0.2) * 4.0;
+  //d0 = tanh(d0);
+  //d0_err = min<Feature>(max<Feature>(d0_err, 0.0), 1.0);
+  //dz = tanh(dz);
+  //dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
 }
 
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name, const Vertex &vtx) : ADJet()
