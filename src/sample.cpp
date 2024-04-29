@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <zlib.h>
 #include <err.h>
+#include <unistd.h>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -30,6 +31,7 @@ private:
   static unordered_map<string, size_t> expected_sample_size_table;
   static unordered_map<string, double> sample_weight_table;
 
+  size_t start_label;
   const string dstdir;
   size_t nfrag, frag_size, ifrag, ievent;
   vector<string> sample_names;
@@ -47,53 +49,59 @@ private:
 };
 
 unordered_map<string, size_t> Sampler::expected_sample_size_table = {
-  {"QCD"        , 51400000},
-  {"WJetsToQQ"  , 571000  },
-  {"WJetsToLNu" , 128000  },
-  {"ZJetsToQQ"  , 225000  },
-  {"ZJetsToLL"  , 25800   },
-  {"ZJetsToNuNu", 22600   },
-  {"TTbar"      , 246000  },
-  {"SingleTop"  , 19300   },
-  {"WW"         , 14000   },
-  {"TW"         , 24900   },
-  {"ZW"         , 10400   },
-  {"ZZ"         , 1250    },
-  {"TZ"         , 486     },
-  {"SingleHiggs", 1630    },
-  {"WH"         , 289     },
-  {"ZH"         , 151     },
-  {"TTbarH"     , 862     },
-  {"TTbarW"     , 655     },
-  {"TTbarZ"     , 1390    },
+  {"QCD"            , 51400000},
+  {"WJetsToQQ"      , 571000  },
+  {"WJetsToLNu"     , 128000  },
+  {"ZJetsToQQ"      , 225000  },
+  {"ZJetsToLL"      , 25800   },
+  {"ZJetsToNuNu"    , 22600   },
+  {"TTbar"          , 246000  },
+  {"SingleTop"      , 19300   },
+  {"WW"             , 14000   },
+  {"TW"             , 24900   },
+  {"ZW"             , 10400   },
+  {"ZZ"             , 1250    },
+  {"TZ"             , 486     },
+  {"SingleHiggs"    , 1630    },
+  {"WH"             , 289     },
+  {"ZH"             , 151     },
+  {"TTbarH"         , 862     },
+  {"TTbarW"         , 655     },
+  {"TTbarZ"         , 1390    },
+  {"SingleHiggsToBB", 1       },  // [XXX]
+  {"DiHiggsTo4B"    , 1       },  // [XXX]
+  {"WkkTo3WTo6Q"    , 1       },  // [XXX]
 };
 
 unordered_map<string, double> Sampler::sample_weight_table = {
-  {"QCD"        , 51400000},
-  {"WJetsToQQ"  , 571000  },
-  {"WJetsToLNu" , 128000  },
-  {"ZJetsToQQ"  , 225000  },
-  {"ZJetsToLL"  , 25800   },
-  {"ZJetsToNuNu", 22600   },
-  {"TTbar"      , 246000  },
-  {"SingleTop"  , 19300   },
-  {"WW"         , 14000   },
-  {"TW"         , 24900   },
-  {"ZW"         , 10400   },
-  {"ZZ"         , 1250    },
-  {"TZ"         , 486     },
-  {"SingleHiggs", 1630    },
-  {"WH"         , 289     },
-  {"ZH"         , 151     },
-  {"TTbarH"     , 862     },
-  {"TTbarW"     , 655     },
-  {"TTbarZ"     , 1390    },
+  {"QCD"            , 51400000},
+  {"WJetsToQQ"      , 571000  },
+  {"WJetsToLNu"     , 128000  },
+  {"ZJetsToQQ"      , 225000  },
+  {"ZJetsToLL"      , 25800   },
+  {"ZJetsToNuNu"    , 22600   },
+  {"TTbar"          , 246000  },
+  {"SingleTop"      , 19300   },
+  {"WW"             , 14000   },
+  {"TW"             , 24900   },
+  {"ZW"             , 10400   },
+  {"ZZ"             , 1250    },
+  {"TZ"             , 486     },
+  {"SingleHiggs"    , 1630    },
+  {"WH"             , 289     },
+  {"ZH"             , 151     },
+  {"TTbarH"         , 862     },
+  {"TTbarW"         , 655     },
+  {"TTbarZ"         , 1390    },
+  {"SingleHiggsToBB", 1       },  // [XXX]
+  {"DiHiggsTo4B"    , 1       },  // [XXX]
+  {"WkkTo3WTo6Q"    , 1       },  // [XXX]
 };
 
 Sampler::Sampler(const string &dstdir_in, size_t nfrag_in)
   : dstdir(dstdir_in), nfrag(nfrag_in), frag_size(0), ifrag(0), ievent(0), ofile{NULL}
 {
-  // empty
+  start_label = atoll(getenv("SAMPLE_START_LABEL") ? : "");
 }
 
 Sampler::~Sampler()
@@ -176,7 +184,7 @@ void Sampler::output_sample(size_t i)
     if(!evt.read(ifiles[i][0])) {
       new_file(i); continue;
     }
-    evt.label = i;
+    evt.label = i + start_label;
     evt.write(ofile[0]);
 
     size_t njet = evt.njet;
@@ -255,7 +263,7 @@ void Sampler::save_sample_names(const string &path)
 {
   FILE *file = fopen(path.c_str(), "w");
   for(size_t i = 0; i < sample_names.size(); ++i) {
-    fprintf(file, "%zu\t%s\n", i, sample_names[i].c_str());
+    fprintf(file, "%zu\t%s\n", i + start_label, sample_names[i].c_str());
   }
   fclose(file);
 }
