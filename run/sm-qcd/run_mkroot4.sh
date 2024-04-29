@@ -1,0 +1,1 @@
+../sm/run_mkroot4.sh

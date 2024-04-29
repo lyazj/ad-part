@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <stdexcept>
 #include <string>
 #include <memory>
@@ -30,6 +31,20 @@ int DT_MAP(unsigned char d_type)
     case DT_UNKNOWN: return ADListDir::DT_UNKNOWN;
   }
   throw runtime_error("unknown d_type: " + to_string(d_type));
+}
+
+int IF_MAP(mode_t st_mode)
+{
+  switch(st_mode & S_IFMT) {
+    case S_IFBLK: return ADListDir::DT_BLK;
+    case S_IFCHR: return ADListDir::DT_CHR;
+    case S_IFDIR: return ADListDir::DT_DIR;
+    case S_IFIFO: return ADListDir::DT_FIFO;
+    case S_IFLNK: return ADListDir::DT_LNK;
+    case S_IFREG: return ADListDir::DT_REG;
+    case S_IFSOCK: return ADListDir::DT_SOCK;
+    default: return ADListDir::DT_UNKNOWN;
+  }
 }
 
 vector<long long> parse_numbers(const string &str)
@@ -59,7 +74,7 @@ const int ADListDir::DT_SOCK    =  64;
 const int ADListDir::DT_UNKNOWN = 128;
 const int ADListDir::DT_ALL     = 255;
 
-ADListDir::ADListDir(const string &dirpath_in, int accept)
+ADListDir::ADListDir(const string &dirpath_in, int accept, bool resolve_link)
 {
   if(dirpath_in.empty()) {
     throw invalid_argument("empty dirpath");
@@ -81,7 +96,22 @@ ADListDir::ADListDir(const string &dirpath_in, int accept)
       throw runtime_error("readdir: "s +
           dirpath_in + ": "s + strerror(errno));
     }
-    if(DT_MAP(ent->d_type) & accept) {
+    if(strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..") && resolve_link) {
+      char path[PATH_MAX + 1];
+      string linkpath = dirpath_in + "/" + ent->d_name;
+      if(!realpath(linkpath.c_str(), path)) {
+        throw runtime_error("realpath: "s +
+            linkpath + ": "s + strerror(errno));
+      }
+      struct stat sbuf;
+      if(stat(path, &sbuf) < 0) {
+        throw runtime_error("stat: "s +
+            path + ": "s + strerror(errno));
+      }
+      if(IF_MAP(sbuf.st_mode) & accept) {
+        names.push_back(path);
+      }
+    } else if(DT_MAP(ent->d_type) & accept) {
       names.push_back(ent->d_name);
     }
   }
@@ -100,7 +130,11 @@ vector<string> ADListDir::get_full_names() const
   vector<string> names;
   names.reserve(entnames.size());
   for(const string &name : entnames) {
-    names.emplace_back(prefix + name);
+    if(!name.empty() && name[0] == '/') {
+      names.emplace_back(name);
+    } else {
+      names.emplace_back(prefix + name);
+    }
   }
   return names;
 }

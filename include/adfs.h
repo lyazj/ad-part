@@ -13,7 +13,7 @@ private:
   std::vector<std::string> entnames;
 
 public:
-  ADListDir(const std::string &dirpath_in = ".", int accept = DT_ALL);
+  ADListDir(const std::string &dirpath_in = ".", int accept = DT_ALL, bool resolve_link = true);
 
   static const int DT_BLK;
   static const int DT_CHR;
