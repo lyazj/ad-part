@@ -28,6 +28,34 @@ event_expressions = list(map(lambda x: (x[0], re.sub(r'\s+', ' ', x[1])), [
     ('jet_sdmass', '''jet_sdmass'''),
     ('jet_tau21', '''jet_tau21'''),
     ('jet_n32', '''jet_n2_0'''),
+    ('jet_probHbb', '''out_0'''),
+    ('jet_probQCD', '''out_161 +
+                       out_162 +
+                       out_163 +
+                       out_164 +
+                       out_165 +
+                       out_166 +
+                       out_167 +
+                       out_168 +
+                       out_169 +
+                       out_170 +
+                       out_171 +
+                       out_172 +
+                       out_173 +
+                       out_174 +
+                       out_175 +
+                       out_176 +
+                       out_177 +
+                       out_178 +
+                       out_179 +
+                       out_180 +
+                       out_181 +
+                       out_182 +
+                       out_183 +
+                       out_184 +
+                       out_185 +
+                       out_186 +
+                       out_187'''),
 ]))
 labels = {
     'QCD':   r'QCD',
@@ -56,6 +84,7 @@ def concatenate(files, expressions, n=None):
         if n is not None: n -= len(events)
     events = ak.concatenate(events)
     aliased_events = ak.Array({ alias: events[origin] for alias, origin in event_expressions })
+    aliased_events['jet_HbbVSQCD'] = 1.0 / (1.0 + aliased_events['jet_probQCD'] / aliased_events['jet_probHbb'])
     return aliased_events
 
 events = { }
@@ -78,8 +107,8 @@ for category in sorted(os.listdir(DATA4)):
 
 categories = sorted(events.keys())
 
-def compute_leading_jet_variables(events, varnames):
-    for varname in varnames:
+def compute_leading_jet_variables(events):
+    for varname in events.fields:
         if varname[:4] != 'jet_': continue
         jet_var = events[varname]
         lead_jet_var = jet_var[:,0]
@@ -89,7 +118,7 @@ def compute_leading_jet_variables(events, varnames):
 print('Computing leading jet variables...')
 for c, e in events.items():
     print('Category:', c)
-    compute_leading_jet_variables(e, [expr[0] for expr in event_expressions])
+    compute_leading_jet_variables(e)
 
 def figure(*args, **kwargs):
     fig = plt.figure(*args, **kwargs)
@@ -173,6 +202,14 @@ sdmass_hists = [np.histogram(events[category]['lead_jet_sdmass'], sdmass_bins, d
 hep.histplot(sdmass_hists, histtype='step', label=[labels[cate] for cate in categories])
 plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Density')
 plt.legend(); plt.grid(); plt.tight_layout(); savefig('sdmass-density.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0, 1, 51)
+HbbVSQCD_hists = [np.histogram(events[category]['lead_jet_HbbVSQCD'], HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-density.pdf')
 plt.close()
 
 # Apply mass window.
