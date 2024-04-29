@@ -73,7 +73,7 @@ void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
   adpar.d0_err = 0.0;  // padding
   adpar.dz = 0.0; // padding
   adpar.dz_err = 0.0;  // padding
-  adpar.deta = (p4.Eta() > 0 ? 1 : -1) * (p4.Eta() - p4_jet.Eta());
+  adpar.deta = (p4_jet.Eta() > 0 ? 1 : -1) * (p4.Eta() - p4_jet.Eta());
   adpar.dphi = p4.DeltaPhi(p4_jet);
   adpar.px = p4.Px();
   adpar.py = p4.Py();
@@ -245,10 +245,10 @@ ADParticle::ADParticle(const ParticleFlowCandidate &pfc,
   set_adpar_d0dzde(*this, pfc, p4_jet, pdginfo);
 }
 
-void ADParticle::preprocess_for_prediction()
+void ADParticle::preprocess_for_prediction(const ADJet &jet)
 {
   // Ref: https://github.com/colizz/anomdet_pheno/blob/master/delphes_ana/OrtHelper.h
-  Feature jet_pt = exp(log_pt - log_pt_rel);
+  Feature jet_pt = jet.pt;
   TLorentzVector p4_scaled;
   p4_scaled.SetPxPyPzE(px, py, pz, e);
   p4_scaled *= 500.0 / jet_pt;
@@ -267,12 +267,10 @@ void ADParticle::preprocess_for_prediction()
   is_photon = clamp<Feature>(is_photon, -1e8, 1e8);
   is_electron = clamp<Feature>(is_electron, -1e8, 1e8);
   is_muon = clamp<Feature>(is_muon, -1e8, 1e8);
-  d0 = tanh(clamp<Feature>(d0, -1e8, 1e8));
+  d0 = clamp<Feature>(tanh(d0), -1e8, 1e8);
   d0_err = clamp<Feature>(d0_err, 0.0, 1.0);
-  dz = tanh(clamp<Feature>(dz, -1e8, 1e8));
+  dz = clamp<Feature>(tanh(dz), -1e8, 1e8);
   dz_err = clamp<Feature>(dz_err, 0.0, 1.0);
-  deta = clamp<Feature>(deta, -1e8, 1e8);
-  dphi = clamp<Feature>(dphi, -1e8, 1e8);
 
   px = clamp<Feature>(p4_scaled.Px(), -1e8, 1e8);
   py = clamp<Feature>(p4_scaled.Py(), -1e8, 1e8);
@@ -315,6 +313,8 @@ ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name, const Ve
   // constituents
   Long64_t c = 0;  // particle counter
   for(Long64_t i = 0; i < n && c < NPARTIFLOW; ++i) {
+    // [XXX] Some large-pT particles may be missed
+    // if having more than NPARTIFLOW candidates.
     ADParticle *particle = NULL;
     TObject *obj = jet.Constituents[i];
     if(obj->IsA() == GenParticle::Class()) {
@@ -423,7 +423,7 @@ void ADJet::preprocess_for_prediction()
 {
   size_t n = npar;
   for(size_t i = 0; i < n; ++i) {
-    par[i].preprocess_for_prediction();
+    par[i].preprocess_for_prediction(*this);
   }
 }
 

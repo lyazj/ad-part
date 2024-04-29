@@ -257,7 +257,7 @@ class ADJet:
     def __init__(self, data, reduced=True):
         self.reduced = reduced
         if self.reduced: assert tuple(data.shape) == (NFEAT_JET,)
-        else: assert tuple(data.shape) == (NFEAT_JET + NFEAT_PAR * JET_NPAR,)
+        else: assert tuple(data.shape) == (NFEAT_JET + NFEAT_PAR * NPAR_JET,)
         self.data = data
 
     @property
@@ -422,7 +422,7 @@ class ADPFData:
     def __init__(self, data, reduced=True):
         self.reduced = reduced
         if self.reduced: self.data = data.reshape(-1, NFEAT_JET)
-        else: self.data = data.reshape(-1, NFEAT_JET + NFEAT_PAR * JET_NPAR)
+        else: self.data = data.reshape(-1, NFEAT_JET + NFEAT_PAR * NPAR_JET)
 
     def jets(self):
         return [ADJet(j, reduced=self.reduced) for j in self.data]

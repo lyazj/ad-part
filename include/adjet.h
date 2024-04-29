@@ -76,7 +76,7 @@ public:
   bool read(gzFile);  // binary input
   void write(gzFile) const;  // binary output
 
-  void preprocess_for_prediction();
+  void preprocess_for_prediction(const ADJet &jet);
 
 };
 
