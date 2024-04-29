@@ -75,6 +75,7 @@ int64_t ADRunner::batch_input()
   ADJet jet;
   while(n < BATCH_SIZE) {
     if(!jet.read(input_file)) break;
+    jet.preprocess_for_prediction();
     for(const auto &tensor : input_pack.get_tensors()) {
       ((ADPFTensor *)tensor.get())->set_value(n, jet);
     }

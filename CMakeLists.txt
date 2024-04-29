@@ -138,6 +138,7 @@ if(AD_NOPDG)
     list(REMOVE_ITEM AD_SOURCES ${PROJECT_SOURCE_DIR}/src/adpdg.cpp)
 endif()
 add_library(adhep ${AD_SOURCES})
+target_link_libraries(adhep INTERFACE Delphes ROOT::Tree ROOT::Physics)
 
 # 以下为可执行文件构建
 

@@ -46,11 +46,6 @@ size_t ADJet::nclass[NRSLTCLASS];
 
 namespace {
 
-TLorentzVector scale_for_pt(const TLorentzVector &p4, double pt)
-{
-  return p4 * (pt / p4.Pt());
-}
-
 template<class DelphesClass>
 bool check_par_common(const TObject &par)
 {
@@ -62,10 +57,7 @@ template<class DelphesClass>
 void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
     const TLorentzVector &p4_jet, ADPDGInfo pdginfo)
 {
-  TLorentzVector p4 = par.P4(), p4_scaled = scale_for_pt(p4, 500.0);
-
-  //adpar.log_pt = log(p4_scaled.Pt());
-  //adpar.log_e = log(p4_scaled.Energy());
+  TLorentzVector p4 = par.P4();
   adpar.log_pt = log(p4.Pt());
   adpar.log_e = log(p4.Energy());
   adpar.log_pt_rel = adpar.log_pt - log(p4_jet.Pt());
@@ -83,10 +75,6 @@ void set_adpar_common(ADParticle &adpar, const DelphesClass &par,
   adpar.dz_err = 0.0;  // padding
   adpar.deta = (p4.Eta() > 0 ? 1 : -1) * (p4.Eta() - p4_jet.Eta());
   adpar.dphi = p4.DeltaPhi(p4_jet);
-  //adpar.px = p4_scaled.Px();
-  //adpar.py = p4_scaled.Py();
-  //adpar.pz = p4_scaled.Pz();
-  //adpar.e = p4_scaled.Energy();
   adpar.px = p4.Px();
   adpar.py = p4.Py();
   adpar.pz = p4.Pz();
@@ -222,7 +210,6 @@ ADParticle::ADParticle(const GenParticle &gnpar,
   ADPDGInfo pdginfo = pdg[gnpar.PID];
   set_adpar_common(*this, gnpar, p4_jet, pdginfo);
   set_adpar_charge(*this, gnpar, p4_jet, pdginfo);
-  preprocess();
 }
 
 ADParticle::ADParticle(const Track &track,
@@ -232,14 +219,12 @@ ADParticle::ADParticle(const Track &track,
   set_adpar_common(*this, track, p4_jet, pdginfo);
   set_adpar_charge(*this, track, p4_jet, pdginfo);
   set_adpar_d0dzde(*this, track, p4_jet, pdginfo);
-  preprocess();
 }
 
 ADParticle::ADParticle(const Tower &tower,
     const TLorentzVector &p4_jet, const ADPDGQuerier &)
 {
   set_adpar_common(*this, tower, p4_jet, (ADPDGInfo)0);
-  preprocess();
 }
 
 ADParticle::ADParticle(const Muon &muon,
@@ -249,7 +234,6 @@ ADParticle::ADParticle(const Muon &muon,
   set_adpar_common(*this, muon, p4_jet, pdginfo);
   set_adpar_charge(*this, muon, p4_jet, pdginfo);
   set_adpar_d0dzde(*this, muon, p4_jet, pdginfo);
-  preprocess();
 }
 
 ADParticle::ADParticle(const ParticleFlowCandidate &pfc,
@@ -259,20 +243,43 @@ ADParticle::ADParticle(const ParticleFlowCandidate &pfc,
   set_adpar_common(*this, pfc, p4_jet, pdginfo);
   set_adpar_charge(*this, pfc, p4_jet, pdginfo);
   set_adpar_d0dzde(*this, pfc, p4_jet, pdginfo);
-  preprocess();
 }
 
-void ADParticle::preprocess()
+void ADParticle::preprocess_for_prediction()
 {
-  //log_pt = (log_pt - 1.7) * 0.7;
-  //log_e = (log_e - 2.0) * 0.7;
-  //log_pt_rel = (log_pt_rel + 4.7) * 0.7;
-  //log_e_rel = (log_e_rel + 4.7) * 0.7;
-  //delta_r = (delta_r - 0.2) * 4.0;
-  //d0 = tanh(d0);
-  //d0_err = min<Feature>(max<Feature>(d0_err, 0.0), 1.0);
-  //dz = tanh(dz);
-  //dz_err = min<Feature>(max<Feature>(dz_err, 0.0), 1.0);
+  // Ref: https://github.com/colizz/anomdet_pheno/blob/master/delphes_ana/OrtHelper.h
+  Feature jet_pt = exp(log_pt - log_pt_rel);
+  TLorentzVector p4_scaled;
+  p4_scaled.SetPxPyPzE(px, py, pz, e);
+  p4_scaled *= 500.0 / jet_pt;
+
+  deta = clamp<Feature>(deta, -1e8, 1e8);
+  dphi = clamp<Feature>(dphi, -1e8, 1e8);
+
+  log_pt = clamp<Feature>((log(p4_scaled.Pt()) - 1.7) * 0.7, -5.0, 5.0);
+  log_e = clamp<Feature>((log(p4_scaled.Energy()) - 2.0) * 0.7, -5.0, 5.0);
+  log_pt_rel = clamp<Feature>((log_pt_rel + 4.7) * 0.7, -5.0, 5.0);
+  log_e_rel = clamp<Feature>((log_e_rel + 4.7) * 0.7, -5.0, 5.0);
+  delta_r = clamp<Feature>((delta_r - 0.2) * 4.0, -5.0, 5.0);
+  charge = clamp<Feature>(charge, -1e8, 1e8);
+  is_charged_hadron = clamp<Feature>(is_charged_hadron, -1e8, 1e8);
+  is_neutral_hadron = clamp<Feature>(is_neutral_hadron, -1e8, 1e8);
+  is_photon = clamp<Feature>(is_photon, -1e8, 1e8);
+  is_electron = clamp<Feature>(is_electron, -1e8, 1e8);
+  is_muon = clamp<Feature>(is_muon, -1e8, 1e8);
+  d0 = tanh(clamp<Feature>(d0, -1e8, 1e8));
+  d0_err = clamp<Feature>(d0_err, 0.0, 1.0);
+  dz = tanh(clamp<Feature>(dz, -1e8, 1e8));
+  dz_err = clamp<Feature>(dz_err, 0.0, 1.0);
+  deta = clamp<Feature>(deta, -1e8, 1e8);
+  dphi = clamp<Feature>(dphi, -1e8, 1e8);
+
+  px = clamp<Feature>(p4_scaled.Px(), -1e8, 1e8);
+  py = clamp<Feature>(p4_scaled.Py(), -1e8, 1e8);
+  pz = clamp<Feature>(p4_scaled.Pz(), -1e8, 1e8);
+  e = clamp<Feature>(p4_scaled.Energy(), -1e8, 1e8);
+
+  mask = clamp<Feature>(mask, -1e8, 1e8);
 }
 
 ADJet::ADJet(const ADPDGQuerier &pdg, const Jet &jet, const char *name, const Vertex &vtx) : ADJet()
@@ -410,6 +417,14 @@ bool ADJet::check(const Jet &jet)
 #else  /* AD_DISABLE_JETCHECK */
   return jet.PT >= 500 && abs(jet.Eta) <= 2;
 #endif  /* AD_DISABLE_JETCHECK */
+}
+
+void ADJet::preprocess_for_prediction()
+{
+  size_t n = npar;
+  for(size_t i = 0; i < n; ++i) {
+    par[i].preprocess_for_prediction();
+  }
 }
 
 void ADEvent::set_ht(const ScalarHT &scalarHT)
