@@ -192,6 +192,9 @@ if(NOT AD_NOEXEC)
     add_executable(mkroot src/mkroot.cpp)
     target_link_libraries(mkroot PUBLIC adhep ROOT::Tree z)
 
+    add_executable(reduce src/reduce.cpp)
+    target_link_libraries(reduce PUBLIC adhep z)
+
     if(NOT AD_NOONNX)
         add_executable(part src/part.cpp)
         target_link_libraries(part PUBLIC adhep onnxruntime z)
