@@ -10,7 +10,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  if(argc == 1) {
+  if(argc <= 2) {
     fprintf(stderr, "usage: %s <label> <evtfile> [ <evtfile> ... ]\n", get_invoc_short_name());
     return 1;
   }
