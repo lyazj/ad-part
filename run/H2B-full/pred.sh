@@ -6,6 +6,6 @@ python3 $HOME/work/weaver-core-dev/weaver/train.py --predict \
     --gpus 2 --fetch-step 1 --in-memory \
     --data-test ../sm/data4/QCD/*.root ../sm/data4/VJets/*.root ../sm/data4/TTbar/*.root ../sm/data4/H2B/*.root \
     --data-config input.yaml --network-config example_ParticleTransformer2023EvtClassifier.py \
-    --model-prefix raw --tensorboard _raw --log-file pred.log \
+    --model-prefix full --tensorboard _full --log-file pred.log \
     --predict-output pred.root \
     </dev/null 2>&1 | tee pred.sh.log
