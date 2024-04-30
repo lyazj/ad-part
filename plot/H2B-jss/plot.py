@@ -192,19 +192,20 @@ plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Significance'); plt.grid()
 plt.tight_layout(); savefig('sdmass.pdf')
 plt.close()
 
-# Apply H2BVSQCD >= 0.94 cut.
-cut_events = { }
-for category in events:
-    e = events[category]
-    e = e[e['H2BVSQCD'] >= 0.94]
-    cut_events[category] = e
-fig = figure(figsize=(12, 11.25), dpi=150)
-sdmass_bins = np.linspace(50, 200, 51)
-sdmass_hists = [np.histogram(cut_events[category]['lead_jet_sdmass'], sdmass_bins, weights=cut_events[category]['weight']) for category in categories]
-histplot(sdmass_hists, categories)
-plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
-plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
-signif(sdmass_hists, categories)
-plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Significance'); plt.grid()
-plt.tight_layout(); savefig('sdmass-0.94.pdf')
-plt.close()
+# Apply H2BVSQCD cut.
+for threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+    cut_events = { }
+    for category in events:
+        e = events[category]
+        e = e[e['H2BVSQCD'] >= threshold]
+        cut_events[category] = e
+    fig = figure(figsize=(12, 11.25), dpi=150)
+    sdmass_bins = np.linspace(50, 200, 51)
+    sdmass_hists = [np.histogram(cut_events[category]['lead_jet_sdmass'], sdmass_bins, weights=cut_events[category]['weight']) for category in categories]
+    histplot(sdmass_hists, categories)
+    plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
+    plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
+    signif(sdmass_hists, categories)
+    plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Significance'); plt.grid()
+    plt.tight_layout(); savefig('sdmass-%.3f.pdf' % threshold)
+    plt.close()

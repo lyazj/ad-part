@@ -69,10 +69,10 @@ new_variables:
    lead_jet_sdmass: 'jet_sdmass [...,0]'
 
 preprocess:
-  ### method: [manual, auto] - whether to use manually specified parameters for variable standardization
-  method: manual
-  ### data_fraction: fraction of events to use when calculating the mean/scale for the standardization
-  data_fraction: 1.0
+   ### method: [manual, auto] - whether to use manually specified parameters for variable standardization
+   method: manual
+   ### data_fraction: fraction of events to use when calculating the mean/scale for the standardization
+   data_fraction: 1.0
 
 inputs:
    evt_features:
