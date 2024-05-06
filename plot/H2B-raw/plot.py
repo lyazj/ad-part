@@ -19,7 +19,9 @@ plt.style.use(hep.style.CMS)
 gs = gridspec.GridSpec(2, 1, height_ratios=[4, 1])
 
 SIGNAL = 'H2B'
-PRED = '../../run/H2B-raw/predict_output'
+POSTFIX = re.search(r'(?:^|/)plot([^/]*)\.py$', __file__).group(1) or '_default'
+os.makedirs('plot' + POSTFIX, exist_ok=True)
+PRED = '../../run/H2B-raw/predict_output/pred%s.root' % POSTFIX
 NEVENT_MAX = None
 #NEVENT_MAX = 1000000
 
@@ -61,11 +63,7 @@ def concatenate(files, expressions, n=None):
 
 events = { }
 
-rootfiles = [
-    os.path.join(PRED, f) + ':Events'
-    for f in sorted(os.listdir(PRED))
-    if os.path.splitext(f)[1] == '.root'
-]
+rootfiles = [PRED + ':Events']
 print('ROOT files:', *rootfiles, sep='\n  - ')
 print('Loading events...')
 uncategorized_events = concatenate(rootfiles, expressions, NEVENT_MAX)
@@ -96,7 +94,7 @@ def histplot(hists, cates):
 
 def savefig(path, *args, **kwargs):
     print('Saving to %s...' % path)
-    plt.savefig(path, *args, **kwargs)
+    plt.savefig(os.path.join('plot' + POSTFIX, path), *args, **kwargs)
 
 def get_signif(s, b):
     return np.sqrt(np.maximum(2 * ((s + b) * np.log(np.maximum(1 + s / (b + (s == 0)), 1)) - s), 0))
