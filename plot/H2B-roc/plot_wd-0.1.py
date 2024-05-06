@@ -34,7 +34,7 @@ weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
-    'H2B':   48.5 * 0.582,
+    'H2B':   48.5 * 0.582 * 100,
 }
 
 # Compute expressions to be evaluated on input ROOT files.
@@ -76,9 +76,15 @@ for method in ['raw', 'lite', 'full', 'hid']:
     print('%d events in mass window [100, 150].' % len(uncategorized_events))
     uncategorized_events['H2BVSQCD'] = 1.0 / (1.0 + uncategorized_events['score_label_QCD'] / uncategorized_events['score_label_H2B'])
 
-    for i, category in enumerate(categories):
+    for category in categories:
         events[category] = uncategorized_events[uncategorized_events['label_' + category] == True]
         events[category]['weight'] = weights[category] / len(events[category])
+
+events = { }
+prediction['none'] = events
+for category in categories:
+    events[category] = ak.copy(prediction['lite'][category])
+    events[category]['H2BVSQCD'] = 1.0 / (1.0 + events[category]['lead_jet_probQCD'] / events[category]['lead_jet_probHbb'])
 
 def savefig(path, *args, **kwargs):
     print('Saving to %s...' % path)
@@ -120,7 +126,7 @@ def roc(events, *args, **kwargs):
     n = 51
     bss = np.empty(n)
     signifs = np.empty(n)
-    for i, bs_exp in enumerate(np.logspace(-3, 0, n)):
+    for i, bs_exp in enumerate(np.logspace(-4, 0, n)):
         min_H2BVSQCD = compute_min_H2BVSQCD(events, bs_exp)
         bs = compute_background_suppression(events, min_H2BVSQCD)
         signif = compute_significance(events, min_H2BVSQCD)
@@ -130,6 +136,7 @@ def roc(events, *args, **kwargs):
     return plt.plot(bss, signifs, *args, **kwargs)
 
 plt.figure(figsize=(12, 9), dpi=150)
+roc(prediction['none'], label='none')
 roc(prediction['raw'], label='raw')
 roc(prediction['lite'], label='lite')
 roc(prediction['full'], label='full')
