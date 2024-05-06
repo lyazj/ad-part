@@ -147,14 +147,14 @@ cut_events = { }
 for category in events:
     e = events[category]
     e = e[e['lead_jet_sdmass'] >= 100]
-    e = e[e['lead_jet_sdmass'] <= 140]
+    e = e[e['lead_jet_sdmass'] <= 150]
     cut_events[category] = e
 plt.figure(figsize=(12, 9), dpi=150)
 H2BVSQCD_bins = np.linspace(0, 1, 51)
 H2BVSQCD_hists = [np.histogram(cut_events[category]['H2BVSQCD'], H2BVSQCD_bins, density=True) for category in categories]
 hep.histplot(H2BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
 plt.xlabel(r'H2BVSQCD'); plt.ylabel('Density')
-plt.legend(); plt.grid(); plt.tight_layout(); savefig('H2BVSQCD-100-140-density.pdf')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('H2BVSQCD-100-150-density.pdf')
 plt.close()
 
 fig = figure(figsize=(12, 11.25), dpi=150)
@@ -165,7 +165,7 @@ plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
 plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
 signif(H2BVSQCD_hists, categories)
 plt.xlabel(r'H2BVSQCD'); plt.ylabel('Density'); plt.grid()
-plt.tight_layout(); savefig('H2BVSQCD-100-140.pdf')
+plt.tight_layout(); savefig('H2BVSQCD-100-150.pdf')
 plt.close()
 
 fig = figure(figsize=(12, 11.25), dpi=150)
@@ -176,7 +176,7 @@ plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
 plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
 signif(H2BVSQCD_hists, categories)
 plt.xlabel(r'H2BVSQCD'); plt.ylabel('Density'); plt.grid()
-plt.tight_layout(); savefig('H2BVSQCD-100-140-0.9-1.0.pdf')
+plt.tight_layout(); savefig('H2BVSQCD-100-150-0.9-1.0.pdf')
 plt.close()
 
 fig = figure(figsize=(12, 11.25), dpi=150)
