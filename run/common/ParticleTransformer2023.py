@@ -817,9 +817,17 @@ class ParticleTransformerTagger_ncoll(nn.Module):
         self.num_colls = len(input_dims)
         self.trimmers = nn.ModuleList()
         self.embeds = nn.ModuleList()
-        for dim in input_dims:
-            self.trimmers.append(SequenceTrimmer(enabled=trim and not for_inference))
-            self.embeds.append(Embed(dim, embed_dims, activation=activation))
+
+        if type(embed_dims) is tuple:
+            assert len(input_dims) == len(embed_dims)
+            for dim, edim in zip(input_dims, embed_dims):
+                self.trimmers.append(SequenceTrimmer(enabled=trim and not for_inference))
+                self.embeds.append(Embed(dim, edim, activation=activation))
+            embed_dims = embed_dims[0]
+        else:
+            for dim in input_dims:
+                self.trimmers.append(SequenceTrimmer(enabled=trim and not for_inference))
+                self.embeds.append(Embed(dim, embed_dims, activation=activation))
 
         self.part = ParticleTransformer(input_dim=embed_dims[-1],
                                         num_classes=num_classes,
