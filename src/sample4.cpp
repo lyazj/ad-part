@@ -12,11 +12,17 @@
 #include <array>
 #include <algorithm>
 #include <stdexcept>
+#include <thread>
+#include <pthread.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 using namespace std;
+
+static bool SKIP_QCD = strcmp(getenv("SKIP_QCD") ? : "", "");
+static bool EXHAUST_EVENTS = strcmp(getenv("EXHAUST_EVENTS") ? : "", "");
 
 class Sampler {
 
@@ -28,6 +34,7 @@ public:
   void set_sample(const string &name, size_t label);
   void add_sample_file(const string &path);
   void sample();
+  void sample_async();
   void save_sample_names(const string &path);
   double get_ratio();
   double set_ratio(double r);
@@ -55,6 +62,8 @@ private:
   void output_sample(size_t i);
   void new_file(size_t i);
   void new_frag();
+
+  thread *async_thread = NULL;
 };
 
 unordered_map<string, size_t> Sampler::expected_sample_size_table = {
@@ -115,6 +124,10 @@ Sampler::Sampler(const string &dstdir_in, size_t nfrag_in)
 
 Sampler::~Sampler()
 {
+  if(async_thread) {
+    async_thread->join();
+    delete async_thread;
+  }
   for(auto &ifile : ifiles) {
     for(size_t i = 0; i < 6; ++i) {
       if(ifile[i]) gzclose(ifile[i]);
@@ -178,7 +191,11 @@ size_t Sampler::get_nevent()
   double r = get_ratio();
   if(nevent) return nevent;
   for(size_t i = 0; i < sample_sizes.size(); ++i) {
-    nevent += min<size_t>(sample_sizes[i], r * expected_sample_sizes[i] + 0.5);
+    if(!EXHAUST_EVENTS) {
+      nevent += min<size_t>(sample_sizes[i], r * expected_sample_sizes[i] + 0.5);
+    } else {
+      nevent += sample_sizes[i];
+    }
   }
   return nevent;
 }
@@ -195,7 +212,10 @@ void Sampler::sample()
 
   size_t total = 0;
   for(size_t i = 0; i < sample_sizes.size(); ++i) {
-    total += sample_sizes[i] = min<size_t>(sample_sizes[i], r * expected_sample_sizes[i] + 0.5);
+    if(!EXHAUST_EVENTS) {
+      sample_sizes[i] = min<size_t>(sample_sizes[i], r * expected_sample_sizes[i] + 0.5);
+    }
+    total += sample_sizes[i];
   }
   nevent = min(nevent, total);
   ievent = frag_size = (nevent + nfrag - 1) / nfrag;
@@ -210,6 +230,12 @@ void Sampler::sample()
     --i;
     output_sample(id - 1);
   }
+}
+
+void Sampler::sample_async()
+{
+  if(async_thread) throw runtime_error("duplicate call to sample_async");
+  async_thread = new thread(&Sampler::sample, this);
 }
 
 void Sampler::output_sample(size_t i)
@@ -389,8 +415,11 @@ int main(int argc, char *argv[])
   }
   fprintf(stderr, "INFO: minimal sampling events: %zu\n", nevent);
   for(size_t i = 0; i < nsampler; ++i) {
-    samplers[i].set_nevent(nevent);
-    samplers[i].sample();
+    if(!EXHAUST_EVENTS) {
+      samplers[i].set_nevent(nevent);
+    }
+    if(SKIP_QCD && !strcmp(label_names[i], "QCD")) continue;
+    samplers[i].sample_async();
   }
   return 0;
 }
