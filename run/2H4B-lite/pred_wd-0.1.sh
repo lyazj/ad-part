@@ -7,7 +7,7 @@ python3 $HOME/work/weaver-core-dev/weaver/train.py --predict \
     --batch-size 8192 \
     --gpus 1 --fetch-step 1 --in-memory \
     --data-test ../sm/data4/QCD/*.root ../sm/data4/VJets/*.root ../sm/data4/TTbar/*.root ../sm/data4/HH4B/*.root \
-    --data-config input.yaml --network-config example_ParticleTransformer2023EvtClassifier.py \
+    --data-config pred_input.yaml --network-config example_ParticleTransformer2023EvtClassifier.py \
     --model-prefix ${NAME/pred/lite} --tensorboard _pred_${NAME/pred/lite} --log-file ${NAME}.log \
     --predict-output ${NAME}.root \
     </dev/null 2>&1 | tee ${NAME}.sh.log
