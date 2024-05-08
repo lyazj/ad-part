@@ -21,7 +21,7 @@ gs = gridspec.GridSpec(2, 1, height_ratios=[4, 1])
 SIGNAL = 'H2B'
 POSTFIX = re.search(r'(?:^|/)plot([^/]*)\.py$', __file__).group(1) or '_default'
 os.makedirs('plot' + POSTFIX, exist_ok=True)
-PRED = '../../run/H2B-raw/predict_output/pred%s.root' % POSTFIX
+PRED = '../../run/H2B-hid/predict_output/pred%s.root' % POSTFIX
 NEVENT_MAX = None
 #NEVENT_MAX = 1000000
 
@@ -191,7 +191,7 @@ plt.tight_layout(); savefig('sdmass.pdf')
 plt.close()
 
 # Apply H2BVSQCD cut.
-for threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+for threshold in [0.9, 0.95, 0.98, 0.99, 0.995, 0.998, 0.999]:
     cut_events = { }
     for category in events:
         e = events[category]
