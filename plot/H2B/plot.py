@@ -67,7 +67,7 @@ weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
-    'H2B':   48.5 * 0.582 * 100,
+    'H2B':   1630 * 0.582,
 }
 
 # Compute expressions to be evaluated on input ROOT files.

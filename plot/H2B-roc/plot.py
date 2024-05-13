@@ -34,7 +34,7 @@ weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
-    'H2B':   48.5 * 0.582 * 100,
+    'H2B':   1630 * 0.582,
 }
 
 # Compute expressions to be evaluated on input ROOT files.
@@ -126,7 +126,7 @@ def roc(events, *args, **kwargs):
     n = 51
     bss = np.empty(n)
     signifs = np.empty(n)
-    for i, bs_exp in enumerate(np.logspace(-4, 0, n)):
+    for i, bs_exp in enumerate(np.logspace(-5, -1, n)):
         min_H2BVSQCD = compute_min_H2BVSQCD(events, bs_exp)
         bs = compute_background_suppression(events, min_H2BVSQCD)
         signif = compute_significance(events, min_H2BVSQCD)
