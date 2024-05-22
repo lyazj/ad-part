@@ -79,6 +79,14 @@ def figure(*args, **kwargs):
     fig.add_subplot(gs[0])
     return fig
 
+def scale(hists, labs):
+    for i, (count, _) in enumerate(hists):
+        value = count.mean()
+        if value >= 1.0: continue
+        sf = 10**int(np.ceil(-np.log10(value)))
+        count *= sf
+        labs[i] += r' ($\times' + str(sf) + r'$)'
+
 def histplot(hists, cates):
     counts     = [hist[0] for (hist, cate) in zip(hists, cates) if cate != SIGNAL]
     bins       = [hist[1] for (hist, cate) in zip(hists, cates) if cate != SIGNAL]
@@ -89,8 +97,12 @@ def histplot(hists, cates):
     items = sorted(zip(count_sums, cates, counts, bins))
     cates      = [item[1]            for item in items]
     hists      = [(item[2], item[3]) for item in items]
-    hep.histplot(hists,     stack=True , histtype='fill', label=[labels[cate] for cate in cates    ], edgecolor='black', linewidth=0.5)
-    hep.histplot(sig_hists, stack=False, histtype='step', label=[labels[cate] for cate in sig_cates], color='black')
+    labs = [labels[cate] for cate in cates]
+    sig_labs = [labels[cate] for cate in sig_cates]
+    scale(hists, labs)
+    scale(sig_hists, sig_labs)
+    hep.histplot(hists,     stack=True , histtype='fill', label=labs,     edgecolor='black', linewidth=0.5)
+    hep.histplot(sig_hists, stack=False, histtype='step', label=sig_labs, color='black')
 
 def savefig(path, *args, **kwargs):
     print('Saving to %s...' % path)
@@ -142,7 +154,7 @@ plt.legend(); plt.grid(); plt.tight_layout(); savefig('pt-density.pdf')
 plt.close()
 
 plt.figure(figsize=(12, 9), dpi=150)
-sdmass_bins = np.linspace(50, 200, 51)
+sdmass_bins = np.linspace(50, 250, 21)
 sdmass_hists = [np.histogram(events[category]['lead_jet_sdmass'], sdmass_bins, density=True) for category in categories]
 hep.histplot(sdmass_hists, histtype='step', label=[labels[cate] for cate in categories])
 plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Density')
@@ -187,7 +199,7 @@ plt.tight_layout(); savefig('2H4BVSQCD-100-150-0.9-1.0.pdf')
 plt.close()
 
 fig = figure(figsize=(12, 11.25), dpi=150)
-sdmass_bins = np.linspace(50, 200, 51)
+sdmass_bins = np.linspace(50, 250, 21)
 sdmass_hists = [np.histogram(events[category]['lead_jet_sdmass'], sdmass_bins, weights=events[category]['weight']) for category in categories]
 histplot(sdmass_hists, categories)
 plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
@@ -205,7 +217,7 @@ for threshold in [0.9, 0.95, 0.98, 0.99, 0.995, 0.998, 0.999]:
         e = e[e['2H4BVSQCD'] >= threshold]
         cut_events[category] = e
     fig = figure(figsize=(12, 11.25), dpi=150)
-    sdmass_bins = np.linspace(50, 200, 51)
+    sdmass_bins = np.linspace(50, 250, 21)
     sdmass_hists = [np.histogram(cut_events[category]['lead_jet_sdmass'], sdmass_bins, weights=cut_events[category]['weight']) for category in categories]
     histplot(sdmass_hists, categories)
     plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()

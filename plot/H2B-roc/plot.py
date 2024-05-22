@@ -9,6 +9,7 @@ import numpy as np
 import awkward as ak
 import mplhep as hep
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
 
 # Transcript printed content to a same-name log file.
 logfile = open(re.sub(r'\.py$', '.log', __file__), 'w')
@@ -91,49 +92,23 @@ def savefig(path, *args, **kwargs):
     plt.savefig(os.path.join('plot' + POSTFIX, path), *args, **kwargs)
 
 def get_signif(s, b):
-    return np.sqrt(np.maximum(2 * ((s + b) * np.log(np.maximum(1 + s / (b + (s == 0)), 1)) - s), 0))
-
-def compute_background_suppression(events, min_H2BVSQCD):
-    b_all, b_cut = 0.0, 0.0
-    for category, category_events in events.items():
-        if category == SIGNAL: continue
-        b_all += ak.sum(category_events['weight'])
-        b_cut += ak.sum(category_events[category_events['H2BVSQCD'] >= min_H2BVSQCD]['weight'])
-    return b_cut / b_all
-
-def compute_min_H2BVSQCD(events, bs_exp, l=0.0, r=1.0):
-    while l != r:
-        m = (l + r) / 2
-        if m == r: m = l
-        bs = compute_background_suppression(events, m)
-        if bs <= bs_exp:  # accepted
-            r = m
-        else:  # refused
-            if m == l: return r
-            l = m
-    return l
-
-def compute_significance(events, min_H2BVSQCD):
-    s_cut, b_cut = 0.0, 0.0
-    for category, category_events in events.items():
-        if category == SIGNAL:
-            s_cut += ak.sum(category_events[category_events['H2BVSQCD'] >= min_H2BVSQCD]['weight'])
-        else:
-            b_cut += ak.sum(category_events[category_events['H2BVSQCD'] >= min_H2BVSQCD]['weight'])
-    return get_signif(s_cut, b_cut)
+    return s / np.sqrt(b + 1)
 
 def roc(events, *args, **kwargs):
-    n = 51
-    bss = np.empty(n)
-    signifs = np.empty(n)
-    for i, bs_exp in enumerate(np.logspace(-5, -1, n)):
-        min_H2BVSQCD = compute_min_H2BVSQCD(events, bs_exp)
-        bs = compute_background_suppression(events, min_H2BVSQCD)
-        signif = compute_significance(events, min_H2BVSQCD)
-        print('%.6f\t%.6f' % (bs, signif))
-        bss[i] = bs
-        signifs[i] = signif
-    return plt.plot(bss, signifs, *args, **kwargs)
+    signal_events = events[SIGNAL]
+    background_events = ak.concatenate([events[category] for category in events if category != SIGNAL])
+    y_true = np.concatenate([np.ones(len(signal_events)), np.zeros(len(background_events))])
+    y_score = np.concatenate([signal_events['H2BVSQCD'], background_events['H2BVSQCD']])
+    sample_weight = np.concatenate([signal_events['weight'], background_events['weight']])
+    print('Generating ROC curve...')
+    fpr, tpr, _ = roc_curve(y_true, y_score, sample_weight=sample_weight)
+    i = len(fpr) - 1 - np.argmax(fpr[::-1] < 10**-4.5)
+    fpr, tpr = fpr[i:], tpr[i::]
+    s_org = np.sum(signal_events['weight'])
+    b_org = np.sum(background_events['weight'])
+    s, b = s_org * tpr, b_org * fpr
+    signif = get_signif(s, b)
+    return plt.plot(fpr, signif, *args, **kwargs)
 
 plt.figure(figsize=(12, 9), dpi=150)
 roc(prediction['none'], label='none')
