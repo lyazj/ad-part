@@ -1,7 +1,6 @@
 #!/bin/bash
 
 NFILE_PER_GROUP=100
-IGROUP=0
 IFILE=0
 EVTFILES=
 JETFILES=
@@ -11,6 +10,7 @@ OUTFILES=
 HIDFILES=
 
 for NAME in $(ls rawdata); do
+    IGROUP=0
     mkdir -p data4/${NAME}
     for EVTFILE in $(ls rawdata/${NAME}/*_events.gz); do
         JETFILE=${EVTFILE/_events.gz/.gz}
