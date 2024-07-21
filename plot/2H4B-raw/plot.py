@@ -29,15 +29,15 @@ event_expressions = None
 categories = ['QCD', 'VJets', 'TTbar', 'HH4B']
 labels = {
     'QCD':   r'QCD',
-    'VJets': r'V + Jets',
-    'TTbar': r'TTbar',
-    'HH4B':  r'$2H \to 4b$',
+    'VJets': r'V+jets',
+    'TTbar': r'$t\bar{t}$',
+    'HH4B':  r'$HH \to 4b$',
 }
 weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
-    'HH4B':  1630 * (37.9 / 48.5e3) * 0.582**2,
+    'HH4B':  1.32 * 0.582**2,
 }
 
 # Compute expressions to be evaluated on input ROOT files.
@@ -109,7 +109,7 @@ def savefig(path, *args, **kwargs):
     plt.savefig(os.path.join('plot' + POSTFIX, path), *args, **kwargs)
 
 def get_signif(s, b):
-    return np.sqrt(np.maximum(2 * ((s + b) * np.log(np.maximum(1 + s / (b + (s == 0)), 1)) - s), 0))
+    return s / np.sqrt(b + 1)
 
 def signif(hists, cates):
     sig_hists  = [hist    for (hist, cate) in zip(hists, cates) if cate == SIGNAL]
@@ -138,13 +138,6 @@ def signif(hists, cates):
     plt.plot([], [], 'k--', label='optimal (%.5f)' % signif_max)
     plt.legend()
 
-# Apply mass window on subleading jet.
-for category in events:
-    e = events[category]
-    e = e[e['sublead_jet_sdmass'] >= 100]
-    e = e[e['sublead_jet_sdmass'] <= 150]
-    events[category] = e
-
 plt.figure(figsize=(12, 9), dpi=150)
 pt_bins = np.linspace(0, 1200, 51)
 pt_hists = [np.histogram(events[category]['lead_jet_pt'], pt_bins, density=True) for category in categories]
@@ -157,7 +150,7 @@ plt.figure(figsize=(12, 9), dpi=150)
 sdmass_bins = np.linspace(50, 250, 21)
 sdmass_hists = [np.histogram(events[category]['lead_jet_sdmass'], sdmass_bins, density=True) for category in categories]
 hep.histplot(sdmass_hists, histtype='step', label=[labels[cate] for cate in categories])
-plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Density')
+plt.xlabel(r'Leading fat jet soft-drop mass $m_\mathrm{SD}$ [GeV]'); plt.ylabel('Density')
 plt.legend(); plt.grid(); plt.tight_layout(); savefig('sdmass-density.pdf')
 plt.close()
 
@@ -205,24 +198,31 @@ histplot(sdmass_hists, categories)
 plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
 plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
 signif(sdmass_hists, categories)
-plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Significance'); plt.grid()
+plt.xlabel(r'Leading fat jet soft-drop mass $m_\mathrm{SD}$ [GeV]'); plt.ylabel('Significance'); plt.grid()
 plt.tight_layout(); savefig('sdmass.pdf')
 plt.close()
 
 # Apply 2H4BVSQCD cut.
-for threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+for threshold in [0, 0.7991]:
     cut_events = { }
     for category in events:
         e = events[category]
         e = e[e['2H4BVSQCD'] >= threshold]
         cut_events[category] = e
-    fig = figure(figsize=(12, 11.25), dpi=150)
+    fig = plt.figure(figsize=(12, 9), dpi=150)
     sdmass_bins = np.linspace(50, 250, 21)
     sdmass_hists = [np.histogram(cut_events[category]['lead_jet_sdmass'], sdmass_bins, weights=cut_events[category]['weight']) for category in categories]
     histplot(sdmass_hists, categories)
-    plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
-    plt.gca().set_xticklabels([]); fig.add_subplot(gs[1])
-    signif(sdmass_hists, categories)
-    plt.xlabel(r'Soft Dropped Mass [GeV]'); plt.ylabel('Significance'); plt.grid()
-    plt.tight_layout(); savefig('sdmass-%.3f.pdf' % threshold)
+    s, b = 0.0, 0.0
+    for category in cut_events:
+        e = cut_events[category]
+        e = e[e['lead_jet_sdmass'] >= 100]
+        e = e[e['lead_jet_sdmass'] <= 150]
+        if category == SIGNAL: s += np.sum(e['weight'])
+        else: b += np.sum(e['weight'])
+    signif = get_signif(s, b)
+    print('thr=%.4f s=%.3f b=%.3f signif=%.5f' % (threshold, s, b, signif))
+    plt.plot([], [], 'k-', label='significance: %.5f' % signif)
+    plt.xlabel(r'Leading fat jet soft-drop mass $m_\mathrm{SD}$ [GeV]'); plt.ylabel('Events'); plt.yscale('log'); plt.legend(loc='upper right'); plt.grid()
+    plt.tight_layout(); savefig('sdmass-%.4f.pdf' % threshold)
     plt.close()

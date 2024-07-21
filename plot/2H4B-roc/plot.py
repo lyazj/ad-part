@@ -35,7 +35,7 @@ weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
-    'HH4B':  1630 * (37.9 / 48.5e3) * 0.582**2,
+    'HH4B':  1.32 * 0.582**2,
 }
 
 # Compute expressions to be evaluated on input ROOT files.
@@ -72,11 +72,6 @@ for method in ['raw', 'lite', 'full', 'hid']:
     print('Loading events...')
     uncategorized_events = concatenate(rootfiles, expressions, NEVENT_MAX)
     print('%d events loaded.' % len(uncategorized_events))
-    uncategorized_events = uncategorized_events[uncategorized_events['lead_jet_sdmass'] >= 100]
-    uncategorized_events = uncategorized_events[uncategorized_events['lead_jet_sdmass'] <= 150]
-    uncategorized_events = uncategorized_events[uncategorized_events['sublead_jet_sdmass'] >= 100]
-    uncategorized_events = uncategorized_events[uncategorized_events['sublead_jet_sdmass'] <= 150]
-    print('%d events in mass window [100, 150].' % len(uncategorized_events))
     uncategorized_events['2H4BVSQCD'] = 1.0 / (1.0 + uncategorized_events['score_label_QCD'] / uncategorized_events['score_label_2H4B'])
 
     for category in categories:
@@ -99,29 +94,36 @@ def savefig(path, *args, **kwargs):
 def get_signif(s, b):
     return s / np.sqrt(b + 1)
 
+def apply_mass_window(events):
+    events = events[events['lead_jet_sdmass'] >= 100]
+    events = events[events['lead_jet_sdmass'] <= 150]
+    return events
+
 def roc(events, *args, **kwargs):
-    signal_events = events[SIGNAL]
-    background_events = ak.concatenate([events[category] for category in events if category != SIGNAL])
+    signal_events = apply_mass_window(events[SIGNAL])
+    background_events = ak.concatenate([apply_mass_window(events[category]) for category in events if category != SIGNAL])
     y_true = np.concatenate([np.ones(len(signal_events)), np.zeros(len(background_events))])
     y_score = np.concatenate([signal_events['2H4BVSQCD'], background_events['2H4BVSQCD']])
     sample_weight = np.concatenate([signal_events['weight'], background_events['weight']])
     print('Generating ROC curve...')
-    fpr, tpr, _ = roc_curve(y_true, y_score, sample_weight=sample_weight)
-    i = len(fpr) - 1 - np.argmax(fpr[::-1] < 10**-4.5)
+    fpr, tpr, thr = roc_curve(y_true, y_score, sample_weight=sample_weight)
+    i = len(fpr) - 1 - np.argmax(fpr[::-1] < 10**-5.5)
     fpr, tpr = fpr[i:], tpr[i::]
     s_org = np.sum(signal_events['weight'])
     b_org = np.sum(background_events['weight'])
     s, b = s_org * tpr, b_org * fpr
     signif = get_signif(s, b)
+    i = signif.argmax()
+    print('best: thr=%.4f s=%.3f b=%.3f signif=%.5f' % (thr[i], s[i], b[i], signif[i]))
     return plt.plot(fpr, signif, *args, **kwargs)
 
 plt.figure(figsize=(12, 9), dpi=150)
-roc(prediction['none'], label='none')
-roc(prediction['raw'], label='raw')
-roc(prediction['lite'], label='lite')
-roc(prediction['full'], label='full')
-roc(prediction['hid'], label='hid')
+roc(prediction['none'], label='HbbVSQCD only')
+roc(prediction['raw'],  label='(1) high-level jet variables')
+roc(prediction['lite'], label='(2) probHbb and probQCD')
+roc(prediction['full'], label='(3) 188 output scores')
+roc(prediction['hid'],  label='(4) 128 hidden scores')
 plt.xlabel(r'Background suppression'); plt.ylabel('Significance')
 plt.xscale('log')
-plt.legend(); plt.grid(); plt.tight_layout(); savefig('roc.pdf')
+plt.legend(loc='upper right'); plt.grid(); plt.tight_layout(); savefig('roc.pdf')
 plt.close()
