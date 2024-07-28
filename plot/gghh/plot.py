@@ -10,16 +10,19 @@ import mplhep as hep
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
+# Modify these values on demand.
+kl = 1.0
+kt = 1.0
+
+FOLDER = 'plot_kl_%.3f_kt_%.3f' % (kl, kt)
+os.makedirs(FOLDER, exist_ok=True)
+
 # Transcript printed content to a same-name log file.
-logfile = open(re.sub(r'\.py$', '.log', __file__), 'w')
+logfile = open(os.path.join(FOLDER, re.sub(r'\.py$', '.log', __file__)), 'w')
 def print(*args, **kwargs): builtins.print(*args, **kwargs); builtins.print(*args, **{**kwargs, 'file': logfile})
 
 plt.style.use(hep.style.CMS)
 gs = gridspec.GridSpec(2, 1, height_ratios=[4, 1])
-
-# Modify these values on demand.
-kl = 1.0
-kt = 1.0
 
 SIGNAL = 'gghh'
 DATA4 = 'data4'
@@ -161,6 +164,7 @@ def histplot(hists, cates):
     hep.histplot(sig_hists, stack=False, histtype='step', label=[labels[cate] for cate in sig_cates], color='black')
 
 def savefig(path, *args, **kwargs):
+    if FOLDER not in path: path = os.path.join(FOLDER, path)
     print('Saving to %s...' % path)
     plt.savefig(path, *args, **kwargs)
 
