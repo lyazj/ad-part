@@ -1,7 +1,6 @@
 selection:
    ### use `&`, `|`, `~` for logical operations on numpy arrays
    ### can use functions from `math`, `np` (numpy), and `awkward` in the expression
-   ak.count(jet_pt, axis=-1) >= 2
 
 new_variables:
    ### [format] name: formula
