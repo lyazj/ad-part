@@ -237,7 +237,7 @@ plt.tight_layout(); savefig('sdmass.pdf')
 plt.close()
 
 # Apply 2H4BVSQCD cut.
-for threshold in [0, 0.9987]:
+for threshold in [0, 0.9985]:
     cut_events = { }
     for category in events:
         e = events[category]
