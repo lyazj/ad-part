@@ -97,7 +97,7 @@ def savefig(path, *args, **kwargs):
     plt.savefig(os.path.join('plot' + POSTFIX, path), *args, **kwargs)
 
 def get_signif(s, b):
-    return np.sqrt(np.maximum(2 * ((s + b) * np.log(np.maximum(1 + s / (b + (s == 0)), 1)) - s), 0))
+    return s / np.sqrt(b + 1)
 
 def signif(hists, cates):
     sig_hists  = [hist    for (hist, cate) in zip(hists, cates) if cate == SIGNAL]

@@ -144,7 +144,7 @@ def savefig(path, *args, **kwargs):
     plt.savefig(path, *args, **kwargs)
 
 def get_signif(s, b):
-    return np.sqrt(2 * ((s + b) * np.log(1 + s / (b + (s == 0))) - s))
+    return s / np.sqrt(b + 1)
 
 def signif(hists, cates):
     sig_hists  = [hist    for (hist, cate) in zip(hists, cates) if cate == SIGNAL]

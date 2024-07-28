@@ -3,7 +3,6 @@
 import os
 import re
 import uproot
-import glob
 import builtins
 import numpy as np
 import awkward as ak
@@ -18,10 +17,14 @@ def print(*args, **kwargs): builtins.print(*args, **kwargs); builtins.print(*arg
 plt.style.use(hep.style.CMS)
 gs = gridspec.GridSpec(2, 1, height_ratios=[4, 1])
 
-SIGNAL = 'H2B'
-DATA4 = '../../run/sm/data4'
+# Modify these values on demand.
+kl = 1.0
+kt = 1.0
+
+SIGNAL = 'gghh'
+DATA4 = 'data4'
 NEVENT_MAX = None
-#NEVENT_MAX = 1000000
+#NEVENT_MAX = 10000
 
 event_expressions = list(map(lambda x: (x[0], re.sub(r'\s+', ' ', x[1])), [
     ('jet_pt', '''jet_pt'''),
@@ -61,13 +64,15 @@ labels = {
     'QCD':   r'QCD',
     'VJets': r'V + Jets',
     'TTbar': r'TTbar',
-    'H2B':   r'$H \to 2b$',
+    'gghh':  r'$ggHH\ (HH \to 4b)$',
 }
 weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
-    'H2B':   1630 * 0.582,
+    'ggHH_kl_0_kt_1': (0.2*kl**2 - 1.2*kl + 1.0) * 2.508E-04 * 43834,
+    'ggHH_kl_1_kt_1': (-0.25*kl**2 + 1.25*kl) * 1.172E-04 * 73366,
+    'ggHH_kl_5_kt_1': (0.05*kl**2 - 0.05*kl) * 3.154E-04 * 34757,
 }
 
 # Compute expressions to be evaluated on input ROOT files.
@@ -90,7 +95,7 @@ def concatenate(files, expressions, n=None):
 events = { }
 
 for category in sorted(os.listdir(DATA4)):
-    if category not in labels: continue
+    if category not in weights: continue
     print('Category:', category)
     rootfiles = [
         os.path.join(DATA4, category, f) + ':tree'
@@ -105,6 +110,10 @@ for category in sorted(os.listdir(DATA4)):
     current_events['weight'] = weights[category] / len(current_events)
     events[category] = current_events
 
+gghh_categories = [ category for category in sorted(events.keys()) if category.startswith('ggHH') ]
+events['gghh'] = ak.concatenate([ events[category] for category in gghh_categories ])
+for category in gghh_categories: del events[category]
+del gghh_categories
 categories = sorted(events.keys())
 
 def compute_leading_jet_variables(events):
@@ -113,12 +122,25 @@ def compute_leading_jet_variables(events):
         jet_var = events[varname]
         lead_jet_var = jet_var[:,0]
         events['lead_' + varname] = lead_jet_var
+    return events
+
+#def compute_subleading_jet_variables(events):
+#    events = events[ak.count(events['jet_pt'], axis=-1) >= 2]
+#    for varname in events.fields:
+#        if varname[:4] != 'jet_': continue
+#        jet_var = events[varname]
+#        sublead_jet_var = jet_var[:,1]
+#        events['sublead_' + varname] = sublead_jet_var
+#    return events
 
 # Compute leading jet variables.
 print('Computing leading jet variables...')
-for c, e in events.items():
+for c in events:
     print('Category:', c)
-    compute_leading_jet_variables(e)
+    e = events[c]
+    e = compute_leading_jet_variables(e)
+    #e = compute_subleading_jet_variables(e)
+    events[c] = e
 
 def figure(*args, **kwargs):
     fig = plt.figure(*args, **kwargs)
@@ -169,8 +191,15 @@ def signif(hists, cates):
     plt.plot(bins, signif_u, label='upper')
     plt.plot([bins[l]] * 2, [0, signif_max * 1.2], 'k--')
     plt.plot([bins[u]] * 2, [0, signif_max * 1.2], 'k--')
-    plt.plot([], [], 'k--', label='optimal (%.3f)' % signif_max)
+    plt.plot([], [], 'k--', label='optimal (%.5f)' % signif_max)
     plt.legend()
+
+## Apply mass window on subleading jet.
+#for category in events:
+#    e = events[category]
+#    e = e[e['sublead_jet_sdmass'] >= 100]
+#    e = e[e['sublead_jet_sdmass'] <= 150]
+#    events[category] = e
 
 plt.figure(figsize=(12, 9), dpi=150)
 pt_bins = np.linspace(0, 1200, 51)
@@ -250,7 +279,7 @@ for threshold in [0.0, 0.9, 0.95, 0.98, 0.99, 0.995, 0.998, 0.999]:
         e = e[e['lead_jet_HbbVSQCD'] >= threshold]
         cut_events[category] = e
     fig = figure(figsize=(12, 11.25), dpi=150)
-    sdmass_bins = np.linspace(50, 200, 51)
+    sdmass_bins = np.linspace(50, 200, 16)
     sdmass_hists = [np.histogram(cut_events[category]['lead_jet_sdmass'], sdmass_bins, weights=cut_events[category]['weight']) for category in categories]
     histplot(sdmass_hists, categories)
     plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
