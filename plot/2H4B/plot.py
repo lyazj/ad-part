@@ -185,12 +185,12 @@ def signif(hists, cates):
     plt.plot([], [], 'k--', label='optimal (%.5f)' % signif_max)
     plt.legend()
 
-# Apply mass window on subleading jet.
-for category in events:
-    e = events[category]
-    e = e[e['sublead_jet_sdmass'] >= 100]
-    e = e[e['sublead_jet_sdmass'] <= 150]
-    events[category] = e
+## Apply mass window on subleading jet.
+#for category in events:
+#    e = events[category]
+#    e = e[e['sublead_jet_sdmass'] >= 100]
+#    e = e[e['sublead_jet_sdmass'] <= 150]
+#    events[category] = e
 
 plt.figure(figsize=(12, 9), dpi=150)
 pt_bins = np.linspace(0, 1200, 51)
@@ -240,6 +240,70 @@ plt.xlabel(r'HbbVSQCD'); plt.ylabel('Density')
 plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-100-150-density.pdf')
 plt.close()
 
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0.9, 1, 51)
+HbbVSQCD_hists = [np.histogram(cut_events[category]['lead_jet_HbbVSQCD'], HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-100-150-density-0.9.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0.99, 1, 51)
+HbbVSQCD_hists = [np.histogram(cut_events[category]['lead_jet_HbbVSQCD'], HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-100-150-density-0.99.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0, 1, 51)
+HbbVSQCD_hists = [np.histogram(cut_events[category]['sublead_jet_HbbVSQCD'], HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD-sub'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-sub-100-150-density.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0.9, 1, 51)
+HbbVSQCD_hists = [np.histogram(cut_events[category]['sublead_jet_HbbVSQCD'], HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD-sub'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-sub-100-150-density-0.9.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0.99, 1, 51)
+HbbVSQCD_hists = [np.histogram(cut_events[category]['sublead_jet_HbbVSQCD'], HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD-sub'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-sub-100-150-density-0.99.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0, 1, 51)
+HbbVSQCD_hists = [np.histogram(np.minimum(cut_events[category]['lead_jet_HbbVSQCD'], cut_events[category]['sublead_jet_HbbVSQCD']), HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD-2'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-2-100-150-density.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0.9, 1, 51)
+HbbVSQCD_hists = [np.histogram(np.minimum(cut_events[category]['lead_jet_HbbVSQCD'], cut_events[category]['sublead_jet_HbbVSQCD']), HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD-2'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-2-100-150-density-0.9.pdf')
+plt.close()
+
+plt.figure(figsize=(12, 9), dpi=150)
+HbbVSQCD_bins = np.linspace(0.99, 1, 51)
+HbbVSQCD_hists = [np.histogram(np.minimum(cut_events[category]['lead_jet_HbbVSQCD'], cut_events[category]['sublead_jet_HbbVSQCD']), HbbVSQCD_bins, density=True) for category in categories]
+hep.histplot(HbbVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'HbbVSQCD-2'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('HbbVSQCD-2-100-150-density-0.99.pdf')
+plt.close()
+
 fig = figure(figsize=(12, 11.25), dpi=150)
 tau21_bins = np.linspace(0, 1, 51)
 tau21_hists = [np.histogram(cut_events[category]['lead_jet_tau21'], tau21_bins, weights=cut_events[category]['weight']) for category in categories]
@@ -268,9 +332,10 @@ for threshold in [0.0, 0.9, 0.95, 0.98, 0.99, 0.995, 0.998, 0.999]:
     for category in events:
         e = events[category]
         e = e[e['lead_jet_HbbVSQCD'] >= threshold]
+        e = e[e['sublead_jet_HbbVSQCD'] >= threshold]
         cut_events[category] = e
     fig = figure(figsize=(12, 11.25), dpi=150)
-    sdmass_bins = np.linspace(50, 200, 51)
+    sdmass_bins = np.linspace(50, 200, 16)
     sdmass_hists = [np.histogram(cut_events[category]['lead_jet_sdmass'], sdmass_bins, weights=cut_events[category]['weight']) for category in categories]
     histplot(sdmass_hists, categories)
     plt.ylabel('Events'); plt.yscale('log'); plt.legend(); plt.grid()
