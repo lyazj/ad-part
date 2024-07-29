@@ -117,6 +117,33 @@ def roc(events, *args, **kwargs):
     print('best: thr=%.4f s=%.3f b=%.3f signif=%.5f' % (thr[i], s[i], b[i], signif[i]))
     return plt.plot(fpr, signif, *args, **kwargs)
 
+for category, events in prediction.items():
+    events = {category: apply_mass_window(events[category]) for category in events}
+
+    plt.figure(figsize=(12, 9), dpi=150)
+    HH4BVSQCD_bins = np.linspace(0, 1, 51)
+    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
+    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
+    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density.pdf')
+    plt.close()
+
+    plt.figure(figsize=(12, 9), dpi=150)
+    HH4BVSQCD_bins = np.linspace(0.9, 1, 51)
+    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
+    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
+    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density-0.9.pdf')
+    plt.close()
+
+    plt.figure(figsize=(12, 9), dpi=150)
+    HH4BVSQCD_bins = np.linspace(0.99, 1, 51)
+    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
+    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
+    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density-0.99.pdf')
+    plt.close()
+
 plt.figure(figsize=(12, 9), dpi=150)
 roc(prediction['none'], label='HbbVSQCD only')
 roc(prediction['raw'],  label='(1) high-level jet variables')

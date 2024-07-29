@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 
 # Transcript printed content to a same-name log file.
+try: os.remove(re.sub(r'\.py$', '.log', __file__))
+except Exception: pass
 logfile = open(re.sub(r'\.py$', '.log', __file__), 'w')
 def print(*args, **kwargs): builtins.print(*args, **kwargs); builtins.print(*args, **{**kwargs, 'file': logfile})
 
@@ -19,7 +21,6 @@ plt.style.use(hep.style.CMS)
 
 SIGNAL = 'gghh'
 POSTFIX = re.search(r'(?:^|/)plot([^/]*)\.py$', __file__).group(1) or '_default'
-os.makedirs('plot' + POSTFIX, exist_ok=True)
 NEVENT_MAX = None
 #NEVENT_MAX = 10000
 
@@ -30,12 +31,12 @@ labels = {
     'TTbar': r'TTbar',
     'gghh':  r'$ggHH\ (HH \to 4b)$',
 }
-weights_gghh = { 
+weights_gghh = {
     'ggHH_kl_0_kt_1': lambda kl, kt: (0.2*kl**2 - 1.2*kl + 1.0) * 2.508E-04 * 43834,
     'ggHH_kl_1_kt_1': lambda kl, kt: (-0.25*kl**2 + 1.25*kl) * 1.172E-04 * 73366,
     'ggHH_kl_5_kt_1': lambda kl, kt: (0.05*kl**2 - 0.05*kl) * 3.154E-04 * 34757,
 }
-weights = { 
+weights = {
     'QCD':   51400000,
     'VJets': 571000 + 128000 + 225000 + 25800 + 22600,
     'TTbar': 246000,
@@ -121,7 +122,7 @@ def reweight_prediction(kl, kt):
 
 def savefig(path, *args, **kwargs):
     print('Saving to %s...' % path)
-    plt.savefig(os.path.join('plot' + POSTFIX, path), *args, **kwargs)
+    plt.savefig(os.path.join('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', path), *args, **kwargs)
 
 def get_signif(s, b):
     return s / np.sqrt(b + 1)
@@ -149,7 +150,39 @@ def roc(events, *args, **kwargs):
     print('best: thr=%.4f s=%.3f b=%.3f signif=%.5f' % (thr[i], s[i], b[i], signif[i]))
     return plt.plot(fpr, signif, *args, **kwargs)
 
-prediction = reweight_prediction(kl=1.0, kt=1.0)
+kl = 1.0
+kt = 1.0
+prediction = reweight_prediction(kl, kt)
+os.makedirs('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', exist_ok=True)
+os.link(re.sub(r'\.py$', '.log', __file__),
+        os.path.join('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', re.sub(r'\.py$', '.log', __file__)))
+
+for category, events in prediction.items():
+    events = {category: apply_mass_window(events[category]) for category in events}
+
+    plt.figure(figsize=(12, 9), dpi=150)
+    HH4BVSQCD_bins = np.linspace(0, 1, 51)
+    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
+    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
+    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density.pdf')
+    plt.close()
+
+    plt.figure(figsize=(12, 9), dpi=150)
+    HH4BVSQCD_bins = np.linspace(0.9, 1, 51)
+    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
+    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
+    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density-0.9.pdf')
+    plt.close()
+
+    plt.figure(figsize=(12, 9), dpi=150)
+    HH4BVSQCD_bins = np.linspace(0.99, 1, 51)
+    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
+    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
+    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
+    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density-0.99.pdf')
+    plt.close()
 
 plt.figure(figsize=(12, 9), dpi=150)
 roc(prediction['none'], label='HbbVSQCD only')
