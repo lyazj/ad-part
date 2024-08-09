@@ -31,6 +31,7 @@ NEVENT_MAX = None
 #NEVENT_MAX = 10000
 
 event_expressions = list(map(lambda x: (x[0], re.sub(r'\s+', ' ', x[1])), [
+    ('evt_njet', '''evt_njet'''),
     ('jet_pt', '''jet_pt'''),
     ('jet_sdmass', '''jet_sdmass'''),
     ('jet_tau21', '''jet_tau21'''),
@@ -205,6 +206,14 @@ def signif(hists, cates):
 #    e = e[e['sublead_jet_sdmass'] >= 100]
 #    e = e[e['sublead_jet_sdmass'] <= 150]
 #    events[category] = e
+
+plt.figure(figsize=(12, 9), dpi=150)
+njet_bins = np.linspace(0, 10, 11)
+njet_hists = [np.histogram(events[category]['evt_njet'], njet_bins, density=True) for category in categories]
+hep.histplot(njet_hists, histtype='step', label=[labels[cate] for cate in categories])
+plt.xlabel(r'$n_\mathrm{jet}$ [GeV]'); plt.ylabel('Density')
+plt.legend(); plt.grid(); plt.tight_layout(); savefig('njet-density.pdf')
+plt.close()
 
 plt.figure(figsize=(12, 9), dpi=150)
 pt_bins = np.linspace(0, 1200, 51)
