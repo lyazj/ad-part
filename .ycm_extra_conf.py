@@ -33,7 +33,9 @@ while dirname != '/':
 filename = os.path.join(dirname, basename)
 
 # Execute parent configuration script.
-exec(open(filename).read())
+filename, __file__ = __file__, filename
+exec(open(__file__).read())
+filename, __file__ = __file__, filename
 
 # Add include paths for this project.
 for dirpath, _, _ in os.walk(dirname_org):
