@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
   // NOTE: Do this before loading rootfile.
   setenv_delphes();
 
-  ////ADGenMatcher matcher;
+  ADGenMatcher matcher;
 
   // Traverse input rootfiles.
   for(int a = 6; a < argc; ++a) {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
     // Set up branches.
     auto brjet = get_branch(delphes, JET_BRANCH);
-    ////auto brgpar = get_branch(delphes, "Particle"_branch);
+    auto brgpar = get_branch(delphes, "Particle"_branch);
     auto brelec = get_branch(delphes, "Electron"_branch);
     auto brmuon = get_branch(delphes, "Muon"_branch);
     auto brmet = get_branch(delphes, "MissingET"_branch);
@@ -121,14 +121,14 @@ int main(int argc, char *argv[])
       //if(brmet[0]->MET <= 100) continue;
 
       // Parse and dump data.
-      ////matcher.set_gnpars(brgpar.get_data());
+      matcher.set_gnpars(brgpar.get_data());
       //matcher.print_gnpars();
       //matcher.print_dgms();
       //printf("\n");
       size_t njet = brjet.size();
       if(njet == 0) continue;
       for(size_t j = 0; j < njet; ++j) {
-        ////ADGenMatchResult r = matcher.match(brjet[j], GNMCH_DETR);
+        ADGenMatchResult r = matcher.match(brjet[j], GNMCH_DETR);
         //if(!r.name) {
         //  printf("result: null\n");
         //} else {
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
         //}
         //printf("\n");
         try {
-          ADJet jet(pdg, *brjet[j], "QCD", *brvtx[0]);  // NOTE: "QCD" is only a placeholder.
+          ADJet jet(pdg, *brjet[j], r.name ? : "QCD", *brvtx[0]);  // NOTE: "QCD" may be a placeholder.
           jet.write(jetfile);
         } catch(const ADInvalidJet &) { }
       }
