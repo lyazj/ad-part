@@ -9,6 +9,8 @@ import awkward as ak
 import mplhep as hep
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
+import pyhf
+from pyhf.contrib.viz import brazil
 
 # Transcript printed content to a same-name log file.
 try: os.remove(re.sub(r'\.py$', '.log', __file__))
@@ -19,7 +21,7 @@ def print(*args, **kwargs): builtins.print(*args, **kwargs); builtins.print(*arg
 plt.style.use(hep.style.CMS)
 
 SIGNAL = 'gghh'
-POSTFIX = re.search(r'(?:^|/)plot([^/]*)\.py$', __file__).group(1) or '_default'
+POSTFIX = re.search(r'(?:^|/)limit([^/]*)\.py$', __file__).group(1) or '_default'
 NEVENT_MAX = None
 #NEVENT_MAX = 10000
 
@@ -119,9 +121,11 @@ def reweight(raw_events, kl, kt):
 def reweight_prediction(kl, kt):
     return { c: reweight(e, kl, kt) for (c, e) in raw_prediction.items() }
 
-def savefig(path, *args, **kwargs):
-    print('Saving to %s...' % path)
-    plt.savefig(os.path.join('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', path), *args, **kwargs)
+os.makedirs('limit' + POSTFIX, exist_ok=True)
+try: os.remove(os.path.join('limit' + POSTFIX, re.sub(r'\.py$', '.log', __file__)))
+except Exception: pass
+os.link(re.sub(r'\.py$', '.log', __file__),
+        os.path.join('limit' + POSTFIX, re.sub(r'\.py$', '.log', __file__)))
 
 def get_signif(s, b):
     return s / np.sqrt(b + 1)
@@ -131,13 +135,17 @@ def apply_mass_window(events):
     events = events[events['lead_jet_sdmass'] <= 150]
     return events
 
-def roc(events, *args, **kwargs):
-    signal_events = apply_mass_window(events[SIGNAL])
-    background_events = ak.concatenate([apply_mass_window(events[category]) for category in events if category != SIGNAL])
+for events in raw_prediction.values():
+    for category in events:
+        events[category] = apply_mass_window(events[category])
+
+def make_best_cut(events):
+    signal_events = events[SIGNAL]
+    background_events = ak.concatenate([events[category] for category in events if category != SIGNAL])
     y_true = np.concatenate([np.ones(len(signal_events)), np.zeros(len(background_events))])
     y_score = np.concatenate([signal_events['2H4BVSQCD'], background_events['2H4BVSQCD']])
     sample_weight = np.concatenate([signal_events['weight'], background_events['weight']])
-    print('Generating ROC curve...')
+    #print('Generating ROC curve...')
     fpr, tpr, thr = roc_curve(y_true, y_score, sample_weight=sample_weight)
     i = len(fpr) - 1 - np.argmax(fpr[::-1] < 10**-5.5)
     fpr, tpr = fpr[i:], tpr[i::]
@@ -146,52 +154,41 @@ def roc(events, *args, **kwargs):
     s, b = s_org * tpr, b_org * fpr
     signif = get_signif(s, b)
     i = signif.argmax()
-    print('best: thr=%.4f s=%.3f b=%.3f signif=%.5f' % (thr[i], s[i], b[i], signif[i]))
-    return plt.plot(fpr, signif, *args, **kwargs)
+    #print('best: thr=%.4f s=%.3f b=%.3f signif=%.5f' % (thr[i], s[i], b[i], signif[i]))
+    signal_events = signal_events[signal_events['2H4BVSQCD'] >= thr[i]]
+    background_events = background_events[background_events['2H4BVSQCD'] >= thr[i]]
+    return signal_events, background_events
 
-kl = 1.0
+def get_exp_limits(method, raw_events, kl, kt):
+    events = reweight(raw_events, kl, kt)
+    signal_events, background_events = make_best_cut(events)
+    signal = np.histogram(np.array(signal_events['lead_jet_sdmass']), 5, (100, 150), weights=np.array(signal_events['weight']))[0]
+    background = np.histogram(np.array(background_events['lead_jet_sdmass']), 5, (100, 150), weights=np.array(background_events['weight']))[0]
+    background_unc = np.sqrt(background)  # [FIXME]
+    model = pyhf.simplemodels.uncorrelated_background(signal=signal, bkg=background, bkg_uncertainty=background_unc)
+    observations = model.expected_data(model.config.suggested_init())  # [XXX]
+    bounds = model.config.suggested_bounds()
+    bounds[model.config.poi_index] = (0.0, 1e10)
+    scan = None
+    obs_limit, exp_limits, (scan, results) = pyhf.infer.intervals.upper_limits.upper_limit(
+        observations, model, scan, level=0.05, return_results=True, par_bounds=bounds
+    )
+    print(method, kl, exp_limits, sep='\t')
+    return exp_limits
+
+def get_exp_limits_monoarg(args):
+    return get_exp_limits(*args)
+
+from multiprocessing import Pool
+pool = Pool(32)
 kt = 1.0
-prediction = reweight_prediction(kl, kt)
-os.makedirs('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', exist_ok=True)
-try: os.remove(os.path.join('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', re.sub(r'\.py$', '.log', __file__)))
-except Exception: pass
-os.link(re.sub(r'\.py$', '.log', __file__),
-        os.path.join('plot' + POSTFIX + f'kl_{kl:.3f}_kt_{kt:.3f}', re.sub(r'\.py$', '.log', __file__)))
-
-for category, events in prediction.items():
-    events = {category: apply_mass_window(events[category]) for category in events}
-
-    plt.figure(figsize=(12, 9), dpi=150)
-    HH4BVSQCD_bins = np.linspace(0, 1, 51)
-    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
-    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
-    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
-    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density.pdf')
-    plt.close()
-
-    plt.figure(figsize=(12, 9), dpi=150)
-    HH4BVSQCD_bins = np.linspace(0.9, 1, 51)
-    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
-    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
-    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
-    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density-0.9.pdf')
-    plt.close()
-
-    plt.figure(figsize=(12, 9), dpi=150)
-    HH4BVSQCD_bins = np.linspace(0.99, 1, 51)
-    HH4BVSQCD_hists = [np.histogram(events[category]['2H4BVSQCD'], HH4BVSQCD_bins, density=True) for category in categories]
-    hep.histplot(HH4BVSQCD_hists, histtype='step', label=[labels[cate] for cate in categories])
-    plt.xlabel(r'2H4BVSQCD'); plt.ylabel('Density')
-    plt.legend(); plt.grid(); plt.tight_layout(); savefig(f'{category}-2H4BVSQCD-100-150-density-0.99.pdf')
-    plt.close()
-
-plt.figure(figsize=(12, 9), dpi=150)
-roc(prediction['none'], label='HbbVSQCD only')
-roc(prediction['raw'],  label='(1) high-level jet variables')
-roc(prediction['lite'], label='(2) probHbb and probQCD')
-roc(prediction['full'], label='(3) 188 output scores')
-roc(prediction['hid'],  label='(4) 128 hidden scores')
-plt.xlabel(r'Background suppression'); plt.ylabel('Significance')
-plt.xscale('log')
-plt.legend(loc='upper right'); plt.grid(); plt.tight_layout(); savefig('roc.pdf')
-plt.close()
+kl_array = np.linspace(-10, 20, 31)
+#methods = ['none', 'raw', 'lite', 'full', 'hid']
+methods = ['raw', 'lite', 'full', 'hid']
+raw_events_list = [ raw_prediction[method] for method in methods ]
+args_list = [ ]
+for method in methods:
+    for kl in kl_array:
+        args_list.append((method, raw_prediction[method], kl, kt))
+limits = np.array(pool.map(get_exp_limits_monoarg, args_list)).reshape(len(methods), len(kl_array), -1)
+np.save(os.path.join('limit' + POSTFIX, 'limits.npy'), limits)
