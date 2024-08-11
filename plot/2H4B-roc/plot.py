@@ -108,7 +108,7 @@ def roc(events, *args, **kwargs):
     print('Generating ROC curve...')
     fpr, tpr, thr = roc_curve(y_true, y_score, sample_weight=sample_weight)
     i = len(fpr) - 1 - np.argmax(fpr[::-1] < 10**-5.5)
-    fpr, tpr = fpr[i:], tpr[i::]
+    fpr, tpr, thr = fpr[i:], tpr[i:], thr[i:]
     s_org = np.sum(signal_events['weight'])
     b_org = np.sum(background_events['weight'])
     s, b = s_org * tpr, b_org * fpr

@@ -148,7 +148,7 @@ def make_best_cut(events):
     #print('Generating ROC curve...')
     fpr, tpr, thr = roc_curve(y_true, y_score, sample_weight=sample_weight)
     i = len(fpr) - 1 - np.argmax(fpr[::-1] < 10**-5.5)
-    fpr, tpr = fpr[i:], tpr[i::]
+    fpr, tpr, thr = fpr[i:], tpr[i:], thr[i:]
     s_org = np.sum(signal_events['weight'])
     b_org = np.sum(background_events['weight'])
     s, b = s_org * tpr, b_org * fpr
@@ -183,8 +183,7 @@ from multiprocessing import Pool
 pool = Pool(32)
 kt = 1.0
 kl_array = np.linspace(-10, 20, 31)
-#methods = ['none', 'raw', 'lite', 'full', 'hid']
-methods = ['raw', 'lite', 'full', 'hid']
+methods = ['none', 'raw', 'lite', 'full', 'hid']
 raw_events_list = [ raw_prediction[method] for method in methods ]
 args_list = [ ]
 for method in methods:
